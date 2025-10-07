@@ -3,7 +3,10 @@ package com.hatirlat.backend.service;
 import com.hatirlat.backend.dto.GroupRequest;
 import com.hatirlat.backend.dto.GroupResponse;
 import com.hatirlat.backend.entity.Group;
+import com.hatirlat.backend.entity.Member;
+import com.hatirlat.backend.exception.ResourceNotFoundException;
 import com.hatirlat.backend.repository.GroupRepository;
+import com.hatirlat.backend.repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +20,9 @@ public class GroupService {
 
     @Autowired
     private GroupRepository groupRepository;
+    
+    @Autowired
+    private MemberRepository memberRepository;
 
     @Transactional(readOnly = true)
     public List<GroupResponse> getAllGroups() {
@@ -29,7 +35,7 @@ public class GroupService {
     public GroupResponse getGroupById(String id) {
         return groupRepository.findById(Long.parseLong(id))
                 .map(this::convertToResponse)
-                .orElse(null);
+                .orElseThrow(() -> new ResourceNotFoundException("Group", id));
     }
 
     @Transactional
@@ -43,10 +49,8 @@ public class GroupService {
 
     @Transactional
     public GroupResponse updateGroup(String id, GroupRequest request) {
-        Group existingGroup = groupRepository.findById(Long.parseLong(id)).orElse(null);
-        if (existingGroup == null) {
-            return null;
-        }
+        Group existingGroup = groupRepository.findById(Long.parseLong(id))
+                .orElseThrow(() -> new ResourceNotFoundException("Group", id));
 
         existingGroup.setName(request.getName());
         existingGroup.setDescription(request.getDescription());
@@ -57,11 +61,11 @@ public class GroupService {
 
     @Transactional
     public boolean deleteGroup(String id) {
-        if (groupRepository.existsById(Long.parseLong(id))) {
-            groupRepository.deleteById(Long.parseLong(id));
-            return true;
+        if (!groupRepository.existsById(Long.parseLong(id))) {
+            throw new ResourceNotFoundException("Group", id);
         }
-        return false;
+        groupRepository.deleteById(Long.parseLong(id));
+        return true;
     }
 
     private GroupResponse convertToResponse(Group group) {
@@ -69,7 +73,9 @@ public class GroupService {
         response.setId(String.valueOf(group.getId()));
         response.setName(group.getName());
         response.setDescription(group.getDescription());
-        response.setMemberCount(group.getMembers() != null ? group.getMembers().size() : 0);
+        // Count members by querying the GroupMember repository
+        List<Member> members = memberRepository.findMembersByGroupId(group.getId());
+        response.setMemberCount(members != null ? members.size() : 0);
         response.setCreatedAt(group.getCreatedAt());
         return response;
     }

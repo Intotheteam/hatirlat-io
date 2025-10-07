@@ -35,7 +35,10 @@ public class ContactController {
     @GetMapping
     public ResponseEntity<BaseResponse<List<ContactResponse>>> getAllContacts() {
         List<ContactResponse> contacts = contactService.getAllContacts();
-        return ResponseEntity.ok(new BaseResponse<>(true, contacts, "Contacts retrieved successfully"));
+        String message = contacts.isEmpty() 
+            ? "No contacts found" 
+            : "Contacts retrieved successfully";
+        return ResponseEntity.ok(new BaseResponse<>(true, contacts, message));
     }
 
     @Operation(
@@ -77,11 +80,7 @@ public class ContactController {
     @PutMapping("/{id}")
     public ResponseEntity<BaseResponse<ContactResponse>> updateContact(@PathVariable String id, @RequestBody ContactRequest request) {
         ContactResponse updatedContact = contactService.updateContact(id, request);
-        if (updatedContact != null) {
-            return ResponseEntity.ok(new BaseResponse<>(true, updatedContact, "Contact updated successfully"));
-        } else {
-            return ResponseEntity.ok(new BaseResponse<>(false, null, "Contact not found"));
-        }
+        return ResponseEntity.ok(new BaseResponse<>(true, updatedContact, "Contact updated successfully"));
     }
 
     @Operation(
@@ -100,11 +99,7 @@ public class ContactController {
     )
     @DeleteMapping("/{id}")
     public ResponseEntity<BaseResponse<Void>> deleteContact(@PathVariable String id) {
-        boolean deleted = contactService.deleteContact(id);
-        if (deleted) {
-            return ResponseEntity.ok(new BaseResponse<>(true, null, "Contact deleted successfully"));
-        } else {
-            return ResponseEntity.ok(new BaseResponse<>(false, null, "Contact not found"));
-        }
+        contactService.deleteContact(id);
+        return ResponseEntity.ok(new BaseResponse<>(true, null, "Contact deleted successfully"));
     }
 }

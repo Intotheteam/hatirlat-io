@@ -35,7 +35,10 @@ public class GroupController {
     @GetMapping
     public ResponseEntity<BaseResponse<List<GroupResponse>>> getAllGroups() {
         List<GroupResponse> groups = groupService.getAllGroups();
-        return ResponseEntity.ok(new BaseResponse<>(true, groups, "Groups retrieved successfully"));
+        String message = groups.isEmpty() 
+            ? "No groups found" 
+            : "Groups retrieved successfully";
+        return ResponseEntity.ok(new BaseResponse<>(true, groups, message));
     }
 
     @Operation(
@@ -56,11 +59,7 @@ public class GroupController {
     @GetMapping("/{id}")
     public ResponseEntity<BaseResponse<GroupResponse>> getGroupById(@PathVariable String id) {
         GroupResponse group = groupService.getGroupById(id);
-        if (group != null) {
-            return ResponseEntity.ok(new BaseResponse<>(true, group, "Group retrieved successfully"));
-        } else {
-            return ResponseEntity.ok(new BaseResponse<>(false, null, "Group not found"));
-        }
+        return ResponseEntity.ok(new BaseResponse<>(true, group, "Group retrieved successfully"));
     }
 
     @Operation(
@@ -102,11 +101,7 @@ public class GroupController {
     @PutMapping("/{id}")
     public ResponseEntity<BaseResponse<GroupResponse>> updateGroup(@PathVariable String id, @RequestBody GroupRequest request) {
         GroupResponse updatedGroup = groupService.updateGroup(id, request);
-        if (updatedGroup != null) {
-            return ResponseEntity.ok(new BaseResponse<>(true, updatedGroup, "Group updated successfully"));
-        } else {
-            return ResponseEntity.ok(new BaseResponse<>(false, null, "Group not found"));
-        }
+        return ResponseEntity.ok(new BaseResponse<>(true, updatedGroup, "Group updated successfully"));
     }
 
     @Operation(
@@ -125,11 +120,7 @@ public class GroupController {
     )
     @DeleteMapping("/{id}")
     public ResponseEntity<BaseResponse<Void>> deleteGroup(@PathVariable String id) {
-        boolean deleted = groupService.deleteGroup(id);
-        if (deleted) {
-            return ResponseEntity.ok(new BaseResponse<>(true, null, "Group deleted successfully"));
-        } else {
-            return ResponseEntity.ok(new BaseResponse<>(false, null, "Group not found"));
-        }
+        groupService.deleteGroup(id);
+        return ResponseEntity.ok(new BaseResponse<>(true, null, "Group deleted successfully"));
     }
 }

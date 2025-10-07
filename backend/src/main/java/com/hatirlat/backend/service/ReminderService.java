@@ -2,8 +2,12 @@ package com.hatirlat.backend.service;
 
 import com.hatirlat.backend.dto.*;
 import com.hatirlat.backend.entity.*;
-import com.hatirlat.backend.repository.ReminderRepository;
+import com.hatirlat.backend.exception.ResourceNotFoundException;
+import com.hatirlat.backend.repository.ContactRepository;
+import com.hatirlat.backend.repository.CustomRepeatConfigRepository;
 import com.hatirlat.backend.repository.GroupRepository;
+import com.hatirlat.backend.repository.MemberRepository;
+import com.hatirlat.backend.repository.ReminderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +27,15 @@ public class ReminderService {
     
     @Autowired
     private GroupRepository groupRepository;
+    
+    @Autowired
+    private MemberRepository memberRepository;
+    
+    @Autowired
+    private ContactRepository contactRepository;
+    
+    @Autowired
+    private CustomRepeatConfigRepository customRepeatConfigRepository;
 
     @Transactional(readOnly = true)
     public List<ReminderResponse> getAllReminders() {
@@ -36,7 +49,7 @@ public class ReminderService {
         // Find by ID and convert to response
         return reminderRepository.findById(Long.parseLong(id))
                 .map(this::convertToResponse)
-                .orElse(null);
+                .orElseThrow(() -> new ResourceNotFoundException("Reminder", id));
     }
 
     @Transactional
@@ -52,23 +65,25 @@ public class ReminderService {
         reminder.setChannels(convertChannelStringsToEnums(request.getChannels()));
         reminder.setRepeat(parseEnumSafely(request.getRepeat(), RepeatType.class, RepeatType.NONE));
 
-        // Set contact if provided
+        // Set contact ID if provided
         if (request.getContact() != null) {
             Contact contact = new Contact();
             contact.setName(request.getContact().getName());
             contact.setPhone(request.getContact().getPhone());
             contact.setEmail(request.getContact().getEmail());
-            // In a real implementation, you'd save or find the contact
-            reminder.setContact(contact);
+            Contact savedContact = contactRepository.save(contact);
+            reminder.setContactId(savedContact.getId()); // Set the foreign key ID
         }
 
-        // Set group if provided by ID
+        // Set group ID if provided
         if (request.getGroupId() != null) {
             try {
                 Long groupId = Long.parseLong(request.getGroupId());
-                Group group = groupRepository.findById(groupId).orElse(null);
-                if (group != null) {
-                    reminder.setGroup(group);
+                // Verify group exists
+                if (groupRepository.existsById(groupId)) {
+                    reminder.setGroupId(groupId); // Set the foreign key ID
+                } else {
+                    log.warn("Group not found with ID: {}", groupId);
                 }
             } catch (NumberFormatException e) {
                 // Handle invalid group ID gracefully - log error and continue without group
@@ -76,7 +91,7 @@ public class ReminderService {
             }
         }
 
-        // Set custom repeat if provided and repeat type is "custom"
+        // Set custom repeat ID if provided and repeat type is "custom"
         if (RepeatType.CUSTOM.equals(reminder.getRepeat()) && request.getCustomRepeat() != null) {
             CustomRepeatConfig customRepeat = new CustomRepeatConfig();
             customRepeat.setInterval(request.getCustomRepeat().getInterval());
@@ -90,7 +105,8 @@ public class ReminderService {
                         .collect(Collectors.toList())
                 );
             }
-            reminder.setCustomRepeat(customRepeat);
+            CustomRepeatConfig savedCustomRepeat = customRepeatConfigRepository.save(customRepeat);
+            reminder.setCustomRepeatId(savedCustomRepeat.getId()); // Set the foreign key ID
         }
 
         Reminder savedReminder = reminderRepository.save(reminder);
@@ -99,10 +115,8 @@ public class ReminderService {
 
     @Transactional
     public ReminderResponse updateReminder(String id, ReminderRequest request) {
-        Reminder existingReminder = reminderRepository.findById(Long.parseLong(id)).orElse(null);
-        if (existingReminder == null) {
-            return null;
-        }
+        Reminder existingReminder = reminderRepository.findById(Long.parseLong(id))
+            .orElseThrow(() -> new ResourceNotFoundException("Reminder", id));
 
         existingReminder.setTitle(request.getTitle());
         existingReminder.setType(parseEnumSafely(request.getType(), ReminderType.class, existingReminder.getType()));
@@ -118,25 +132,22 @@ public class ReminderService {
             contact.setName(request.getContact().getName());
             contact.setPhone(request.getContact().getPhone());
             contact.setEmail(request.getContact().getEmail());
-            // In a real implementation, you'd save or find the contact
-            existingReminder.setContact(contact);
+            Contact savedContact = contactRepository.save(contact);
+            existingReminder.setContactId(savedContact.getId()); // Set the foreign key ID
         }
 
         // Update group if provided by ID
         if (request.getGroupId() != null) {
             try {
                 Long groupId = Long.parseLong(request.getGroupId());
-                Group group = groupRepository.findById(groupId).orElse(null);
-                if (group != null) {
-                    existingReminder.setGroup(group);
+                // Verify group exists
+                if (groupRepository.existsById(groupId)) {
+                    existingReminder.setGroupId(groupId); // Set the foreign key ID
                 } else {
-                    // If group is not found, set to null to avoid association with non-existent group
-                    existingReminder.setGroup(null);
+                    throw new ResourceNotFoundException("Group", request.getGroupId());
                 }
             } catch (NumberFormatException e) {
-                // Handle invalid group ID gracefully - set group to null
-                existingReminder.setGroup(null);
-                log.warn("Invalid group ID: {}", request.getGroupId());
+                throw new IllegalArgumentException("Invalid group ID format: " + request.getGroupId());
             }
         }
 
@@ -154,9 +165,10 @@ public class ReminderService {
                         .collect(Collectors.toList())
                 );
             }
-            existingReminder.setCustomRepeat(customRepeat);
+            CustomRepeatConfig savedCustomRepeat = customRepeatConfigRepository.save(customRepeat);
+            existingReminder.setCustomRepeatId(savedCustomRepeat.getId()); // Set the foreign key ID
         } else {
-            existingReminder.setCustomRepeat(null);
+            existingReminder.setCustomRepeatId(null);
         }
 
         Reminder updatedReminder = reminderRepository.save(existingReminder);
@@ -165,10 +177,8 @@ public class ReminderService {
 
     @Transactional
     public ReminderResponse updateReminderStatus(String id, String status) {
-        Reminder reminder = reminderRepository.findById(Long.parseLong(id)).orElse(null);
-        if (reminder == null) {
-            return null;
-        }
+        Reminder reminder = reminderRepository.findById(Long.parseLong(id))
+            .orElseThrow(() -> new ResourceNotFoundException("Reminder", id));
 
         ReminderStatus newStatus = parseEnumSafely(status, ReminderStatus.class, ReminderStatus.SCHEDULED);
         reminder.setStatus(newStatus);
@@ -178,11 +188,11 @@ public class ReminderService {
 
     @Transactional
     public boolean deleteReminder(String id) {
-        if (reminderRepository.existsById(Long.parseLong(id))) {
-            reminderRepository.deleteById(Long.parseLong(id));
-            return true;
+        if (!reminderRepository.existsById(Long.parseLong(id))) {
+            throw new ResourceNotFoundException("Reminder", id);
         }
-        return false;
+        reminderRepository.deleteById(Long.parseLong(id));
+        return true;
     }
 
     private <T extends Enum<T>> T parseEnumSafely(String value, Class<T> enumClass, T defaultValue) {
@@ -223,42 +233,52 @@ public class ReminderService {
         }
         response.setRepeat(reminder.getRepeat() != null ? reminder.getRepeat().name().toLowerCase() : null);
 
-        // Convert contact
-        if (reminder.getContact() != null) {
-            ContactRequest contactRequest = new ContactRequest();
-            contactRequest.setName(reminder.getContact().getName());
-            contactRequest.setPhone(reminder.getContact().getPhone());
-            contactRequest.setEmail(reminder.getContact().getEmail());
-            response.setContact(contactRequest);
-        }
-
-        // Convert group
-        if (reminder.getGroup() != null) {
-            GroupResponse groupResponse = new GroupResponse();
-            groupResponse.setId(String.valueOf(reminder.getGroup().getId()));
-            groupResponse.setName(reminder.getGroup().getName());
-            groupResponse.setDescription(reminder.getGroup().getDescription());
-            groupResponse.setMemberCount(reminder.getGroup().getMembers() != null ? 
-                reminder.getGroup().getMembers().size() : 0);
-            groupResponse.setCreatedAt(reminder.getGroup().getCreatedAt());
-            response.setGroup(groupResponse);
-        }
-
-        // Convert custom repeat
-        if (reminder.getCustomRepeat() != null) {
-            CustomRepeatRequest customRepeatRequest = new CustomRepeatRequest();
-            customRepeatRequest.setInterval(reminder.getCustomRepeat().getInterval());
-            customRepeatRequest.setFrequency(reminder.getCustomRepeat().getFrequency() != null ? 
-                reminder.getCustomRepeat().getFrequency().name().toLowerCase() : null);
-            if (reminder.getCustomRepeat().getDaysOfWeek() != null) {
-                customRepeatRequest.setDaysOfWeek(
-                    reminder.getCustomRepeat().getDaysOfWeek().stream()
-                        .map(Enum::name)
-                        .map(String::toLowerCase)
-                        .collect(Collectors.toList())
-                );
+        // Convert contact using contact ID
+        if (reminder.getContactId() != null) {
+            Contact contact = contactRepository.findById(reminder.getContactId()).orElse(null);
+            if (contact != null) {
+                ContactRequest contactRequest = new ContactRequest();
+                contactRequest.setName(contact.getName());
+                contactRequest.setPhone(contact.getPhone());
+                contactRequest.setEmail(contact.getEmail());
+                response.setContact(contactRequest);
             }
-            response.setCustomRepeat(customRepeatRequest);
+        }
+
+        // Convert group using group ID
+        if (reminder.getGroupId() != null) {
+            Group group = groupRepository.findById(reminder.getGroupId()).orElse(null);
+            if (group != null) {
+                GroupResponse groupResponse = new GroupResponse();
+                groupResponse.setId(String.valueOf(group.getId()));
+                groupResponse.setName(group.getName());
+                groupResponse.setDescription(group.getDescription());
+                // Count members by querying the GroupMember repository
+                List<Member> members = memberRepository.findMembersByGroupId(group.getId());
+                groupResponse.setMemberCount(members != null ? members.size() : 0);
+                groupResponse.setCreatedAt(group.getCreatedAt());
+                response.setGroup(groupResponse);
+            }
+        }
+
+        // Convert custom repeat using custom repeat ID
+        if (reminder.getCustomRepeatId() != null) {
+            CustomRepeatConfig customRepeat = customRepeatConfigRepository.findById(reminder.getCustomRepeatId()).orElse(null);
+            if (customRepeat != null) {
+                CustomRepeatRequest customRepeatRequest = new CustomRepeatRequest();
+                customRepeatRequest.setInterval(customRepeat.getInterval());
+                customRepeatRequest.setFrequency(customRepeat.getFrequency() != null ? 
+                    customRepeat.getFrequency().name().toLowerCase() : null);
+                if (customRepeat.getDaysOfWeek() != null) {
+                    customRepeatRequest.setDaysOfWeek(
+                        customRepeat.getDaysOfWeek().stream()
+                            .map(Enum::name)
+                            .map(String::toLowerCase)
+                            .collect(Collectors.toList())
+                    );
+                }
+                response.setCustomRepeat(customRepeatRequest);
+            }
         }
 
         return response;

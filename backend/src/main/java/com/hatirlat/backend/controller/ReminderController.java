@@ -36,7 +36,10 @@ public class ReminderController {
     @GetMapping
     public ResponseEntity<BaseResponse<List<ReminderResponse>>> getAllReminders() {
         List<ReminderResponse> reminders = reminderService.getAllReminders();
-        return ResponseEntity.ok(new BaseResponse<>(true, reminders, "Reminders retrieved successfully"));
+        String message = reminders.isEmpty() 
+            ? "No reminders found" 
+            : "Reminders retrieved successfully";
+        return ResponseEntity.ok(new BaseResponse<>(true, reminders, message));
     }
 
     @Operation(
@@ -57,11 +60,7 @@ public class ReminderController {
     @GetMapping("/{id}")
     public ResponseEntity<BaseResponse<ReminderResponse>> getReminderById(@PathVariable String id) {
         ReminderResponse reminder = reminderService.getReminderById(id);
-        if (reminder != null) {
-            return ResponseEntity.ok(new BaseResponse<>(true, reminder, "Reminder retrieved successfully"));
-        } else {
-            return ResponseEntity.ok(new BaseResponse<>(false, null, "Reminder not found"));
-        }
+        return ResponseEntity.ok(new BaseResponse<>(true, reminder, "Reminder retrieved successfully"));
     }
 
     @Operation(
@@ -104,11 +103,7 @@ public class ReminderController {
     @PutMapping("/{id}")
     public ResponseEntity<BaseResponse<ReminderResponse>> updateReminder(@PathVariable String id, @RequestBody ReminderRequest request) {
         ReminderResponse updatedReminder = reminderService.updateReminder(id, request);
-        if (updatedReminder != null) {
-            return ResponseEntity.ok(new BaseResponse<>(true, updatedReminder, "Reminder updated successfully"));
-        } else {
-            return ResponseEntity.ok(new BaseResponse<>(false, null, "Reminder not found"));
-        }
+        return ResponseEntity.ok(new BaseResponse<>(true, updatedReminder, "Reminder updated successfully"));
     }
 
     @Operation(
@@ -129,11 +124,7 @@ public class ReminderController {
     @PutMapping("/{id}/status")
     public ResponseEntity<BaseResponse<ReminderResponse>> updateReminderStatus(@PathVariable String id, @RequestBody StatusUpdateRequest statusRequest) {
         ReminderResponse updatedReminder = reminderService.updateReminderStatus(id, statusRequest.getStatus());
-        if (updatedReminder != null) {
-            return ResponseEntity.ok(new BaseResponse<>(true, updatedReminder, "Reminder status updated successfully"));
-        } else {
-            return ResponseEntity.ok(new BaseResponse<>(false, null, "Reminder not found"));
-        }
+        return ResponseEntity.ok(new BaseResponse<>(true, updatedReminder, "Reminder status updated successfully"));
     }
 
     @Operation(
@@ -152,11 +143,7 @@ public class ReminderController {
     )
     @DeleteMapping("/{id}")
     public ResponseEntity<BaseResponse<Void>> deleteReminder(@PathVariable String id) {
-        boolean deleted = reminderService.deleteReminder(id);
-        if (deleted) {
-            return ResponseEntity.ok(new BaseResponse<>(true, null, "Reminder deleted successfully"));
-        } else {
-            return ResponseEntity.ok(new BaseResponse<>(false, null, "Reminder not found"));
-        }
+        reminderService.deleteReminder(id);
+        return ResponseEntity.ok(new BaseResponse<>(true, null, "Reminder deleted successfully"));
     }
 }

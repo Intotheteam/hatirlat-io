@@ -3,7 +3,9 @@ package com.hatirlat.backend.service;
 import com.hatirlat.backend.dto.GroupRequest;
 import com.hatirlat.backend.dto.GroupResponse;
 import com.hatirlat.backend.entity.Group;
+import com.hatirlat.backend.entity.Member;
 import com.hatirlat.backend.repository.GroupRepository;
+import com.hatirlat.backend.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +28,9 @@ class GroupServiceTest {
 
     @Mock
     private GroupRepository groupRepository;
+    
+    @Mock
+    private MemberRepository memberRepository;
 
     @InjectMocks
     private GroupService groupService;
@@ -60,33 +65,38 @@ class GroupServiceTest {
     @Test
     void getGroupById_ExistingGroup_ReturnsGroup() {
         when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
+        when(memberRepository.findMembersByGroupId(1L)).thenReturn(Arrays.asList());
 
         GroupResponse response = groupService.getGroupById("1");
 
         assertNotNull(response);
         assertEquals("Test Group", response.getName());
         verify(groupRepository, times(1)).findById(1L);
+        verify(memberRepository, times(1)).findMembersByGroupId(1L);
     }
 
     @Test
     void getGroupById_NonExistingGroup_ReturnsNull() {
         when(groupRepository.findById(999L)).thenReturn(Optional.empty());
 
-        GroupResponse response = groupService.getGroupById("999");
-
-        assertNull(response);
+        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
+            groupService.getGroupById("999");
+        });
+        
         verify(groupRepository, times(1)).findById(999L);
     }
 
     @Test
     void createGroup_ValidRequest_ReturnsCreatedGroup() {
         when(groupRepository.save(any(Group.class))).thenReturn(group);
+        when(memberRepository.findMembersByGroupId(1L)).thenReturn(Arrays.asList());
 
         GroupResponse response = groupService.createGroup(groupRequest);
 
         assertNotNull(response);
         assertEquals("Test Group", response.getName());
         verify(groupRepository, times(1)).save(any(Group.class));
+        verify(memberRepository, times(1)).findMembersByGroupId(1L);
     }
 
     @Test
@@ -94,6 +104,7 @@ class GroupServiceTest {
         groupRequest.setName("Updated Group");
         when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
         when(groupRepository.save(any(Group.class))).thenReturn(group);
+        when(memberRepository.findMembersByGroupId(1L)).thenReturn(Arrays.asList());
 
         GroupResponse response = groupService.updateGroup("1", groupRequest);
 
@@ -101,15 +112,17 @@ class GroupServiceTest {
         assertEquals("Updated Group", response.getName());
         verify(groupRepository, times(1)).findById(1L);
         verify(groupRepository, times(1)).save(any(Group.class));
+        verify(memberRepository, times(1)).findMembersByGroupId(1L);
     }
 
     @Test
     void updateGroup_NonExistingGroup_ReturnsNull() {
         when(groupRepository.findById(999L)).thenReturn(Optional.empty());
 
-        GroupResponse response = groupService.updateGroup("999", groupRequest);
-
-        assertNull(response);
+        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
+            groupService.updateGroup("999", groupRequest);
+        });
+        
         verify(groupRepository, times(1)).findById(999L);
     }
 
@@ -128,9 +141,10 @@ class GroupServiceTest {
     void deleteGroup_NonExistingGroup_ReturnsFalse() {
         when(groupRepository.existsById(999L)).thenReturn(false);
 
-        boolean result = groupService.deleteGroup("999");
-
-        assertFalse(result);
+        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
+            groupService.deleteGroup("999");
+        });
+        
         verify(groupRepository, times(1)).existsById(999L);
         verify(groupRepository, never()).deleteById(999L);
     }

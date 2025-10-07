@@ -2,8 +2,6 @@ package com.hatirlat.backend.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "groups")
@@ -16,14 +14,6 @@ public class Group {
     private String name;
     private String description;
     private LocalDateTime createdAt;
-
-    @ManyToMany
-    @JoinTable(
-        name = "group_members",
-        joinColumns = @JoinColumn(name = "group_id"),
-        inverseJoinColumns = @JoinColumn(name = "member_id")
-    )
-    private Set<Member> members = new HashSet<>();
 
     // Constructors
     public Group() {
@@ -67,13 +57,5 @@ public class Group {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
-    }
-
-    public Set<Member> getMembers() {
-        return members;
-    }
-
-    public void setMembers(Set<Member> members) {
-        this.members = members;
     }
 }

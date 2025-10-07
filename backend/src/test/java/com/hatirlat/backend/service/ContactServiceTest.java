@@ -86,9 +86,10 @@ class ContactServiceTest {
     void updateContact_NonExistingContact_ReturnsNull() {
         when(contactRepository.findById(999L)).thenReturn(Optional.empty());
 
-        ContactResponse response = contactService.updateContact("999", contactRequest);
-
-        assertNull(response);
+        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
+            contactService.updateContact("999", contactRequest);
+        });
+        
         verify(contactRepository, times(1)).findById(999L);
     }
 
@@ -107,9 +108,10 @@ class ContactServiceTest {
     void deleteContact_NonExistingContact_ReturnsFalse() {
         when(contactRepository.existsById(999L)).thenReturn(false);
 
-        boolean result = contactService.deleteContact("999");
-
-        assertFalse(result);
+        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
+            contactService.deleteContact("999");
+        });
+        
         verify(contactRepository, times(1)).existsById(999L);
         verify(contactRepository, never()).deleteById(999L);
     }

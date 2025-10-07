@@ -1,128 +1,72 @@
-"use client";
+"use client"
 
-import React, { useState } from "react";
-import { Sun, Moon, LogOut } from "lucide-react";
-import { useRouter } from "next/navigation";
+import type React from "react"
+
+import { Bell, ListChecks, Users, Settings, LogOut } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { Button } from "@/components/ui/button"
+import type { View } from "@/types"
 
 interface HeaderProps {
-  activePage: string;
-  onNavigate: (page: string) => void;
-  toggleTheme: (mode: "light" | "dark") => void;
-  isDarkMode: boolean;
+  currentView: View
+  onNavigate: (view: View) => void
+  showNavigation: boolean
 }
 
-const Header: React.FC<HeaderProps> = ({
-  activePage,
-  onNavigate,
-  toggleTheme,
-  isDarkMode,
-}) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const router = useRouter();
+const navButtons: { view: View; label: string; icon: React.ElementType }[] = [
+  { view: "dashboard", label: "Dashboard", icon: ListChecks },
+  { view: "schedules", label: "Schedules", icon: Bell },
+  { view: "groups", label: "Groups", icon: Users },
+]
 
-  const linkClasses = (page: string) =>
-    `flex items-center space-x-2 cursor-pointer border-b-2 ${
-      activePage === page
-        ? "text-white border-green-400"
-        : "text-white/70 hover:text-white/90 border-transparent"
-    }`;
-
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-
-    router.replace("/login");
-  };
-
+export function Header({ currentView, onNavigate, showNavigation }: HeaderProps) {
   return (
-    <header className="bg-teal-500 text-white px-6 py-4 relative">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 17h5l-5 5-5-5h5v-12"
-            />
-          </svg>
-          <span className="text-xl font-semibold">Hatirlat.io</span>
+    <header className="sticky top-0 z-50 w-full border-b border-primary/40 bg-primary text-primary-foreground">
+      <div className="container grid h-16 max-w-screen-2xl grid-cols-3 items-center">
+        {/* Left Section: Logo */}
+        <div className="flex items-center justify-start">
+          <a href="#" onClick={() => onNavigate("dashboard")} className="flex items-center space-x-2">
+            <Bell className="h-6 w-6" />
+            <span className="hidden font-bold sm:inline-block">Hatirlat.io</span>
+          </a>
         </div>
 
-        <nav className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-6">
-          <div
-            className={linkClasses("dashboard")}
-            onClick={() => onNavigate("dashboard")}
-          >
-            <span>Dashboard</span>
-          </div>
-          <div
-            className={linkClasses("schedules")}
-            onClick={() => onNavigate("schedules")}
-          >
-            <span>Schedules</span>
-          </div>
-          <div
-            className={linkClasses("groups")}
-            onClick={() => onNavigate("groups")}
-          >
-            <span>Groups</span>
-          </div>
-        </nav>
-
-        <div className="flex items-center space-x-2 relative">
-          <div className="relative">
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="p-2 text-white hover:bg-white/10 rounded-md"
-            >
-              {isDarkMode ? (
-                <Moon className="w-5 h-5" />
-              ) : (
-                <Sun className="w-5 h-5" />
-              )}
-            </button>
-
-            {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-40 bg-white text-black rounded-md shadow-lg z-50">
-                <div
-                  onClick={() => {
-                    toggleTheme("light");
-                    setIsDropdownOpen(false);
-                  }}
-                  className="flex items-center space-x-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+        {/* Center Section: Navigation */}
+        <div className="flex items-center justify-center">
+          {showNavigation && (
+            <nav className="hidden items-center space-x-1 md:flex">
+              {navButtons.map(({ view, label, icon: Icon }) => (
+                <Button
+                  key={view}
+                  variant="ghost"
+                  onClick={() => onNavigate(view)}
+                  className={`h-16 rounded-none border-b-4 px-4 text-base font-semibold transition-all duration-300 hover:bg-primary/20 ${
+                    currentView === view
+                      ? "border-secondary text-secondary-foreground"
+                      : "border-transparent text-primary-foreground/70 hover:text-primary-foreground"
+                  }`}
                 >
-                  <Sun className="w-4 h-4" />
-                  <span>Light Mode</span>
-                </div>
-                <div
-                  onClick={() => {
-                    toggleTheme("dark");
-                    setIsDropdownOpen(false);
-                  }}
-                  className="flex items-center space-x-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                >
-                  <Moon className="w-4 h-4" />
-                  <span>Dark Mode</span>
-                </div>
-              </div>
-            )}
-          </div>
+                  <Icon className="mr-2 h-5 w-5" />
+                  {label}
+                </Button>
+              ))}
+            </nav>
+          )}
+        </div>
 
-          <button
-            onClick={handleLogout}
-            className="p-2 text-white hover:bg-white/10 rounded-md"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
+        {/* Right Section: Actions */}
+        <div className="flex items-center justify-end space-x-2">
+          <ThemeToggle />
+          <Button variant="ghost" size="icon">
+            <Settings className="h-5 w-5" />
+            <span className="sr-only">Settings</span>
+          </Button>
+          <Button variant="ghost" size="icon">
+            <LogOut className="h-5 w-5" />
+            <span className="sr-only">Log Out</span>
+          </Button>
         </div>
       </div>
     </header>
-  );
-};
-
-export default Header;
+  )
+}

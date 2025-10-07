@@ -22,17 +22,10 @@ class EntityTests {
         reminder.setChannels(Arrays.asList(NotificationChannel.EMAIL));
         reminder.setRepeat(RepeatType.DAILY);
 
-        Contact contact = new Contact();
-        contact.setName("Test Contact");
-        reminder.setContact(contact);
-
-        Group group = new Group();
-        group.setName("Test Group");
-        reminder.setGroup(group);
-
-        CustomRepeatConfig customRepeat = new CustomRepeatConfig();
-        customRepeat.setInterval(2);
-        reminder.setCustomRepeat(customRepeat);
+        // Use foreign key IDs instead of setting full entity objects
+        reminder.setContactId(1L);
+        reminder.setGroupId(1L);
+        reminder.setCustomRepeatId(1L);
 
         assertEquals(1L, reminder.getId());
         assertEquals("Test Reminder", reminder.getTitle());
@@ -41,9 +34,9 @@ class EntityTests {
         assertEquals(ReminderStatus.SCHEDULED, reminder.getStatus());
         assertEquals(Arrays.asList(NotificationChannel.EMAIL), reminder.getChannels());
         assertEquals(RepeatType.DAILY, reminder.getRepeat());
-        assertEquals(contact, reminder.getContact());
-        assertEquals(group, reminder.getGroup());
-        assertEquals(customRepeat, reminder.getCustomRepeat());
+        assertEquals(Long.valueOf(1L), reminder.getContactId());
+        assertEquals(Long.valueOf(1L), reminder.getGroupId());
+        assertEquals(Long.valueOf(1L), reminder.getCustomRepeatId());
     }
 
     @Test
@@ -72,13 +65,11 @@ class EntityTests {
         group.setName("Test Group");
         group.setDescription("Test Description");
         group.setCreatedAt(LocalDateTime.now());
-        group.setMembers(new HashSet<>());
 
         assertEquals(1L, group.getId());
         assertEquals("Test Group", group.getName());
         assertEquals("Test Description", group.getDescription());
         assertNotNull(group.getCreatedAt());
-        assertEquals(new HashSet<>(), group.getMembers());
 
         Group groupWithConstructor = new Group("Name", "Description");
         assertEquals("Name", groupWithConstructor.getName());

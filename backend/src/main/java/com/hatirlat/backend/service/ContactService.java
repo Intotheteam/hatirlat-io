@@ -3,6 +3,7 @@ package com.hatirlat.backend.service;
 import com.hatirlat.backend.dto.ContactRequest;
 import com.hatirlat.backend.dto.ContactResponse;
 import com.hatirlat.backend.entity.Contact;
+import com.hatirlat.backend.exception.ResourceNotFoundException;
 import com.hatirlat.backend.repository.ContactRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,10 +33,8 @@ public class ContactService {
     }
 
     public ContactResponse updateContact(String id, ContactRequest request) {
-        Contact existingContact = contactRepository.findById(Long.parseLong(id)).orElse(null);
-        if (existingContact == null) {
-            return null;
-        }
+        Contact existingContact = contactRepository.findById(Long.parseLong(id))
+            .orElseThrow(() -> new ResourceNotFoundException("Contact", id));
 
         existingContact.setName(request.getName());
         existingContact.setPhone(request.getPhone());
@@ -46,11 +45,11 @@ public class ContactService {
     }
 
     public boolean deleteContact(String id) {
-        if (contactRepository.existsById(Long.parseLong(id))) {
-            contactRepository.deleteById(Long.parseLong(id));
-            return true;
+        if (!contactRepository.existsById(Long.parseLong(id))) {
+            throw new ResourceNotFoundException("Contact", id);
         }
-        return false;
+        contactRepository.deleteById(Long.parseLong(id));
+        return true;
     }
 
     private ContactResponse convertToResponse(Contact contact) {

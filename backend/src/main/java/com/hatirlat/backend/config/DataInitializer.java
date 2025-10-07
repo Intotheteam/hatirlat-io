@@ -4,6 +4,7 @@ import com.hatirlat.backend.entity.Role;
 import com.hatirlat.backend.entity.User;
 import com.hatirlat.backend.entity.Contact;
 import com.hatirlat.backend.entity.Group;
+import com.hatirlat.backend.entity.GroupMember;
 import com.hatirlat.backend.entity.Member;
 import com.hatirlat.backend.entity.MemberRole;
 import com.hatirlat.backend.entity.MemberStatus;
@@ -13,6 +14,7 @@ import com.hatirlat.backend.entity.ReminderType;
 import com.hatirlat.backend.entity.NotificationChannel;
 import com.hatirlat.backend.entity.RepeatType;
 import com.hatirlat.backend.repository.ContactRepository;
+import com.hatirlat.backend.repository.GroupMemberRepository;
 import com.hatirlat.backend.repository.GroupRepository;
 import com.hatirlat.backend.repository.MemberRepository;
 import com.hatirlat.backend.repository.ReminderRepository;
@@ -42,6 +44,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private GroupMemberRepository groupMemberRepository;
 
     @Autowired
     private ReminderRepository reminderRepository;
@@ -137,6 +142,28 @@ public class DataInitializer implements CommandLineRunner {
                 log.info("Sample groups created");
             }
 
+            // Link members to groups (after both are created)
+            if (groupMemberRepository.count() == 0) {
+                java.util.List<Member> members = memberRepository.findAll();
+                java.util.List<Group> groups = groupRepository.findAll();
+
+                if (!members.isEmpty() && !groups.isEmpty()) {
+                    // Add first member to first group
+                    GroupMember gm1 = new GroupMember();
+                    gm1.setGroupId(groups.get(0).getId());
+                    gm1.setMemberId(members.get(0).getId());
+                    groupMemberRepository.save(gm1);
+
+                    // Add second member to first group
+                    GroupMember gm2 = new GroupMember();
+                    gm2.setGroupId(groups.get(0).getId());
+                    gm2.setMemberId(members.get(1).getId());
+                    groupMemberRepository.save(gm2);
+
+                    log.info("Sample group-member associations created");
+                }
+            }
+
             // Reminders
             if (reminderRepository.count() == 0) {
                 java.util.List<Contact> contacts = contactRepository.findAll();
@@ -148,7 +175,9 @@ public class DataInitializer implements CommandLineRunner {
                 r1.setMessage("Pay the electricity bill before due date");
                 r1.setDateTime(java.time.LocalDateTime.now().plusDays(1));
                 r1.setStatus(ReminderStatus.SCHEDULED);
-                r1.setContact(!contacts.isEmpty() ? contacts.get(0) : null);
+                if (!contacts.isEmpty()) {
+                    r1.setContactId(contacts.get(0).getId()); // Set contact ID instead of entity
+                }
                 r1.setChannels(java.util.List.of(NotificationChannel.EMAIL));
                 r1.setRepeat(RepeatType.NONE);
 
@@ -158,7 +187,9 @@ public class DataInitializer implements CommandLineRunner {
                 r2.setMessage("Daily standup at 10:00");
                 r2.setDateTime(java.time.LocalDateTime.now().plusHours(2));
                 r2.setStatus(ReminderStatus.SCHEDULED);
-                r2.setGroup(!groups.isEmpty() ? groups.get(0) : null);
+                if (!groups.isEmpty()) {
+                    r2.setGroupId(groups.get(0).getId()); // Set group ID instead of entity
+                }
                 r2.setChannels(java.util.List.of(NotificationChannel.WHATSAPP, NotificationChannel.SMS));
                 r2.setRepeat(RepeatType.DAILY);
 

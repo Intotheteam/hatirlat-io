@@ -35,7 +35,10 @@ public class MemberController {
     @GetMapping("/groups/{groupId}/members")
     public ResponseEntity<BaseResponse<List<MemberResponse>>> getGroupMembers(@PathVariable String groupId) {
         List<MemberResponse> members = memberService.getGroupMembers(groupId);
-        return ResponseEntity.ok(new BaseResponse<>(true, members, "Members retrieved successfully"));
+        String message = members.isEmpty() 
+            ? "No members found in the group" 
+            : "Members retrieved successfully";
+        return ResponseEntity.ok(new BaseResponse<>(true, members, message));
     }
 
     @Operation(

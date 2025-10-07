@@ -3,6 +3,7 @@ package com.hatirlat.backend.service;
 import com.hatirlat.backend.dto.MemberRequest;
 import com.hatirlat.backend.dto.MemberResponse;
 import com.hatirlat.backend.entity.*;
+import com.hatirlat.backend.repository.GroupMemberRepository;
 import com.hatirlat.backend.repository.GroupRepository;
 import com.hatirlat.backend.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +31,9 @@ class MemberServiceTest {
 
     @Mock
     private GroupRepository groupRepository;
+    
+    @Mock
+    private GroupMemberRepository groupMemberRepository;
 
     @InjectMocks
     private MemberService memberService;
@@ -59,29 +62,27 @@ class MemberServiceTest {
         group = new Group();
         group.setId(1L);
         group.setName("Test Group");
-        group.setMembers(new HashSet<>());
     }
 
     @Test
     void getGroupMembers_ExistingGroupWithMembers_ReturnsListOfMembers() {
-        group.getMembers().add(member);
-        when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
+        when(memberRepository.findMembersByGroupId(1L)).thenReturn(Arrays.asList(member));
 
         List<MemberResponse> members = memberService.getGroupMembers("1");
 
         assertEquals(1, members.size());
         assertEquals("Test Member", members.get(0).getName());
-        verify(groupRepository, times(1)).findById(1L);
+        verify(memberRepository, times(1)).findMembersByGroupId(1L);
     }
 
     @Test
     void getGroupMembers_NonExistingGroup_ReturnsEmptyList() {
-        when(groupRepository.findById(999L)).thenReturn(Optional.empty());
+        when(memberRepository.findMembersByGroupId(999L)).thenReturn(Arrays.asList());
 
         List<MemberResponse> members = memberService.getGroupMembers("999");
 
         assertTrue(members.isEmpty());
-        verify(groupRepository, times(1)).findById(999L);
+        verify(memberRepository, times(1)).findMembersByGroupId(999L);
     }
 
     @Test
@@ -95,7 +96,7 @@ class MemberServiceTest {
         assertEquals("Test Member", response.getName());
         verify(groupRepository, times(1)).findById(1L);
         verify(memberRepository, times(1)).save(any(Member.class));
-        assertEquals(1, group.getMembers().size());
+        verify(groupMemberRepository, times(1)).save(any(GroupMember.class));
     }
 
     @Test
@@ -107,45 +108,45 @@ class MemberServiceTest {
         assertNull(response);
         verify(groupRepository, times(1)).findById(999L);
         verify(memberRepository, never()).save(any(Member.class));
+        verify(groupMemberRepository, never()).save(any(GroupMember.class));
     }
 
     @Test
     void removeMemberFromGroup_ExistingMember_ReturnsTrue() {
-        group.getMembers().add(member);
-        when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
-        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+        GroupMember groupMember = new GroupMember();
+        groupMember.setGroupId(1L);
+        groupMember.setMemberId(1L);
+        when(groupMemberRepository.findByGroupIdAndMemberId(1L, 1L)).thenReturn(groupMember);
 
         boolean result = memberService.removeMemberFromGroup("1", "1");
 
         assertTrue(result);
-        verify(groupRepository, times(1)).findById(1L);
-        verify(memberRepository, times(1)).findById(1L);
-        verify(groupRepository, times(1)).save(any(Group.class));
+        verify(groupMemberRepository, times(1)).findByGroupIdAndMemberId(1L, 1L);
+        verify(groupMemberRepository, times(1)).delete(any(GroupMember.class));
     }
 
     @Test
     void removeMemberFromGroup_NonExistingGroup_ReturnsFalse() {
-        when(groupRepository.findById(999L)).thenReturn(Optional.empty());
+        when(groupMemberRepository.findByGroupIdAndMemberId(999L, 1L)).thenReturn(null);
 
-        boolean result = memberService.removeMemberFromGroup("999", "1");
-
-        assertFalse(result);
-        verify(groupRepository, times(1)).findById(999L);
-        verify(memberRepository, never()).findById(anyLong());
-        verify(groupRepository, never()).save(any(Group.class));
+        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
+            memberService.removeMemberFromGroup("999", "1");
+        });
+        
+        verify(groupMemberRepository, times(1)).findByGroupIdAndMemberId(999L, 1L);
+        verify(groupMemberRepository, never()).delete(any(GroupMember.class));
     }
 
     @Test
     void removeMemberFromGroup_NonExistingMember_ReturnsFalse() {
-        when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
-        when(memberRepository.findById(999L)).thenReturn(Optional.empty());
+        when(groupMemberRepository.findByGroupIdAndMemberId(1L, 999L)).thenReturn(null);
 
-        boolean result = memberService.removeMemberFromGroup("1", "999");
-
-        assertFalse(result);
-        verify(groupRepository, times(1)).findById(1L);
-        verify(memberRepository, times(1)).findById(999L);
-        verify(groupRepository, never()).save(any(Group.class));
+        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
+            memberService.removeMemberFromGroup("1", "999");
+        });
+        
+        verify(groupMemberRepository, times(1)).findByGroupIdAndMemberId(1L, 999L);
+        verify(groupMemberRepository, never()).delete(any(GroupMember.class));
     }
 
     @Test

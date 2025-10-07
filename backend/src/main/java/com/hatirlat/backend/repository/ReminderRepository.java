@@ -14,4 +14,10 @@ public interface ReminderRepository extends JpaRepository<Reminder, Long> {
     
     @Query("SELECT r FROM Reminder r WHERE r.status = :status AND r.dateTime <= :dateTime")
     List<Reminder> findByStatusAndDateTimeBefore(ReminderStatus status, LocalDateTime dateTime);
+    
+    @Query("SELECT r FROM Reminder r WHERE r.contactId = :contactId")
+    List<Reminder> findByContactId(Long contactId);
+    
+    @Query("SELECT r FROM Reminder r WHERE r.groupId = :groupId")
+    List<Reminder> findByGroupId(Long groupId);
 }

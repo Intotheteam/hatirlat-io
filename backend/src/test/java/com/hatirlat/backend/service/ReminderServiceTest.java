@@ -3,7 +3,9 @@ package com.hatirlat.backend.service;
 import com.hatirlat.backend.dto.*;
 import com.hatirlat.backend.entity.*;
 import com.hatirlat.backend.repository.ContactRepository;
+import com.hatirlat.backend.repository.CustomRepeatConfigRepository;
 import com.hatirlat.backend.repository.GroupRepository;
+import com.hatirlat.backend.repository.MemberRepository;
 import com.hatirlat.backend.repository.ReminderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,12 @@ class ReminderServiceTest {
 
     @Mock
     private GroupRepository groupRepository;
+    
+    @Mock
+    private MemberRepository memberRepository;
+    
+    @Mock
+    private CustomRepeatConfigRepository customRepeatConfigRepository;
 
     @InjectMocks
     private ReminderService reminderService;
@@ -72,8 +80,8 @@ class ReminderServiceTest {
         reminder.setStatus(ReminderStatus.SCHEDULED);
         reminder.setChannels(Arrays.asList(NotificationChannel.EMAIL));
         reminder.setRepeat(RepeatType.NONE);
-        reminder.setContact(contact);
-        reminder.setGroup(group);
+        reminder.setContactId(1L); // Use foreign key ID instead of entity
+        reminder.setGroupId(1L); // Use foreign key ID instead of entity
     }
 
     @Test
@@ -91,21 +99,28 @@ class ReminderServiceTest {
     @Test
     void getReminderById_ExistingReminder_ReturnsReminder() {
         when(reminderRepository.findById(1L)).thenReturn(Optional.of(reminder));
+        when(contactRepository.findById(1L)).thenReturn(Optional.of(contact));
+        when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
+        when(memberRepository.findMembersByGroupId(1L)).thenReturn(Arrays.asList());
 
         ReminderResponse response = reminderService.getReminderById("1");
 
         assertNotNull(response);
         assertEquals("Test Reminder", response.getTitle());
         verify(reminderRepository, times(1)).findById(1L);
+        verify(contactRepository, times(1)).findById(1L);
+        verify(groupRepository, times(1)).findById(1L);
+        verify(memberRepository, times(1)).findMembersByGroupId(1L);
     }
 
     @Test
     void getReminderById_NonExistingReminder_ReturnsNull() {
         when(reminderRepository.findById(999L)).thenReturn(Optional.empty());
 
-        ReminderResponse response = reminderService.getReminderById("999");
-
-        assertNull(response);
+        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
+            reminderService.getReminderById("999");
+        });
+        
         verify(reminderRepository, times(1)).findById(999L);
     }
     
@@ -131,6 +146,7 @@ class ReminderServiceTest {
     void createReminder_ValidRequest_ReturnsCreatedReminder() {
         // Since reminderRequest has type "personal" and no groupId, groupRepository.findById shouldn't be called
         when(reminderRepository.save(any(Reminder.class))).thenReturn(reminder);
+        when(contactRepository.save(any(Contact.class))).thenReturn(contact);
 
         ReminderResponse response = reminderService.createReminder(reminderRequest);
 
@@ -138,6 +154,7 @@ class ReminderServiceTest {
         assertEquals("Test Reminder", response.getTitle());
         assertEquals("personal", response.getType());
         verify(reminderRepository, times(1)).save(any(Reminder.class));
+        verify(contactRepository, times(1)).save(any(Contact.class));
         verify(groupRepository, never()).findById(anyLong()); // Ensure group lookup wasn't called for personal reminder
     }
 
@@ -160,9 +177,10 @@ class ReminderServiceTest {
     void updateReminder_NonExistingReminder_ReturnsNull() {
         when(reminderRepository.findById(999L)).thenReturn(Optional.empty());
 
-        ReminderResponse response = reminderService.updateReminder("999", reminderRequest);
-
-        assertNull(response);
+        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
+            reminderService.updateReminder("999", reminderRequest);
+        });
+        
         verify(reminderRepository, times(1)).findById(999L);
     }
 
@@ -204,9 +222,10 @@ class ReminderServiceTest {
     void deleteReminder_NonExistingReminder_ReturnsFalse() {
         when(reminderRepository.existsById(999L)).thenReturn(false);
 
-        boolean result = reminderService.deleteReminder("999");
-
-        assertFalse(result);
+        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
+            reminderService.deleteReminder("999");
+        });
+        
         verify(reminderRepository, times(1)).existsById(999L);
         verify(reminderRepository, never()).deleteById(999L);
     }

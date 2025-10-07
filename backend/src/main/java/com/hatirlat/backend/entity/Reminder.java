@@ -24,13 +24,9 @@ public class Reminder {
     @Enumerated(EnumType.STRING)
     private ReminderStatus status; // Enum for "scheduled", "sent", "paused", "failed"
     
-    @ManyToOne
-    @JoinColumn(name = "contact_id")
-    private Contact contact;
+    private Long contactId; // Foreign key reference instead of relationship
     
-    @ManyToOne
-    @JoinColumn(name = "group_id")
-    private Group group;
+    private Long groupId; // Foreign key reference instead of relationship
     
     @ElementCollection
     @CollectionTable(name = "reminder_channels", joinColumns = @JoinColumn(name = "reminder_id"))
@@ -40,9 +36,7 @@ public class Reminder {
     @Enumerated(EnumType.STRING)
     private RepeatType repeat; // Enum for "none", "hourly", "daily", "weekly", "custom"
     
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "custom_repeat_id")
-    private CustomRepeatConfig customRepeat;
+    private Long customRepeatId; // Foreign key reference instead of relationship
 
     // Constructors
     public Reminder() {}
@@ -96,20 +90,20 @@ public class Reminder {
         this.status = status;
     }
 
-    public Contact getContact() {
-        return contact;
+    public Long getContactId() {
+        return contactId;
     }
 
-    public void setContact(Contact contact) {
-        this.contact = contact;
+    public void setContactId(Long contactId) {
+        this.contactId = contactId;
     }
 
-    public Group getGroup() {
-        return group;
+    public Long getGroupId() {
+        return groupId;
     }
 
-    public void setGroup(Group group) {
-        this.group = group;
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
     }
 
     public List<NotificationChannel> getChannels() {
@@ -128,11 +122,11 @@ public class Reminder {
         this.repeat = repeat;
     }
 
-    public CustomRepeatConfig getCustomRepeat() {
-        return customRepeat;
+    public Long getCustomRepeatId() {
+        return customRepeatId;
     }
 
-    public void setCustomRepeat(CustomRepeatConfig customRepeat) {
-        this.customRepeat = customRepeat;
+    public void setCustomRepeatId(Long customRepeatId) {
+        this.customRepeatId = customRepeatId;
     }
 }

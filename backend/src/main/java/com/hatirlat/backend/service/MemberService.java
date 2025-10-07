@@ -3,9 +3,12 @@ package com.hatirlat.backend.service;
 import com.hatirlat.backend.dto.MemberRequest;
 import com.hatirlat.backend.dto.MemberResponse;
 import com.hatirlat.backend.entity.Group;
+import com.hatirlat.backend.entity.GroupMember;
 import com.hatirlat.backend.entity.Member;
 import com.hatirlat.backend.entity.MemberRole;
 import com.hatirlat.backend.entity.MemberStatus;
+import com.hatirlat.backend.exception.ResourceNotFoundException;
+import com.hatirlat.backend.repository.GroupMemberRepository;
 import com.hatirlat.backend.repository.GroupRepository;
 import com.hatirlat.backend.repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,22 +27,21 @@ public class MemberService {
     
     @Autowired
     private GroupRepository groupRepository;
+    
+    @Autowired
+    private GroupMemberRepository groupMemberRepository;
 
     public List<MemberResponse> getGroupMembers(String groupId) {
-        Group group = groupRepository.findById(Long.parseLong(groupId)).orElse(null);
-        if (group != null && group.getMembers() != null) {
-            return group.getMembers().stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
-        }
-        return List.of();
+        List<Member> members = memberRepository.findMembersByGroupId(Long.parseLong(groupId));
+        return members.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
     }
 
     public MemberResponse addMemberToGroup(String groupId, MemberRequest request) {
-        Group group = groupRepository.findById(Long.parseLong(groupId)).orElse(null);
-        if (group == null) {
-            return null;
-        }
+        // Verify group exists
+        Group group = groupRepository.findById(Long.parseLong(groupId))
+            .orElseThrow(() -> new ResourceNotFoundException("Group", groupId));
 
         Member member = new Member();
         member.setName(request.getName());
@@ -49,29 +52,29 @@ public class MemberService {
 
         Member savedMember = memberRepository.save(member);
 
-        // Add member to group
-        group.getMembers().add(savedMember);
-        groupRepository.save(group);
+        // Add member to group by creating a GroupMember entry
+        GroupMember groupMember = new GroupMember();
+        groupMember.setGroupId(Long.parseLong(groupId));
+        groupMember.setMemberId(savedMember.getId());
+        groupMemberRepository.save(groupMember);
 
         return convertToResponse(savedMember);
     }
 
     public boolean removeMemberFromGroup(String groupId, String memberId) {
-        Group group = groupRepository.findById(Long.parseLong(groupId)).orElse(null);
-        if (group == null) {
-            return false;
+        // Check if the member is in the group
+        GroupMember groupMember = groupMemberRepository.findByGroupIdAndMemberId(
+            Long.parseLong(groupId), 
+            Long.parseLong(memberId)
+        );
+        if (groupMember == null) {
+            throw new ResourceNotFoundException("GroupMember", 
+                String.format("Group ID: %s, Member ID: %s", groupId, memberId));
         }
 
-        Member member = memberRepository.findById(Long.parseLong(memberId)).orElse(null);
-        if (member == null) {
-            return false;
-        }
-
-        boolean removed = group.getMembers().remove(member);
-        if (removed) {
-            groupRepository.save(group);
-        }
-        return removed;
+        // Remove the GroupMember entry
+        groupMemberRepository.delete(groupMember);
+        return true;
     }
 
     public String inviteMember(String email, String groupId) {
