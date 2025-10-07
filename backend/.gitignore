@@ -1,0 +1,78 @@
+# -----------------------------
+# Maven / Build outputs
+# -----------------------------
+/target/
+/depgraph.txt
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+# If you don't want to commit the Maven wrapper JAR, ignore it:
+.mvn/wrapper/maven-wrapper.jar
+
+# -----------------------------
+# IDE / Editor configs
+# -----------------------------
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+# Eclipse
+.project
+.classpath
+.settings/
+# VS Code
+.vscode/
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# -----------------------------
+# OS / Misc
+# -----------------------------
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# Logs / Runtime files
+# -----------------------------
+logs/
+*.log
+*.out
+*.pid
+hs_err_pid*
+replay_pid*
+
+# -----------------------------
+# Spring / Env config (local only)
+# -----------------------------
+application-local.properties
+application-local.yml
+.env
+.env.*
+
+# -----------------------------
+# Local caches
+# -----------------------------
+local-m2/
+
+# -----------------------------
+# Build helper dirs (if any)
+# -----------------------------
+/bin/
+/build/
+
+# -----------------------------
+# Test / Coverage
+# -----------------------------
+coverage/
+*.exec
+jacoco.exec
+
