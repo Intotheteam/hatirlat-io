@@ -37,6 +37,9 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> {
+                        // Explicitly permit OPTIONS requests for all endpoints (needed for CORS preflight)
+                        authz.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll();
+                        
                         // permitAll patterns from configuration
                         endpointSecurityProperties.getPermitAll().forEach(pattern ->
                                 authz.requestMatchers(pattern).permitAll()
@@ -70,6 +73,7 @@ public class SecurityConfig {
             .securityMatcher("/scalar/**", "/favicon.ico")
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/scalar/**").permitAll()
                 .requestMatchers("/favicon.ico").permitAll()
                 .anyRequest().permitAll()

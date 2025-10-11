@@ -3,6 +3,7 @@ package com.hatirlat.backend.controller;
 import com.hatirlat.backend.dto.AuthRequest;
 import com.hatirlat.backend.dto.AuthResponse;
 import com.hatirlat.backend.dto.BaseResponse;
+import com.hatirlat.backend.dto.UserRequest;
 import com.hatirlat.backend.dto.UserResponse;
 import com.hatirlat.backend.entity.Role;
 import com.hatirlat.backend.entity.User;
@@ -55,13 +56,13 @@ public class AuthController {
         }
     )
     @PostMapping(value = "/register")
-    public ResponseEntity<User> register(
-            @RequestParam String username,
-            @RequestParam String password,
-            @RequestParam String email,
-            @RequestParam(required = false, defaultValue = "USER") Role role
-    ) {
-        User user = authService.register(username, password, email, role);
+    public ResponseEntity<User> register(@RequestBody UserRequest userRequest) {
+        User user = authService.register(
+            userRequest.getUsername(), 
+            userRequest.getPassword(), 
+            userRequest.getEmail(), 
+            userRequest.getRole() != null ? Role.valueOf(userRequest.getRole()) : Role.USER
+        );
         return ResponseEntity.ok(user);
     }
     
