@@ -37,4 +37,30 @@ export interface Reminder {
   customRepeat?: CustomRepeatConfig
 }
 
+export interface User {
+  id: string
+  username: string
+  email: string
+  role: string
+}
+
+export interface AuthRequest {
+  username: string
+  password: string
+}
+
+export interface AuthResponse {
+  token: string
+  refreshToken: string
+  type: string
+  expiresIn: number
+  user: User
+}
+
+export interface BaseResponse<T> {
+  success: boolean
+  data: T
+  message?: string
+}
+
 export type View = "dashboard" | "schedule-form" | "groups" | "manage-members" | "schedules"

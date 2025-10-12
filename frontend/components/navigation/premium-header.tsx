@@ -12,13 +12,23 @@ import {
   LogOut,
   Menu,
   X,
-  Sparkles
+  Sparkles,
+  User
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SettingsButton } from "./settings-button";
 import { UpgradeButton } from "./upgrade-button";
 import type { View } from "@/types";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface PremiumHeaderProps {
   currentView: View;
@@ -33,12 +43,28 @@ const navItems = [
 
 export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const router = useRouter();
 
   const handleNavigation = (view: View) => {
     onNavigate(view);
     if (window.innerWidth < 768) {
       setIsMobileMenuOpen(false);
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((part) => part.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -142,6 +168,33 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
           <div className="flex items-center gap-3">
             {/* Theme Toggle */}
             <ThemeToggle />
+
+            {/* User Profile */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      {user?.username ? getInitials(user.username) : <User className="h-4 w-4" />}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuItem onClick={() => handleNavigation("dashboard")}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleNavigation("dashboard")}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Settings Button */}
             <div className="hidden lg:block">
@@ -253,6 +306,7 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                       <Button
                         variant="outline"
                         className="w-full rounded-xl border-2 border-border/60 dark:border-border/40 hover:bg-gradient-to-br hover:from-accent/50 hover:to-accent/30 hover:border-indigo-200/40 dark:hover:border-indigo-500/30 transition-all"
+                        onClick={() => handleNavigation("dashboard")}
                       >
                         <div className="p-1 rounded-lg group-hover:bg-accent/50 mr-2 inline-flex">
                           <Settings className="h-4 w-4 group-hover:rotate-90 transition-transform duration-500" />
@@ -264,6 +318,7 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                       <Button
                         variant="outline"
                         className="w-full rounded-xl border-2 border-border/60 dark:border-border/40 hover:bg-gradient-to-br hover:from-accent/50 hover:to-accent/30 hover:border-pink-200/40 dark:hover:border-pink-500/30 transition-all"
+                        onClick={handleLogout}
                       >
                         <div className="p-1 rounded-lg group-hover:bg-accent/50 mr-2 inline-flex">
                           <LogOut className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />

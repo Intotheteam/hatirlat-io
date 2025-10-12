@@ -1,227 +1,275 @@
-# API Context for Hatirlat.io Backend Implementation
+# Hatirlat.io Frontend API Integration Guide
 
-## Project Overview
-Hatirlat.io is a modern reminder application frontend built with Next.js 15, TypeScript, and Tailwind CSS. The application currently uses dummy data for API calls, but requires a backend implementation with Java Spring Boot REST APIs to handle all data operations and business logic.
+## Overview
 
-## Current Frontend State
-The frontend application is fully functional with dummy data implementation and includes the following key features:
-- Reminder management (create, read, update, delete)
-- Group management (create, read)
-- Member management within groups
-- Multiple notification channels (email, SMS, WhatsApp)
-- Recurring reminder functionality
-- User authentication simulation
-- Dashboard with statistics and filtering
+This document describes how the frontend application integrates with the Hatirlat.io backend API. The integration uses JWT-based authentication and follows RESTful principles.
 
-## API Implementation Requirements
+## Base URL Configuration
 
-### 1. Core Technology Stack
-- **Backend Framework**: Java Spring Boot (latest stable version)
-- **Database**: PostgreSQL (or similar SQL database)
-- **Authentication**: JWT-based authentication
-- **API Documentation**: OpenAPI/Swagger
-- **Testing**: JUnit for unit tests, MockMvc for integration tests
-- **Security**: Spring Security with CSRF protection
+The API base URL is configurable through the `NEXT_PUBLIC_API_URL` environment variable. If not set, it defaults to `http://localhost:8080`.
 
-### 2. Data Models & Endpoints to Implement
+## Authentication
 
-#### Reminders API
-- `GET /api/reminders` - Get all reminders for authenticated user
-- `GET /api/reminders/{id}` - Get specific reminder
-- `POST /api/reminders` - Create new reminder
-- `PUT /api/reminders/{id}` - Update reminder
-- `DELETE /api/reminders/{id}` - Delete reminder
-- `PUT /api/reminders/{id}/status` - Update reminder status
+All API requests (except for authentication endpoints) require a valid JWT token in the Authorization header:
 
-**Reminder Entity Fields**:
-```java
-@Entity
-public class Reminder {
-    @Id
-    private String id;
-    private String title;
-    private String type; // "personal" | "group"
-    private String message;
-    private LocalDateTime dateTime;
-    private String status; // "scheduled" | "sent" | "paused" | "failed"
-    
-    @ManyToOne
-    @JoinColumn(name = "contact_id")
-    private Contact contact;
-    
-    @ManyToOne
-    @JoinColumn(name = "group_id")
-    private Group group;
-    
-    @ElementCollection
-    private List<String> channels; // "email" | "sms" | "whatsapp"
-    
-    private String repeat; // "none" | "hourly" | "daily" | "weekly" | "custom"
-    
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "custom_repeat_id")
-    private CustomRepeatConfig customRepeat;
-    
-    // Getters and setters
-}
+```
+Authorization: Bearer <jwt-token>
 ```
 
-#### Groups API
-- `GET /api/groups` - Get all groups for authenticated user
-- `GET /api/groups/{id}` - Get specific group
-- `POST /api/groups` - Create new group
-- `PUT /api/groups/{id}` - Update group
-- `DELETE /api/groups/{id}` - Delete group
-
-**Group Entity Fields**:
-```java
-@Entity
-public class Group {
-    @Id
-    private String id;
-    private String name;
-    private String description;
-    private LocalDateTime createdAt;
-    
-    @ManyToMany
-    @JoinTable(
-        name = "group_members",
-        joinColumns = @JoinColumn(name = "group_id"),
-        inverseJoinColumns = @JoinColumn(name = "member_id")
-    )
-    private Set<Member> members = new HashSet<>();
-    
-    // Getters and setters
-}
-```
-
-#### Members API
-- `GET /api/groups/{groupId}/members` - Get all members in a group
-- `POST /api/groups/{groupId}/members` - Add member to group
-- `DELETE /api/groups/{groupId}/members/{memberId}` - Remove member from group
-- `POST /api/members/invite` - Send invitation to join group
-
-**Member Entity Fields**:
-```java
-@Entity
-public class Member {
-    @Id
-    private String id;
-    private String name;
-    private String email;
-    private String role; // "Admin" | "Member"
-    private String status; // "Active" | "Pending"
-    private LocalDateTime joinedAt;
-    private String phone;
-    private LocalDateTime lastActivity;
-    
-    // Getters and setters
-}
-```
-
-#### Contacts API
-- `GET /api/contacts` - Get all contacts for authenticated user
-- `POST /api/contacts` - Create new contact
-- `PUT /api/contacts/{id}` - Update contact
-- `DELETE /api/contacts/{id}` - Delete contact
-
-**Contact Entity Fields**:
-```java
-@Entity
-public class Contact {
-    @Id
-    private String id;
-    private String name;
-    private String phone;
-    private String email;
-    
-    // Getters and setters
-}
-```
-
-### 3. Authentication and User Management
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Authenticate user and return JWT
-- `GET /api/auth/me` - Get current user info (requires valid JWT)
-
-### 4. Custom Repeat Configuration
-For recurring reminders, implement custom repeat logic:
-- Support for multiple repeat patterns (hourly, daily, weekly, monthly)
-- Custom intervals and days of week
-- End date or occurrence limit
-
-### 5. Notification System
-- Integration with external services for SMS, email, and WhatsApp notifications
-- Background job scheduling using Spring Scheduler or similar
-- Retry mechanism for failed notifications
-- Logging for notification status
-
-### 6. API Response Format
-All API responses should follow a consistent format:
-
-Success responses:
-```json
-{
-  "success": true,
-  "data": { ... },
-  "message": "Optional success message"
-}
-```
-
-Error responses:
-```json
-{
-  "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "Human-readable error message",
-    "details": "Optional detailed error information"
+### Login
+- **Endpoint**: `POST /api/auth/login`
+- **Request Body**: 
+  ```json
+  {
+    "username": "string",
+    "password": "string"
   }
+  ```
+- **Response**: 
+  ```json
+  {
+    "token": "string",
+    "refreshToken": "string",
+    "type": "Bearer",
+    "expiresIn": "number",
+    "user": {
+      "id": "string",
+      "username": "string",
+      "email": "string",
+      "role": "string"
+    }
+  }
+  ```
+
+### Register
+- **Endpoint**: `POST /api/auth/register`
+- **Query Parameters**: 
+  - `username`: User's username
+  - `password`: User's password
+  - `email`: User's email
+- **Response**: 
+  ```json
+  {
+    "id": "string",
+    "username": "string",
+    "email": "string",
+    "role": "string"
+  }
+  ```
+
+### Get Current User
+- **Endpoint**: `GET /api/auth/me`
+- **Response**: 
+  ```json
+  {
+    "id": "string",
+    "username": "string",
+    "email": "string",
+    "role": "string"
+  }
+  ```
+
+## Reminders API
+
+### Get All Reminders
+- **Endpoint**: `GET /api/reminders`
+- **Response**: Array of Reminder objects
+
+### Get Reminder by ID
+- **Endpoint**: `GET /api/reminders/{id}`
+- **Response**: Reminder object
+
+### Create Reminder
+- **Endpoint**: `POST /api/reminders`
+- **Request Body**: Reminder object (without ID)
+- **Response**: Created Reminder object
+
+### Update Reminder
+- **Endpoint**: `PUT /api/reminders/{id}`
+- **Request Body**: Partial or full Reminder object
+- **Response**: Updated Reminder object
+
+### Delete Reminder
+- **Endpoint**: `DELETE /api/reminders/{id}`
+- **Response**: 204 No Content
+
+### Update Reminder Status
+- **Endpoint**: `PUT /api/reminders/{id}/status`
+- **Request Body**: 
+  ```json
+  {
+    "status": "string"
+  }
+  ```
+- **Response**: Updated Reminder object
+
+## Groups API
+
+### Get All Groups
+- **Endpoint**: `GET /api/groups`
+- **Response**: Array of Group objects
+
+### Get Group by ID
+- **Endpoint**: `GET /api/groups/{id}`
+- **Response**: Group object
+
+### Create Group
+- **Endpoint**: `POST /api/groups`
+- **Request Body**: Group object (without ID)
+- **Response**: Created Group object
+
+### Update Group
+- **Endpoint**: `PUT /api/groups/{id}`
+- **Request Body**: Partial or full Group object
+- **Response**: Updated Group object
+
+### Delete Group
+- **Endpoint**: `DELETE /api/groups/{id}`
+- **Response**: 204 No Content
+
+## Members API
+
+### Get Group Members
+- **Endpoint**: `GET /api/groups/{groupId}/members`
+- **Response**: Array of Member objects
+
+### Add Member to Group
+- **Endpoint**: `POST /api/groups/{groupId}/members`
+- **Request Body**: Member object (without ID)
+- **Response**: Created Member object
+
+### Remove Member from Group
+- **Endpoint**: `DELETE /api/groups/{groupId}/members/{memberId}`
+- **Response**: 204 No Content
+
+### Invite Member
+- **Endpoint**: `POST /api/members/invite`
+- **Request Body**: 
+  ```json
+  {
+    "email": "string",
+    "groupId": "string"
+  }
+  ```
+- **Response**: Success message
+
+## Contacts API
+
+### Get All Contacts
+- **Endpoint**: `GET /api/contacts`
+- **Response**: Array of Contact objects
+
+### Get Contact by ID
+- **Endpoint**: `GET /api/contacts/{id}`
+- **Response**: Contact object
+
+### Create Contact
+- **Endpoint**: `POST /api/contacts`
+- **Request Body**: Contact object (without ID)
+- **Response**: Created Contact object
+
+### Update Contact
+- **Endpoint**: `PUT /api/contacts/{id}`
+- **Request Body**: Partial or full Contact object
+- **Response**: Updated Contact object
+
+### Delete Contact
+- **Endpoint**: `DELETE /api/contacts/{id}`
+- **Response**: 204 No Content
+
+## Error Handling
+
+All API errors are wrapped in an ApiError class that extends the standard JavaScript Error class. The error includes:
+
+- `status`: HTTP status code
+- `message`: Human-readable error message
+
+Common error responses:
+- `400 Bad Request`: Invalid request parameters or payload
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: Insufficient permissions
+- `404 Not Found`: Resource not found
+- `500 Internal Server Error`: Server error
+
+## Data Models
+
+### Reminder
+```typescript
+interface Reminder {
+  id: string;
+  title: string;
+  type: "personal" | "group";
+  message: string;
+  dateTime: string; // ISO 8601 format
+  status: "scheduled" | "sent" | "paused" | "failed";
+  contact: Contact;
+  group: Group;
+  channels: ("email" | "sms" | "whatsapp" | "push")[];
+  repeat: "none" | "hourly" | "daily" | "weekly" | "custom";
+  customRepeat?: CustomRepeatConfig;
 }
 ```
 
-### 7. Validation Requirements
-- Server-side validation for all input parameters
-- Proper error messages for validation failures
-- Business logic validation (e.g., cannot delete group with active reminders)
+### Group
+```typescript
+interface Group {
+  id: string;
+  name: string;
+  description?: string;
+  memberCount?: number;
+  createdAt?: string; // ISO 8601 format
+}
+```
 
-### 8. Security Considerations
-- Authentication required for all endpoints except login/register
-- Authorization: users can only access their own data
-- Input sanitization to prevent injection attacks
-- Rate limiting to prevent abuse
-- Proper CORS configuration
+### Member
+```typescript
+interface Member {
+  id: string;
+  name: string;
+  email: string;
+  role: "Admin" | "Member";
+  status: "Active" | "Pending";
+  joinedAt: string; // ISO 8601 format
+  phone?: string;
+  lastActivity?: string; // ISO 8601 format
+}
+```
 
-### 9. Deployment & Environment Configuration
-- Containerized deployment with Docker
-- Environment variables for database credentials, JWT secrets, API keys
-- Health check endpoints for monitoring
-- Logging configuration for production
+### Contact
+```typescript
+interface Contact {
+  name: string;
+  phone: string;
+  email: string;
+}
+```
 
-### 10. Data Relationships
-- A Reminder can be associated with either a Contact (for personal reminders) or a Group (for group reminders)
-- A Group can have multiple Members
-- Users can be members of multiple groups
-- Contacts are tied to individual users
+### CustomRepeatConfig
+```typescript
+interface CustomRepeatConfig {
+  interval: number;
+  frequency: "day" | "week" | "month";
+  daysOfWeek?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+}
+```
 
-### 11. Additional Features for Backend
-- Search and filtering capabilities
-- Pagination for large datasets
-- Export functionality (CSV, PDF)
-- Audit logging for important operations
-- Soft delete for important entities to maintain data integrity
-- Background processing for notification sending
+## Authentication Flow
 
-### 12. Error Handling Strategy
-- Custom exception classes for different error types
-- Global exception handler with appropriate HTTP status codes
-- Proper logging of errors for debugging
-- Graceful degradation when external services are unavailable
+1. User submits login credentials
+2. Frontend sends POST request to `/api/auth/login`
+3. Backend validates credentials and returns JWT token
+4. Frontend stores token in localStorage
+5. For subsequent requests, frontend adds Authorization header with token
+6. Backend validates token on each request
+7. On logout, frontend clears token from localStorage
 
-### 13. Testing Strategy
-- Unit tests for service layer logic
-- Integration tests for API endpoints
-- Repository tests for database operations
-- Test coverage should be at least 80%
+## Best Practices
 
-This document provides the complete context needed for implementing the Java Spring Boot REST API for the Hatirlat.io platform, ensuring it meets all requirements of the existing frontend application.
+1. Always handle API errors gracefully with user-friendly messages
+2. Show loading states during API requests
+3. Implement proper error boundaries for network failures
+4. Use optimistic updates where appropriate for better UX
+5. Cache data when possible to reduce API calls
+6. Implement proper pagination for large datasets
+7. Use TypeScript interfaces for type safety
+8. Handle authentication tokens securely (localStorage is acceptable for this demo)

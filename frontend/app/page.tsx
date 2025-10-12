@@ -1,51 +1,66 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/AuthContext"
 import { PremiumHeader } from "@/components/navigation/premium-header"
 import PremiumDashboard from "@/components/dashboard/premium-dashboard"
 import GroupManagement from "@/components/group-management"
 import ManageMembers from "@/components/manage-members"
 import ScheduleList from "@/components/schedule-list"
 import type { Reminder, View } from "@/types"
-import { apiService } from "@/services/api/apiService"
+import { apiManager } from "@/services/api/apiManager"
 import { toast } from "sonner"
 import { Toaster } from "@/components/ui/sonner"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 export default function HomePage() {
+  const router = useRouter()
+  const { isAuthenticated, user } = useAuth()
   const [currentView, setCurrentView] = useState<View>("dashboard")
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login")
+    }
+  }, [isAuthenticated, router])
+
   const fetchReminders = useCallback(async () => {
+    if (!isAuthenticated) return
+    
     setIsLoading(true)
     try {
-      const fetchedReminders = await apiService.get<Reminder[]>("/reminders")
+      const fetchedReminders = await apiManager.getReminders()
       setReminders(fetchedReminders || [])
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch reminders:", error)
       toast.error("Hatırlatıcılar yüklenemedi.")
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [isAuthenticated])
 
   useEffect(() => {
-    fetchReminders()
-  }, [fetchReminders])
+    if (isAuthenticated) {
+      fetchReminders()
+    }
+  }, [isAuthenticated, fetchReminders])
 
   const handleSaveReminder = async (reminderToSave: Reminder | Omit<Reminder, "id">) => {
     try {
       if ("id" in reminderToSave && reminderToSave.id) {
-        await apiService.put(`/reminders/${reminderToSave.id}`, reminderToSave)
+        const updatedReminder = await apiManager.updateReminder(reminderToSave.id, reminderToSave)
         toast.success("Hatırlatıcı güncellendi!")
       } else {
-        await apiService.post("/reminders", reminderToSave)
+        const newReminder = await apiManager.createReminder(reminderToSave as Omit<Reminder, "id">)
         toast.success("Hatırlatıcı oluşturuldu!")
       }
       await fetchReminders()
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save reminder:", error)
       toast.error("Hatırlatıcı kaydedilemedi.")
     }
@@ -53,10 +68,10 @@ export default function HomePage() {
 
   const handleDeleteReminder = async (id: string) => {
     try {
-      await apiService.delete(`/reminders/${id}`)
+      await apiManager.deleteReminder(id)
       toast.success("Hatırlatıcı silindi.")
       setReminders((prev) => prev.filter((r) => r.id !== id))
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete reminder:", error)
       toast.error("Hatırlatıcı silinemedi.")
     }
@@ -68,10 +83,10 @@ export default function HomePage() {
 
     const newStatus = reminder.status === "paused" ? "scheduled" : "paused"
     try {
-      await apiService.put(`/reminders/${id}`, { ...reminder, status: newStatus })
+      const updatedReminder = await apiManager.updateReminderStatus(id, newStatus)
       toast.success(`Hatırlatıcı durumu güncellendi: ${newStatus}`)
       await fetchReminders()
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to toggle reminder status:", error)
       toast.error("Durum güncellenemedi.")
     }
@@ -116,6 +131,15 @@ export default function HomePage() {
   }
 
   const showNavigation = currentView !== "manage-members"
+
+  // Show loading spinner while checking authentication
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
 
   return (
     <>
