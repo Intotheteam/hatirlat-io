@@ -1,13 +1,14 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Users, Plus, Link, Copy, UserPlus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import type { View } from "@/app/page"
+import { apiManager } from "@/services/api/apiManager"
+import type { View } from "@/types"
 
 interface Group {
   id: string
@@ -23,55 +24,68 @@ interface GroupManagementProps {
 }
 
 export default function GroupManagement({ onNavigate }: GroupManagementProps) {
-  const [groups, setGroups] = useState<Group[]>([
-    {
-      id: "1",
-      name: "Family",
-      description: "Family members for important reminders",
-      memberCount: 4,
-      inviteLink: "https://hatirlat.io/invite/abc123",
-      createdAt: "2024-01-15",
-    },
-    {
-      id: "2",
-      name: "Work Team",
-      description: "Project deadlines and meetings",
-      memberCount: 8,
-      inviteLink: "https://hatirlat.io/invite/def456",
-      createdAt: "2024-01-10",
-    },
-  ])
+  const [groups, setGroups] = useState<Group[]>([])
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true)
+  const { toast } = useToast()
+
+  // Fetch groups when component mounts
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const fetchedGroups = await apiManager.getGroups()
+        setGroups(fetchedGroups)
+      } catch (error) {
+        console.error("Failed to fetch groups:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load groups. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoadingGroups(false)
+      }
+    }
+
+    fetchGroups()
+  }, [])
 
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [newGroup, setNewGroup] = useState({ name: "", description: "" })
   const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
 
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    // Mock API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      // Call the actual API to create group
+      const response = await apiManager.createGroup({
+        name: newGroup.name,
+        description: newGroup.description,
+        memberCount: 1, // Creator
+        inviteLink: "", // Will be set by the backend
+        createdAt: new Date().toISOString().split("T")[0],
+      })
 
-    const group: Group = {
-      id: Date.now().toString(),
-      name: newGroup.name,
-      description: newGroup.description,
-      memberCount: 1, // Creator
-      inviteLink: `https://hatirlat.io/invite/${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString().split("T")[0],
+      // Update the local state with the created group
+      setGroups((prev) => [response, ...prev])
+      setNewGroup({ name: "", description: "" })
+      setShowCreateForm(false)
+
+      toast({
+        title: "Group Created",
+        description: "Your group has been created successfully",
+      })
+    } catch (error) {
+      console.error("Failed to create group:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create group. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
-
-    setGroups((prev) => [group, ...prev])
-    setNewGroup({ name: "", description: "" })
-    setShowCreateForm(false)
-    setIsLoading(false)
-
-    toast({
-      title: "Group Created",
-      description: "Your group has been created successfully",
-    })
   }
 
   const copyInviteLink = (link: string) => {
@@ -82,12 +96,26 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
     })
   }
 
-  const deleteGroup = (groupId: string) => {
-    setGroups((prev) => prev.filter((g) => g.id !== groupId))
-    toast({
-      title: "Group Deleted",
-      description: "Group has been deleted successfully",
-    })
+  const deleteGroup = async (groupId: string) => {
+    try {
+      // Call the actual API to delete group
+      await apiManager.deleteGroup(groupId)
+
+      // Update the local state to remove the group
+      setGroups((prev) => prev.filter((g) => g.id !== groupId))
+      
+      toast({
+        title: "Group Deleted",
+        description: "Group has been deleted successfully",
+      })
+    } catch (error) {
+      console.error("Failed to delete group:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete group. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -206,109 +234,116 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
 
       {/* Groups Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {groups.map((group) => (
-          <Card key={group.id} className="rounded-2xl border-2 border-border/60 dark:border-border/40 bg-gradient-to-br from-background to-accent/5 shadow-md dark:shadow-sm hover:shadow-lg dark:hover:shadow-md transition-all">
-            <CardHeader className="pb-3 px-4 pt-4">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-start gap-2 flex-1 min-w-0">
-                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/50 dark:border-indigo-500/20 shrink-0">
-                    <Users className="h-4 w-4 text-indigo-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-sm font-semibold truncate">{group.name}</CardTitle>
-                    <CardDescription className="text-xs truncate mt-0.5">{group.description}</CardDescription>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteGroup(group.id)}
-                  className="h-7 w-7 shrink-0 text-pink-500 hover:bg-pink-500/10 hover:text-pink-600 rounded-full"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+        {isLoadingGroups ? (
+          <div className="col-span-full flex justify-center items-center py-10">
+            <div className="flex flex-col items-center gap-2">
+              <div className="h-8 w-8 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
+              <span className="text-sm text-muted-foreground">Loading groups...</span>
+            </div>
+          </div>
+        ) : groups.length === 0 && !showCreateForm ? (
+          <Card className="rounded-2xl border-2 border-border/60 dark:border-border/40 bg-gradient-to-br from-background to-accent/5 shadow-md dark:shadow-sm">
+            <CardContent className="text-center py-12">
+              <div className="mx-auto p-3 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 w-14 h-14 flex items-center justify-center mb-3">
+                <Users className="h-7 w-7 text-muted-foreground" />
               </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-3">
-              {/* Stats */}
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Users className="h-3 w-3" />
-                  <span>{group.memberCount} members</span>
-                </div>
-                <span className="text-muted-foreground">
-                  {new Date(group.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </span>
-              </div>
-
-              {/* Invite Link */}
-              <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-200/50 dark:border-border/20">
-                <label className="text-[10px] font-medium text-muted-foreground flex items-center gap-1 mb-1.5">
-                  <Link className="h-3 w-3" />
-                  Invite Link
-                </label>
-                <div className="flex gap-1.5">
-                  <Input
-                    type="text"
-                    value={group.inviteLink}
-                    readOnly
-                    className="text-xs h-7 rounded-lg bg-background/50"
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => copyInviteLink(group.inviteLink)}
-                    className="h-7 w-7 shrink-0 rounded-lg"
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2 pt-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onNavigate("manage-members", group.id)}
-                  className="flex-1 rounded-full h-8 text-xs"
-                >
-                  <UserPlus className="h-3 w-3 mr-1.5" />
-                  Members
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyInviteLink(group.inviteLink)}
-                  className="flex-1 rounded-full h-8 text-xs"
-                >
-                  <Copy className="h-3 w-3 mr-1.5" />
-                  Copy
-                </Button>
-              </div>
+              <h3 className="text-sm font-semibold mb-1">No Groups Yet</h3>
+              <p className="text-xs text-muted-foreground mb-4">Create your first group to start inviting contacts</p>
+              <Button
+                onClick={() => setShowCreateForm(true)}
+                className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-md rounded-full text-sm h-9"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Create First Group
+              </Button>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        ) : (
+          groups.map((group) => (
+            <Card key={group.id} className="rounded-2xl border-2 border-border/60 dark:border-border/40 bg-gradient-to-br from-background to-accent/5 shadow-md dark:shadow-sm hover:shadow-lg dark:hover:shadow-md transition-all">
+              <CardHeader className="pb-3 px-4 pt-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/50 dark:border-indigo-500/20 shrink-0">
+                      <Users className="h-4 w-4 text-indigo-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-sm font-semibold truncate">{group.name}</CardTitle>
+                      <CardDescription className="text-xs truncate mt-0.5">{group.description}</CardDescription>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteGroup(group.id)}
+                    className="h-7 w-7 shrink-0 text-pink-500 hover:bg-pink-500/10 hover:text-pink-600 rounded-full"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 space-y-3">
+                {/* Stats */}
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Users className="h-3 w-3" />
+                    <span>{group.memberCount} members</span>
+                  </div>
+                  <span className="text-muted-foreground">
+                    {new Date(group.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
 
-      {groups.length === 0 && !showCreateForm && (
-        <Card className="rounded-2xl border-2 border-border/60 dark:border-border/40 bg-gradient-to-br from-background to-accent/5 shadow-md dark:shadow-sm">
-          <CardContent className="text-center py-12">
-            <div className="mx-auto p-3 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 w-14 h-14 flex items-center justify-center mb-3">
-              <Users className="h-7 w-7 text-muted-foreground" />
-            </div>
-            <h3 className="text-sm font-semibold mb-1">No Groups Yet</h3>
-            <p className="text-xs text-muted-foreground mb-4">Create your first group to start inviting contacts</p>
-            <Button
-              onClick={() => setShowCreateForm(true)}
-              className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-md rounded-full text-sm h-9"
-            >
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Create First Group
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+                {/* Invite Link */}
+                <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-200/50 dark:border-border/20">
+                  <label className="text-[10px] font-medium text-muted-foreground flex items-center gap-1 mb-1.5">
+                    <Link className="h-3 w-3" />
+                    Invite Link
+                  </label>
+                  <div className="flex gap-1.5">
+                    <Input
+                      type="text"
+                      value={group.inviteLink}
+                      readOnly
+                      className="text-xs h-7 rounded-lg bg-background/50"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => copyInviteLink(group.inviteLink)}
+                      className="h-7 w-7 shrink-0 rounded-lg"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onNavigate("manage-members", group.id)}
+                    className="flex-1 rounded-full h-8 text-xs"
+                  >
+                    <UserPlus className="h-3 w-3 mr-1.5" />
+                    Members
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyInviteLink(group.inviteLink)}
+                    className="flex-1 rounded-full h-8 text-xs"
+                  >
+                    <Copy className="h-3 w-3 mr-1.5" />
+                    Copy
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   )
 }

@@ -32,13 +32,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface PremiumHeaderProps {
   currentView: View;
-  onNavigate: (view: View) => void;
+  onNavigate?: (view: View) => void;
 }
 
 const navItems = [
-  { view: "dashboard" as View, label: "Home", icon: Home },
-  { view: "schedules" as View, label: "Schedule", icon: Calendar },
-  { view: "groups" as View, label: "Groups", icon: Users },
+  { view: "dashboard" as View, label: "Home", icon: Home, path: "/dashboard" },
+  { view: "schedules" as View, label: "Schedule", icon: Calendar, path: "/schedules" },
+  { view: "groups" as View, label: "Groups", icon: Users, path: "/groups" },
 ];
 
 export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
@@ -47,7 +47,24 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
   const router = useRouter();
 
   const handleNavigation = (view: View) => {
-    onNavigate(view);
+    if (onNavigate) {
+      onNavigate(view);
+    } else {
+      // Default behavior: navigate to the corresponding route
+      switch(view) {
+        case "dashboard":
+          router.push("/dashboard");
+          break;
+        case "schedules":
+          router.push("/schedules");
+          break;
+        case "groups":
+          router.push("/groups");
+          break;
+        default:
+          router.push("/dashboard");
+      }
+    }
     if (window.innerWidth < 768) {
       setIsMobileMenuOpen(false);
     }
@@ -71,9 +88,10 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link href="#" onClick={() => handleNavigation("dashboard")} className="flex items-center gap-3 group cursor-pointer">
-            <div className="relative">
+          {/* Left section - Logo */}
+          <div className="flex items-center">
+            <Link href="/dashboard" className="flex items-center gap-3 group flex-shrink-0">
+              <div className="relative">
               {/* Animated gradient glow */}
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 group-hover:blur-xl transition-all duration-500 animate-pulse"></div>
 
@@ -109,44 +127,50 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
               </div>
             </div>
           </Link>
+        </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2">
+        {/* Desktop Navigation */}
+        <nav className="hidden lg:flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.view;
               return (
                 <div key={item.view} className="relative group">
-                  <Button
-                    variant="ghost"
-                    className={`px-6 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden ${
-                      isActive
-                        ? "text-foreground font-semibold shadow-md bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-pink-950/30 border border-indigo-200/40 dark:border-indigo-500/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-br hover:from-accent/50 hover:to-accent/30 hover:border hover:border-border/40"
-                    }`}
-                    onClick={() => handleNavigation(item.view)}
-                  >
-                    {/* Animated background for active state */}
-                    {isActive && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-purple-500/5 to-pink-500/5 animate-pulse"></div>
-                    )}
+                  <Link href={item.path}>
+                    <Button
+                      variant="ghost"
+                      className={`px-6 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden ${
+                        isActive
+                          ? "text-foreground font-semibold shadow-md bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-pink-950/30 border border-indigo-200/40 dark:border-indigo-500/30"
+                          : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-br hover:from-accent/50 hover:to-accent/30 hover:border hover:border-border/40"
+                      }`}
+                      onClick={(e) => {
+                        e.preventDefault(); // Prevent default click behavior since we're using Link
+                        handleNavigation(item.view);
+                      }}
+                    >
+                      {/* Animated background for active state */}
+                      {isActive && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-purple-500/5 to-pink-500/5 animate-pulse"></div>
+                      )}
 
-                    {/* Icon with enhanced styling */}
-                    <div className={`relative p-1 rounded-lg mr-2 inline-flex ${
-                      isActive
-                        ? "bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 dark:border-indigo-500/30"
-                        : "group-hover:bg-accent/50"
-                    }`}>
-                      <Icon className={`h-4 w-4 transition-transform duration-300 ${
-                        isActive ? "text-indigo-600 dark:text-indigo-400" : ""
-                      } group-hover:scale-110`} />
-                    </div>
+                      {/* Icon with enhanced styling */}
+                      <div className={`relative p-1 rounded-lg mr-2 inline-flex ${
+                        isActive
+                          ? "bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 dark:border-indigo-500/30"
+                          : "group-hover:bg-accent/50"
+                      }`}>
+                        <Icon className={`h-4 w-4 transition-transform duration-300 ${
+                          isActive ? "text-indigo-600 dark:text-indigo-400" : ""
+                        } group-hover:scale-110`} />
+                      </div>
 
-                    <span className="relative z-10">{item.label}</span>
+                      <span className="relative z-10">{item.label}</span>
 
-                    {/* Hover glow effect */}
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-indigo-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300"></div>
-                  </Button>
+                      {/* Hover glow effect */}
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-indigo-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300"></div>
+                    </Button>
+                  </Link>
 
                   {/* Enhanced active indicator */}
                   {isActive && (
@@ -181,14 +205,22 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuItem onClick={() => handleNavigation("dashboard")}>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleNavigation("dashboard")}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
+                <Link href="/dashboard">
+                  <DropdownMenuItem asChild>
+                    <div className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </div>
+                  </DropdownMenuItem>
+                </Link>
+                <Link href="/dashboard">
+                  <DropdownMenuItem asChild>
+                    <div className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </div>
+                  </DropdownMenuItem>
+                </Link>
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>
@@ -207,7 +239,7 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
             </div>
 
             {/* Enhanced Mobile Menu Button */}
-            <div className="relative group md:hidden">
+            <div className="relative group lg:hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl blur-md opacity-0 group-hover:opacity-30 transition-all duration-300"></div>
               <Button
                 variant="ghost"
@@ -235,7 +267,7 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="md:hidden pb-4 border-t border-border/40 mt-2 bg-gradient-to-b from-background to-accent/5"
+              className="lg:hidden pb-4 border-t border-border/40 mt-2 bg-gradient-to-b from-background to-accent/5 z-50"
             >
               <div className="flex flex-col gap-2 pt-4">
                 {navItems.map((item, index) => {
@@ -249,32 +281,33 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                       transition={{ delay: index * 0.1 }}
                       className="relative group"
                     >
-                      <Button
-                        variant={isActive ? "secondary" : "ghost"}
-                        className={`w-full justify-start rounded-xl transition-all duration-300 ${
-                          isActive
-                            ? "bg-gradient-to-r from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-pink-950/30 border-2 border-indigo-200/40 dark:border-indigo-500/30 shadow-md font-semibold"
-                            : "hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/30 hover:border hover:border-border/40"
-                        }`}
-                        onClick={() => handleNavigation(item.view)}
-                      >
-                        {/* Icon container */}
-                        <div className={`p-1.5 rounded-lg mr-3 ${
-                          isActive
-                            ? "bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 dark:border-indigo-500/30"
-                            : "group-hover:bg-accent/50"
-                        }`}>
-                          <Icon className={`h-5 w-5 ${
-                            isActive ? "text-indigo-600 dark:text-indigo-400" : ""
-                          } group-hover:scale-110 transition-transform`} />
-                        </div>
-                        {item.label}
+                      <Link href={item.path} onClick={() => handleNavigation(item.view)}>
+                        <Button
+                          variant={isActive ? "secondary" : "ghost"}
+                          className={`w-full justify-start rounded-xl transition-all duration-300 ${
+                            isActive
+                              ? "bg-gradient-to-r from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-pink-950/30 border-2 border-indigo-200/40 dark:border-indigo-500/30 shadow-md font-semibold"
+                              : "hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/30 hover:border hover:border-border/40"
+                          }`}
+                        >
+                          {/* Icon container */}
+                          <div className={`p-1.5 rounded-lg mr-3 ${
+                            isActive
+                              ? "bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 dark:border-indigo-500/30"
+                              : "group-hover:bg-accent/50"
+                          }`}>
+                            <Icon className={`h-5 w-5 ${
+                              isActive ? "text-indigo-600 dark:text-indigo-400" : ""
+                            } group-hover:scale-110 transition-transform`} />
+                          </div>
+                          {item.label}
 
-                        {/* Active indicator */}
-                        {isActive && (
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500 rounded-full shadow-lg"></div>
-                        )}
-                      </Button>
+                          {/* Active indicator */}
+                          {isActive && (
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500 rounded-full shadow-lg"></div>
+                          )}
+                        </Button>
+                      </Link>
                     </motion.div>
                   );
                 })}
@@ -302,18 +335,21 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
 
                   {/* Enhanced Settings & Logout buttons */}
                   <div className="flex gap-2">
-                    <div className="relative group flex-1">
+                    <Link href="/dashboard" className="flex-1">
                       <Button
                         variant="outline"
                         className="w-full rounded-xl border-2 border-border/60 dark:border-border/40 hover:bg-gradient-to-br hover:from-accent/50 hover:to-accent/30 hover:border-indigo-200/40 dark:hover:border-indigo-500/30 transition-all"
-                        onClick={() => handleNavigation("dashboard")}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleNavigation("dashboard");
+                        }}
                       >
                         <div className="p-1 rounded-lg group-hover:bg-accent/50 mr-2 inline-flex">
                           <Settings className="h-4 w-4 group-hover:rotate-90 transition-transform duration-500" />
                         </div>
                         Settings
                       </Button>
-                    </div>
+                    </Link>
                     <div className="relative group flex-1">
                       <Button
                         variant="outline"
