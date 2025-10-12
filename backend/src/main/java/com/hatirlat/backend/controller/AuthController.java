@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -79,14 +80,12 @@ public class AuthController {
         }
     )
     @GetMapping(value = "/me")
-    public ResponseEntity<BaseResponse<UserResponse>> getCurrentUser() {
-        // In a real implementation, you would extract user details from the JWT token
-        // For now, we'll return a placeholder user response
+    public ResponseEntity<BaseResponse<UserResponse>> getCurrentUser(@AuthenticationPrincipal User currentUser) {
         UserResponse userResponse = new UserResponse();
-        userResponse.setId("1");
-        userResponse.setUsername("currentuser");
-        userResponse.setEmail("currentuser@example.com");
-        userResponse.setRole("USER");
+        userResponse.setId(String.valueOf(currentUser.getId()));
+        userResponse.setUsername(currentUser.getUsername());
+        userResponse.setEmail(currentUser.getEmail());
+        userResponse.setRole(currentUser.getRole().name());
         
         BaseResponse<UserResponse> response = new BaseResponse<>(true, userResponse, "User info retrieved successfully");
         return ResponseEntity.ok(response);

@@ -6,6 +6,7 @@ import com.hatirlat.backend.dto.AuthResponse;
 import com.hatirlat.backend.dto.UserResponse;
 import com.hatirlat.backend.entity.User;
 import com.hatirlat.backend.entity.Role;
+import com.hatirlat.backend.exception.ResourceAlreadyExistsException;
 import com.hatirlat.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -63,11 +64,11 @@ public class AuthService {
     public User register(String username, String password, String email, Role role) {
         // Check if user already exists
         if (userRepository.findByUsername(username).isPresent()) {
-            throw new RuntimeException("Username already exists");
+            throw new ResourceAlreadyExistsException("User", username);
         }
         
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("Email already exists");
+            throw new ResourceAlreadyExistsException("User with email", email);
         }
         
         User user = new User();

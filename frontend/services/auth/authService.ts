@@ -30,14 +30,8 @@ class AuthService {
 
   async register(userData: { username: string; password: string; email: string }): Promise<User> {
     try {
-      // Note: The backend API expects query parameters for registration
-      const params = new URLSearchParams({
-        username: userData.username,
-        password: userData.password,
-        email: userData.email
-      });
-      
-      const response = await apiService.post<User>(`/api/auth/register?${params.toString()}`, {});
+      // The backend API expects a JSON body for registration, not query parameters.
+      const response = await apiService.post<User>("/api/auth/register", userData);
       return response;
     } catch (error) {
       console.error("Registration failed:", error);
