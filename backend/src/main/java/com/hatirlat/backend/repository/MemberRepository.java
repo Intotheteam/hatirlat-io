@@ -10,6 +10,6 @@ import java.util.List;
 @Repository
 public interface MemberRepository extends JpaRepository<Member, Long> {
     
-    @Query("SELECT m FROM Member m JOIN GroupMember gm ON m.id = gm.memberId WHERE gm.groupId = :groupId")
+    @Query("SELECT m FROM Member m WHERE m.id IN (SELECT gm.memberId FROM GroupMember gm WHERE gm.groupId = :groupId)")
     List<Member> findMembersByGroupId(Long groupId);
 }

@@ -100,12 +100,13 @@ class MemberServiceTest {
     }
 
     @Test
-    void addMemberToGroup_NonExistingGroup_ReturnsNull() {
+    void addMemberToGroup_NonExistingGroup_ThrowsResourceNotFoundException() {
         when(groupRepository.findById(999L)).thenReturn(Optional.empty());
 
-        MemberResponse response = memberService.addMemberToGroup("999", memberRequest);
+        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
+            memberService.addMemberToGroup("999", memberRequest);
+        });
 
-        assertNull(response);
         verify(groupRepository, times(1)).findById(999L);
         verify(memberRepository, never()).save(any(Member.class));
         verify(groupMemberRepository, never()).save(any(GroupMember.class));

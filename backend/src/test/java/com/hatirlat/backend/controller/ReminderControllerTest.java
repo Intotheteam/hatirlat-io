@@ -19,6 +19,8 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
+import com.hatirlat.backend.exception.ResourceNotFoundException;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -87,15 +89,14 @@ class ReminderControllerTest {
     }
 
     @Test
-    void getReminderById_NonExistingReminder_ReturnsNotFound() {
-        when(reminderService.getReminderById("999")).thenReturn(null);
+    void getReminderById_NonExistingReminder_ThrowsResourceNotFoundException() {
+        when(reminderService.getReminderById("999"))
+                .thenThrow(new ResourceNotFoundException("Reminder", "999"));
 
-        ResponseEntity<BaseResponse<ReminderResponse>> response = reminderController.getReminderById("999");
+        assertThrows(ResourceNotFoundException.class, () -> {
+            reminderController.getReminderById("999");
+        });
 
-        assertEquals(HttpStatus.OK, response.getStatusCode()); // Note: Controller returns 200 even for "not found" case
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertNull(response.getBody().getData());
         verify(reminderService, times(1)).getReminderById("999");
     }
 
@@ -126,15 +127,14 @@ class ReminderControllerTest {
     }
 
     @Test
-    void updateReminder_NonExistingReminder_ReturnsNotFound() {
-        when(reminderService.updateReminder(eq("999"), any(ReminderRequest.class))).thenReturn(null);
+    void updateReminder_NonExistingReminder_ThrowsResourceNotFoundException() {
+        when(reminderService.updateReminder(eq("999"), any(ReminderRequest.class)))
+                .thenThrow(new ResourceNotFoundException("Reminder", "999"));
 
-        ResponseEntity<BaseResponse<ReminderResponse>> response = reminderController.updateReminder("999", reminderRequest);
+        assertThrows(ResourceNotFoundException.class, () -> {
+            reminderController.updateReminder("999", reminderRequest);
+        });
 
-        assertEquals(HttpStatus.OK, response.getStatusCode()); // Note: Controller returns 200 even for "not found" case
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertNull(response.getBody().getData());
         verify(reminderService, times(1)).updateReminder(eq("999"), any(ReminderRequest.class));
     }
 
@@ -178,14 +178,14 @@ class ReminderControllerTest {
     }
 
     @Test
-    void deleteReminder_NonExistingReminder_ReturnsNotFound() {
-        when(reminderService.deleteReminder("999")).thenReturn(false);
+    void deleteReminder_NonExistingReminder_ThrowsResourceNotFoundException() {
+        doThrow(new ResourceNotFoundException("Reminder", "999"))
+                .when(reminderService).deleteReminder("999");
 
-        ResponseEntity<BaseResponse<Void>> response = reminderController.deleteReminder("999");
+        assertThrows(ResourceNotFoundException.class, () -> {
+            reminderController.deleteReminder("999");
+        });
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
         verify(reminderService, times(1)).deleteReminder("999");
     }
 }
