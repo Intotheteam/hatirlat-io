@@ -4,6 +4,7 @@ import com.hatirlat.backend.dto.*;
 import com.hatirlat.backend.service.ReminderService;
 import com.hatirlat.backend.aop.LimitedForFree;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -80,7 +81,7 @@ public class ReminderController {
     )
     @PostMapping
     @LimitedForFree(key = "createReminder")
-    public ResponseEntity<BaseResponse<ReminderResponse>> createReminder(@RequestBody ReminderRequest request) {
+    public ResponseEntity<BaseResponse<ReminderResponse>> createReminder(@Valid @RequestBody ReminderRequest request) {
         ReminderResponse createdReminder = reminderService.createReminder(request);
         return ResponseEntity.ok(new BaseResponse<>(true, createdReminder, "Reminder created successfully"));
     }

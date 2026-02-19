@@ -2,6 +2,7 @@ package com.hatirlat.backend.controller;
 
 import com.hatirlat.backend.dto.AuthRequest;
 import com.hatirlat.backend.dto.AuthResponse;
+import com.hatirlat.backend.dto.UserRequest;
 import com.hatirlat.backend.dto.UserResponse;
 import com.hatirlat.backend.entity.Role;
 import com.hatirlat.backend.entity.User;
@@ -64,12 +65,13 @@ class AuthControllerTest {
         when(authService.register(anyString(), anyString(), anyString(), any(Role.class)))
                 .thenReturn(expectedUser);
 
-        ResponseEntity<User> response = authController.register(
-                "testuser", 
-                "password", 
-                "test@example.com", 
-                Role.USER
-        );
+        UserRequest userRequest = new UserRequest();
+        userRequest.setUsername("testuser");
+        userRequest.setPassword("password");
+        userRequest.setEmail("test@example.com");
+        userRequest.setRole("USER");
+
+        ResponseEntity<User> response = authController.register(userRequest);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("testuser", response.getBody().getUsername());
@@ -85,13 +87,13 @@ class AuthControllerTest {
         when(authService.register(anyString(), anyString(), anyString(), any(Role.class)))
                 .thenReturn(expectedUser);
 
-        // Test with null role (should default to USER via @RequestParam defaultValue)
-        ResponseEntity<User> response = authController.register(
-                "testuser", 
-                "password", 
-                "test@example.com", 
-                null
-        );
+        // role null bırakılınca controller Role.USER kullanır
+        UserRequest userRequest = new UserRequest();
+        userRequest.setUsername("testuser");
+        userRequest.setPassword("password");
+        userRequest.setEmail("test@example.com");
+
+        ResponseEntity<User> response = authController.register(userRequest);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("testuser", response.getBody().getUsername());

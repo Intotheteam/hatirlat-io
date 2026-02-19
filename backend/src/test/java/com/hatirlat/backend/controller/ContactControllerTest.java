@@ -1,6 +1,7 @@
 package com.hatirlat.backend.controller;
 
 import com.hatirlat.backend.dto.*;
+import com.hatirlat.backend.exception.ResourceNotFoundException;
 import com.hatirlat.backend.service.ContactService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,22 +88,19 @@ class ContactControllerTest {
     }
 
     @Test
-    void updateContact_NonExistingContact_ReturnsNotFound() {
-        when(contactService.updateContact(eq("999"), any(ContactRequest.class))).thenReturn(null);
+    void updateContact_NonExistingContact_ThrowsResourceNotFoundException() {
+        when(contactService.updateContact(eq("999"), any(ContactRequest.class)))
+                .thenThrow(new ResourceNotFoundException("Contact", "999"));
 
-        ResponseEntity<BaseResponse<ContactResponse>> response = contactController.updateContact("999", contactRequest);
+        assertThrows(ResourceNotFoundException.class, () -> {
+            contactController.updateContact("999", contactRequest);
+        });
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertNull(response.getBody().getData());
         verify(contactService, times(1)).updateContact(eq("999"), any(ContactRequest.class));
     }
 
     @Test
     void deleteContact_ExistingContact_ReturnsSuccess() {
-        when(contactService.deleteContact("1")).thenReturn(true);
-
         ResponseEntity<BaseResponse<Void>> response = contactController.deleteContact("1");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -112,14 +110,14 @@ class ContactControllerTest {
     }
 
     @Test
-    void deleteContact_NonExistingContact_ReturnsNotFound() {
-        when(contactService.deleteContact("999")).thenReturn(false);
+    void deleteContact_NonExistingContact_ThrowsResourceNotFoundException() {
+        doThrow(new ResourceNotFoundException("Contact", "999"))
+                .when(contactService).deleteContact("999");
 
-        ResponseEntity<BaseResponse<Void>> response = contactController.deleteContact("999");
+        assertThrows(ResourceNotFoundException.class, () -> {
+            contactController.deleteContact("999");
+        });
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
         verify(contactService, times(1)).deleteContact("999");
     }
 }

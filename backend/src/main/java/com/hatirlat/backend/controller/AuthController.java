@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -57,7 +58,7 @@ public class AuthController {
         }
     )
     @PostMapping(value = "/register")
-    public ResponseEntity<User> register(@RequestBody UserRequest userRequest) {
+    public ResponseEntity<User> register(@Valid @RequestBody UserRequest userRequest) {
         User user = authService.register(
             userRequest.getUsername(), 
             userRequest.getPassword(), 
