@@ -520,11 +520,32 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                     ))
                   ) : (
                     <div className="text-center py-6">
-                      <div className="mx-auto p-2.5 rounded-full bg-muted/30 w-10 h-10 flex items-center justify-center">
-                        <CheckCircle className="h-5 w-5 text-muted-foreground" />
+                      <div className="mx-auto p-2.5 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 w-12 h-12 flex items-center justify-center">
+                        {stats.total === 0 ? (
+                          <Bell className="h-6 w-6 text-indigo-400" />
+                        ) : (
+                          <CheckCircle className="h-6 w-6 text-green-500" />
+                        )}
                       </div>
-                      <h3 className="mt-3 text-sm font-medium">No upcoming reminders</h3>
-                      <p className="text-xs text-muted-foreground mt-1">All caught up!</p>
+                      {stats.total === 0 ? (
+                        <>
+                          <h3 className="mt-3 text-sm font-medium">Henuz hatirlatici yok</h3>
+                          <p className="text-xs text-muted-foreground mt-1">Ilk hatirlaticiyi olusturarak baslayabilirsiniz</p>
+                          <Button
+                            onClick={() => onNavigate("schedules")}
+                            size="sm"
+                            className="mt-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-md rounded-full text-xs"
+                          >
+                            <Plus className="mr-1.5 h-3 w-3" />
+                            Hatirlatici Olustur
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <h3 className="mt-3 text-sm font-medium">Yaklasan hatirlatici yok</h3>
+                          <p className="text-xs text-muted-foreground mt-1">Tum isler tamamlandi!</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </AnimatePresence>
@@ -636,7 +657,13 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                   </div>
                 ))}
                 {activityData.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-4">No recent activity</p>
+                  <div className="text-center py-6">
+                    <div className="mx-auto p-2 rounded-full bg-gradient-to-br from-purple-500/10 to-pink-500/10 w-10 h-10 flex items-center justify-center mb-2">
+                      <Activity className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Henuz bir aktivite bulunmuyor</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Hatirlatici olusturdukca burada gorunecek</p>
+                  </div>
                 )}
               </div>
             </CardContent>

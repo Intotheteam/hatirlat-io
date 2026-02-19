@@ -9,7 +9,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-// removed unused import
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -17,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.core.annotation.Order;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -28,18 +28,20 @@ public class SecurityConfig {
     @Autowired
     private EndpointSecurityProperties endpointSecurityProperties;
 
+    @Autowired
+    private CorsConfigurationSource corsConfigurationSource;
+
     @Bean
+    @Order(1)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf
-                    // Disable CSRF for API endpoints
-                    .ignoringRequestMatchers("/api/**")
-                )
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> {
                         // Explicitly permit OPTIONS requests for all endpoints (needed for CORS preflight)
                         authz.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll();
-                        
+
                         // permitAll patterns from configuration
                         endpointSecurityProperties.getPermitAll().forEach(pattern ->
                                 authz.requestMatchers(pattern).permitAll()
@@ -59,10 +61,8 @@ public class SecurityConfig {
                 // For H2 Console
                 .headers(headers -> headers
                     .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
-                    // Add security headers to prevent XSS attacks
-                    .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'self'; form-action 'self'"))
                     .contentTypeOptions(withDefaults()));
-        
+
         return http.build();
     }
 
@@ -71,35 +71,26 @@ public class SecurityConfig {
     public SecurityFilterChain scalarFilterChain(HttpSecurity http) throws Exception {
         http
             .securityMatcher("/scalar/**", "/favicon.ico")
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/scalar/**").permitAll()
                 .requestMatchers("/favicon.ico").permitAll()
                 .anyRequest().permitAll()
             )
             .headers(headers -> headers
                 .frameOptions(frameOptions -> frameOptions.sameOrigin())
-                .contentSecurityPolicy(csp -> csp.policyDirectives(
-                    "default-src 'self'; " +
-                    "script-src 'self' 'unsafe-inline'; " +
-                    "style-src 'self' 'unsafe-inline'; " +
-                    "img-src 'self' data:; " +
-                    "connect-src 'self'; " +
-                    "frame-ancestors 'self'; " +
-                    "form-action 'self'"
-                ))
                 .contentTypeOptions(withDefaults())
             );
 
         return http.build();
     }
-    
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
-    
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

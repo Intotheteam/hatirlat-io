@@ -107,6 +107,12 @@ export class ApiManager {
     await apiService.delete(`/api/contacts/${id}`);
   }
 
+  // Invite member
+  async inviteMember(email: string, groupId: string): Promise<string> {
+    const response = await apiService.post<{ success: boolean; data: string }>("/api/members/invite", { email, groupId });
+    return response.data;
+  }
+
   // Additional utility methods
   async searchReminders(query: string): Promise<Reminder[]> {
     const response = await apiService.get<{ success: boolean; data: Reminder[] }>(`/api/reminders?q=${encodeURIComponent(query)}`);

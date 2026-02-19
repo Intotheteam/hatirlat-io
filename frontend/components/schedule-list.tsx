@@ -317,10 +317,27 @@ export default function ScheduleList({ reminders, onNavigate, onSave, onDelete, 
               ) : (
                 <div className="text-center py-12">
                   <div className="mx-auto p-3 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 w-14 h-14 flex items-center justify-center mb-3">
-                    <Bell className="h-7 w-7 text-muted-foreground" />
+                    <Bell className="h-7 w-7 text-indigo-400" />
                   </div>
-                  <p className="text-sm font-semibold">No reminders found</p>
-                  <p className="text-xs text-muted-foreground mt-1">Adjust filters or create a new reminder</p>
+                  {reminders.length === 0 ? (
+                    <>
+                      <p className="text-sm font-semibold">Henuz hatirlatici yok</p>
+                      <p className="text-xs text-muted-foreground mt-1">Ilk hatirlaticiyi olusturarak baslayabilirsiniz</p>
+                      <Button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        size="sm"
+                        className="mt-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-md rounded-full text-xs"
+                      >
+                        <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
+                        Ilk Hatirlatici Olustur
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold">Hatirlatici bulunamadi</p>
+                      <p className="text-xs text-muted-foreground mt-1">Filtreleri degistirmeyi deneyin veya yeni bir hatirlatici olusturun</p>
+                    </>
+                  )}
                 </div>
               )}
             </div>

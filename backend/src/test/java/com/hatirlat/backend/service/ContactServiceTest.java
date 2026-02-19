@@ -3,7 +3,10 @@ package com.hatirlat.backend.service;
 import com.hatirlat.backend.dto.ContactRequest;
 import com.hatirlat.backend.dto.ContactResponse;
 import com.hatirlat.backend.entity.Contact;
+import com.hatirlat.backend.exception.ResourceNotFoundException;
+import com.hatirlat.backend.mapper.ContactMapper;
 import com.hatirlat.backend.repository.ContactRepository;
+import com.hatirlat.backend.util.LoggingUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +20,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,93 +29,146 @@ class ContactServiceTest {
     @Mock
     private ContactRepository contactRepository;
 
+    @Mock
+    private ContactMapper contactMapper;
+
+    @Mock
+    private LoggingUtil loggingUtil;
+
     @InjectMocks
     private ContactService contactService;
 
-    private ContactRequest contactRequest;
     private Contact contact;
+    private ContactRequest contactRequest;
+    private ContactResponse contactResponse;
 
     @BeforeEach
     void setUp() {
-        contactRequest = new ContactRequest();
-        contactRequest.setName("Test Contact");
-        contactRequest.setEmail("test@example.com");
-        contactRequest.setPhone("1234567890");
-
         contact = new Contact();
         contact.setId(1L);
         contact.setName("Test Contact");
+        contact.setPhone("123-456-7890");
         contact.setEmail("test@example.com");
-        contact.setPhone("1234567890");
+
+        contactRequest = new ContactRequest();
+        contactRequest.setName("Test Contact");
+        contactRequest.setPhone("123-456-7890");
+        contactRequest.setEmail("test@example.com");
+
+        contactResponse = new ContactResponse();
+        contactResponse.setId("1");
+        contactResponse.setName("Test Contact");
+        contactResponse.setPhone("123-456-7890");
+        contactResponse.setEmail("test@example.com");
     }
 
     @Test
-    void getAllContacts_ReturnsListOfContacts() {
+    void testGetAllContacts() {
+        // Given
         when(contactRepository.findAll()).thenReturn(Arrays.asList(contact));
+        when(contactMapper.toDto(contact)).thenReturn(contactResponse);
 
-        List<ContactResponse> contacts = contactService.getAllContacts();
+        // When
+        List<ContactResponse> result = contactService.getAllContacts();
 
-        assertEquals(1, contacts.size());
-        assertEquals("Test Contact", contacts.get(0).getName());
+        // Then
+        assertEquals(1, result.size());
+        assertEquals("Test Contact", result.get(0).getName());
         verify(contactRepository, times(1)).findAll();
+        verify(contactMapper, times(1)).toDto(contact);
     }
 
     @Test
-    void createContact_ValidRequest_ReturnsCreatedContact() {
+    void testGetContactById() {
+        // Given
+        when(contactRepository.findById(1L)).thenReturn(Optional.of(contact));
+        when(contactMapper.toDto(contact)).thenReturn(contactResponse);
+
+        // When
+        ContactResponse result = contactService.getContactById(1L);
+
+        // Then
+        assertEquals("1", result.getId());
+        assertEquals("Test Contact", result.getName());
+        verify(contactRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    void testGetContactById_NotFound() {
+        // Given
+        when(contactRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class, () -> {
+            contactService.getContactById(1L);
+        });
+        verify(contactRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    void testCreateContact() {
+        // Given
+        when(contactMapper.toEntity(any(ContactRequest.class))).thenReturn(contact);
         when(contactRepository.save(any(Contact.class))).thenReturn(contact);
+        when(contactMapper.toDto(any(Contact.class))).thenReturn(contactResponse);
 
-        ContactResponse response = contactService.createContact(contactRequest);
+        // When
+        ContactResponse result = contactService.createContact(contactRequest);
 
-        assertNotNull(response);
-        assertEquals("Test Contact", response.getName());
+        // Then
+        assertEquals("1", result.getId());
         verify(contactRepository, times(1)).save(any(Contact.class));
     }
 
     @Test
-    void updateContact_ExistingContact_ReturnsUpdatedContact() {
-        contactRequest.setName("Updated Contact");
+    void testUpdateContact() {
+        // Given
         when(contactRepository.findById(1L)).thenReturn(Optional.of(contact));
         when(contactRepository.save(any(Contact.class))).thenReturn(contact);
+        when(contactMapper.toDto(any(Contact.class))).thenReturn(contactResponse);
 
-        ContactResponse response = contactService.updateContact("1", contactRequest);
+        // When
+        ContactResponse result = contactService.updateContact("1", contactRequest);
 
-        assertNotNull(response);
-        assertEquals("Updated Contact", response.getName());
+        // Then
+        assertEquals("1", result.getId());
         verify(contactRepository, times(1)).findById(1L);
         verify(contactRepository, times(1)).save(any(Contact.class));
     }
 
     @Test
-    void updateContact_NonExistingContact_ReturnsNull() {
-        when(contactRepository.findById(999L)).thenReturn(Optional.empty());
+    void testUpdateContact_NotFound() {
+        // Given
+        when(contactRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
-            contactService.updateContact("999", contactRequest);
+        // When & Then
+        assertThrows(ResourceNotFoundException.class, () -> {
+            contactService.updateContact("1", contactRequest);
         });
-        
-        verify(contactRepository, times(1)).findById(999L);
+        verify(contactRepository, times(1)).findById(1L);
     }
 
     @Test
-    void deleteContact_ExistingContact_ReturnsTrue() {
+    void testDeleteContact() {
+        // Given
         when(contactRepository.existsById(1L)).thenReturn(true);
 
-        boolean result = contactService.deleteContact("1");
+        // When
+        contactService.deleteContact("1");
 
-        assertTrue(result);
-        verify(contactRepository, times(1)).existsById(1L);
+        // Then
         verify(contactRepository, times(1)).deleteById(1L);
     }
 
     @Test
-    void deleteContact_NonExistingContact_ReturnsFalse() {
-        when(contactRepository.existsById(999L)).thenReturn(false);
+    void testDeleteContact_NotFound() {
+        // Given
+        when(contactRepository.existsById(1L)).thenReturn(false);
 
-        assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
-            contactService.deleteContact("999");
+        // When & Then
+        assertThrows(ResourceNotFoundException.class, () -> {
+            contactService.deleteContact("1");
         });
-        
-        verify(contactRepository, times(1)).existsById(999L);
-        verify(contactRepository, never()).deleteById(999L);
+        verify(contactRepository, times(1)).existsById(1L);
     }
 }

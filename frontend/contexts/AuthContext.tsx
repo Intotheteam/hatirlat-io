@@ -42,10 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (userData: { username: string; password: string; email: string }) => {
     try {
-      const user = await authService.register(userData);
-      // After successful registration, the user needs to log in
+      const response = await authService.register(userData);
+      setUser(response.user);
+      setIsAuthenticated(true);
     } catch (error) {
-      // Re-throw error to be handled by the calling component
       throw error;
     }
   };

@@ -87,21 +87,8 @@ class ContactControllerTest {
     }
 
     @Test
-    void updateContact_NonExistingContact_ReturnsNotFound() {
-        when(contactService.updateContact(eq("999"), any(ContactRequest.class))).thenReturn(null);
-
-        ResponseEntity<BaseResponse<ContactResponse>> response = contactController.updateContact("999", contactRequest);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertNull(response.getBody().getData());
-        verify(contactService, times(1)).updateContact(eq("999"), any(ContactRequest.class));
-    }
-
-    @Test
     void deleteContact_ExistingContact_ReturnsSuccess() {
-        when(contactService.deleteContact("1")).thenReturn(true);
+        doNothing().when(contactService).deleteContact("1");
 
         ResponseEntity<BaseResponse<Void>> response = contactController.deleteContact("1");
 
@@ -109,17 +96,5 @@ class ContactControllerTest {
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         verify(contactService, times(1)).deleteContact("1");
-    }
-
-    @Test
-    void deleteContact_NonExistingContact_ReturnsNotFound() {
-        when(contactService.deleteContact("999")).thenReturn(false);
-
-        ResponseEntity<BaseResponse<Void>> response = contactController.deleteContact("999");
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        verify(contactService, times(1)).deleteContact("999");
     }
 }

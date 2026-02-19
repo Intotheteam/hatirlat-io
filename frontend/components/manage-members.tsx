@@ -218,24 +218,24 @@ export default function ManageMembers({ groupId, groupName, onNavigate }: Manage
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Badge
-                      variant={member.role === "Admin" ? "default" : "secondary"}
+                      variant={member.role === "ADMIN" ? "default" : "secondary"}
                       className={`text-[10px] h-5 ${
-                        member.role === "Admin"
+                        member.role === "ADMIN"
                           ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-0"
                           : ""
                       }`}
                     >
-                      {member.role}
+                      {member.role === "ADMIN" ? "Admin" : "Member"}
                     </Badge>
                     <Badge
-                      variant={member.status === "Active" ? "default" : "outline"}
+                      variant={member.status === "ACTIVE" ? "default" : "outline"}
                       className={`text-[10px] h-5 ${
-                        member.status === "Active"
+                        member.status === "ACTIVE"
                           ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
                           : ""
                       }`}
                     >
-                      {member.status}
+                      {member.status === "ACTIVE" ? "Active" : "Pending"}
                     </Badge>
                     <Button
                       variant="ghost"

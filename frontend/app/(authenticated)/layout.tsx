@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PremiumHeader } from "@/components/navigation/premium-header";
 import { Toaster } from "@/components/ui/sonner";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ErrorBoundary } from "@/components/error-boundary";
 import type { View } from "@/types";
 
 // Helper function to determine current view based on pathname
@@ -37,12 +38,14 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   }
 
   return (
-    <>
+    <ErrorBoundary>
       <Toaster position="top-center" richColors />
       <div className="flex min-h-screen w-full flex-col bg-gradient-to-br from-background via-background to-accent/5">
         <PremiumHeader currentView={currentView} />
-        <main className="flex flex-1 flex-col p-1 sm:p-2">{children}</main>
+        <main className="flex flex-1 flex-col p-1 sm:p-2">
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </main>
       </div>
-    </>
+    </ErrorBoundary>
   );
 }

@@ -33,6 +33,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private boolean premium = false;
 
+    @Column(name = "timezone")
+    private String timezone = "Europe/Istanbul"; // Default timezone
+
     // Constructors  
     public User() {
     }
@@ -122,5 +125,13 @@ public class User implements UserDetails {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
     }
 }

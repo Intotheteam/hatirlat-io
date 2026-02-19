@@ -8,31 +8,42 @@ class AuthService {
 
   async login(credentials: AuthRequest): Promise<AuthResponse> {
     try {
-      const response = await apiService.post<AuthResponse>("/api/auth/login", credentials);
-      
-      // Store tokens and user data
-      if (response.token) {
-        this.setToken(response.token);
+      const response = await apiService.post<{ success: boolean; data: AuthResponse }>("/api/auth/login", credentials);
+      const authData = response.data;
+
+      if (authData.token) {
+        this.setToken(authData.token);
       }
-      if (response.refreshToken) {
-        this.setRefreshToken(response.refreshToken);
+      if (authData.refreshToken) {
+        this.setRefreshToken(authData.refreshToken);
       }
-      if (response.user) {
-        this.setCurrentUser(response.user);
+      if (authData.user) {
+        this.setCurrentUser(authData.user);
       }
-      
-      return response;
+
+      return authData;
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
     }
   }
 
-  async register(userData: { username: string; password: string; email: string }): Promise<User> {
+  async register(userData: { username: string; password: string; email: string }): Promise<AuthResponse> {
     try {
-      // The backend API expects a JSON body for registration, not query parameters.
-      const response = await apiService.post<User>("/api/auth/register", userData);
-      return response;
+      const response = await apiService.post<{ success: boolean; data: AuthResponse }>("/api/auth/register", userData);
+      const authData = response.data;
+
+      if (authData.token) {
+        this.setToken(authData.token);
+      }
+      if (authData.refreshToken) {
+        this.setRefreshToken(authData.refreshToken);
+      }
+      if (authData.user) {
+        this.setCurrentUser(authData.user);
+      }
+
+      return authData;
     } catch (error) {
       console.error("Registration failed:", error);
       throw error;

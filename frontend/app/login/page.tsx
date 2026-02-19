@@ -78,6 +78,11 @@ export default function LoginPage() {
               {isLoading ? "Giriş Yapılıyor..." : "Giriş Yap"}
             </Button>
             <div className="text-center text-sm text-muted-foreground">
+              <Link href="/forgot-password" className="text-primary hover:underline">
+                Şifremi Unuttum
+              </Link>
+            </div>
+            <div className="text-center text-sm text-muted-foreground">
               Hesabınız yok mu?{" "}
               <Link href="/register" className="text-primary hover:underline">
                 Kayıt Ol

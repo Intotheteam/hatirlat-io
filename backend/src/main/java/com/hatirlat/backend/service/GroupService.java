@@ -2,81 +2,168 @@ package com.hatirlat.backend.service;
 
 import com.hatirlat.backend.dto.GroupRequest;
 import com.hatirlat.backend.dto.GroupResponse;
-import com.hatirlat.backend.entity.Group;
-import com.hatirlat.backend.entity.Member;
+import com.hatirlat.backend.entity.*;
 import com.hatirlat.backend.exception.ResourceNotFoundException;
+import com.hatirlat.backend.mapper.GroupMapper;
+import com.hatirlat.backend.repository.GroupMemberRepository;
 import com.hatirlat.backend.repository.GroupRepository;
 import com.hatirlat.backend.repository.MemberRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.hatirlat.backend.util.LoggingUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 public class GroupService {
 
-    @Autowired
-    private GroupRepository groupRepository;
-    
-    @Autowired
-    private MemberRepository memberRepository;
+    private static final Logger logger = LoggerFactory.getLogger(GroupService.class);
 
-    @Transactional(readOnly = true)
-    public List<GroupResponse> getAllGroups() {
-        // In a real implementation, you'd filter by the authenticated user
-        List<Group> groups = groupRepository.findAll();
-        return groups.stream().map(this::convertToResponse).collect(Collectors.toList());
+    private final GroupRepository groupRepository;
+    private final MemberRepository memberRepository;
+    private final GroupMemberRepository groupMemberRepository;
+    private final GroupMapper groupMapper;
+    private final LoggingUtil loggingUtil;
+
+    public GroupService(GroupRepository groupRepository, MemberRepository memberRepository,
+                        GroupMemberRepository groupMemberRepository, GroupMapper groupMapper, LoggingUtil loggingUtil) {
+        this.groupRepository = groupRepository;
+        this.memberRepository = memberRepository;
+        this.groupMemberRepository = groupMemberRepository;
+        this.groupMapper = groupMapper;
+        this.loggingUtil = loggingUtil;
     }
 
     @Transactional(readOnly = true)
-    public GroupResponse getGroupById(String id) {
-        return groupRepository.findById(Long.parseLong(id))
-                .map(this::convertToResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Group", id));
-    }
-
-    @Transactional
-    public GroupResponse createGroup(GroupRequest request) {
-        Group group = new Group();
-        group.setName(request.getName());
-        group.setDescription(request.getDescription());
-        Group savedGroup = groupRepository.save(group);
-        return convertToResponse(savedGroup);
-    }
-
-    @Transactional
-    public GroupResponse updateGroup(String id, GroupRequest request) {
-        Group existingGroup = groupRepository.findById(Long.parseLong(id))
-                .orElseThrow(() -> new ResourceNotFoundException("Group", id));
-
-        existingGroup.setName(request.getName());
-        existingGroup.setDescription(request.getDescription());
-
-        Group updatedGroup = groupRepository.save(existingGroup);
-        return convertToResponse(updatedGroup);
-    }
-
-    @Transactional
-    public boolean deleteGroup(String id) {
-        if (!groupRepository.existsById(Long.parseLong(id))) {
-            throw new ResourceNotFoundException("Group", id);
+    public List<GroupResponse> getAllGroups(User currentUser) {
+        loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "getAllGroups");
+        try {
+            List<Group> groups = groupRepository.findByOwner(currentUser);
+            List<GroupResponse> responses = groups.stream().map(groupMapper::toDto).collect(Collectors.toList());
+            loggingUtil.logServiceMethodExit(this.getClass().getSimpleName(), "getAllGroups", responses.size() + " groups retrieved");
+            return responses;
+        } catch (Exception e) {
+            loggingUtil.logServiceMethodError(this.getClass().getSimpleName(), "getAllGroups", e);
+            throw e;
         }
-        groupRepository.deleteById(Long.parseLong(id));
-        return true;
     }
 
-    private GroupResponse convertToResponse(Group group) {
-        GroupResponse response = new GroupResponse();
-        response.setId(String.valueOf(group.getId()));
-        response.setName(group.getName());
-        response.setDescription(group.getDescription());
-        // Count members by querying the GroupMember repository
-        List<Member> members = memberRepository.findMembersByGroupId(group.getId());
-        response.setMemberCount(members != null ? members.size() : 0);
-        response.setCreatedAt(group.getCreatedAt());
-        return response;
+    @Transactional(readOnly = true)
+    public GroupResponse getGroupById(String id, User currentUser) {
+        loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "getGroupById", id);
+        try {
+            Group group = groupRepository.findById(Long.parseLong(id))
+                    .orElseThrow(() -> new ResourceNotFoundException("Group", id));
+            verifyOwnership(group, currentUser);
+            GroupResponse response = groupMapper.toDto(group);
+            loggingUtil.logServiceMethodExit(this.getClass().getSimpleName(), "getGroupById", id);
+            return response;
+        } catch (Exception e) {
+            loggingUtil.logServiceMethodError(this.getClass().getSimpleName(), "getGroupById", e);
+            throw e;
+        }
+    }
+
+    @Transactional
+    public GroupResponse createGroup(GroupRequest request, User currentUser) {
+        loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "createGroup", request.getName());
+        try {
+            Group group = new Group(request.getName(), request.getDescription());
+            group.setOwner(currentUser);
+            group.setInviteCode(generateInviteCode());
+            Group savedGroup = groupRepository.save(group);
+            loggingUtil.logDatabaseOperation("CREATE", "Group", savedGroup.getId());
+            GroupResponse response = groupMapper.toDto(savedGroup);
+            loggingUtil.logServiceMethodExit(this.getClass().getSimpleName(), "createGroup", response.getId());
+            return response;
+        } catch (Exception e) {
+            loggingUtil.logServiceMethodError(this.getClass().getSimpleName(), "createGroup", e);
+            throw e;
+        }
+    }
+
+    @Transactional
+    public GroupResponse updateGroup(String id, GroupRequest request, User currentUser) {
+        loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "updateGroup", id);
+        try {
+            Group existingGroup = groupRepository.findById(Long.parseLong(id))
+                    .orElseThrow(() -> new ResourceNotFoundException("Group", id));
+            verifyOwnership(existingGroup, currentUser);
+
+            existingGroup.setName(request.getName());
+            existingGroup.setDescription(request.getDescription());
+
+            Group updatedGroup = groupRepository.save(existingGroup);
+            loggingUtil.logDatabaseOperation("UPDATE", "Group", updatedGroup.getId());
+            GroupResponse response = groupMapper.toDto(updatedGroup);
+            loggingUtil.logServiceMethodExit(this.getClass().getSimpleName(), "updateGroup", response.getId());
+            return response;
+        } catch (Exception e) {
+            loggingUtil.logServiceMethodError(this.getClass().getSimpleName(), "updateGroup", e);
+            throw e;
+        }
+    }
+
+    @Transactional
+    public boolean deleteGroup(String id, User currentUser) {
+        loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "deleteGroup", id);
+        try {
+            Group group = groupRepository.findById(Long.parseLong(id))
+                    .orElseThrow(() -> new ResourceNotFoundException("Group", id));
+            verifyOwnership(group, currentUser);
+            groupRepository.deleteById(Long.parseLong(id));
+            loggingUtil.logDatabaseOperation("DELETE", "Group", id);
+            loggingUtil.logServiceMethodExit(this.getClass().getSimpleName(), "deleteGroup", true);
+            return true;
+        } catch (Exception e) {
+            loggingUtil.logServiceMethodError(this.getClass().getSimpleName(), "deleteGroup", e);
+            throw e;
+        }
+    }
+
+    /**
+     * Get group info by invite code (public - no auth needed).
+     */
+    @Transactional(readOnly = true)
+    public GroupResponse getGroupByInviteCode(String inviteCode) {
+        Group group = groupRepository.findByInviteCode(inviteCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Group invite", inviteCode));
+        return groupMapper.toDto(group);
+    }
+
+    /**
+     * Join a group using an invite code.
+     */
+    @Transactional
+    public void joinGroupByInviteCode(String inviteCode, String memberName, String memberEmail, String memberPhone) {
+        Group group = groupRepository.findByInviteCode(inviteCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Group invite", inviteCode));
+
+        // Create a new member
+        Member member = new Member(memberName, memberEmail, memberPhone);
+        member.setRole(MemberRole.MEMBER);
+        member.setStatus(MemberStatus.ACTIVE);
+        Member savedMember = memberRepository.save(member);
+
+        // Create GroupMember association
+        GroupMember groupMember = new GroupMember(group.getId(), savedMember.getId());
+        groupMemberRepository.save(groupMember);
+
+        logger.info("Member '{}' joined group '{}' via invite code", memberName, group.getName());
+    }
+
+    private String generateInviteCode() {
+        return UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+
+    private void verifyOwnership(Group group, User currentUser) {
+        if (group.getOwner() != null && !group.getOwner().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("You do not have permission to access this group");
+        }
     }
 }

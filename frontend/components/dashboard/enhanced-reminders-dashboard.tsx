@@ -59,7 +59,7 @@ export default function EnhancedRemindersDashboard({ onNavigate }: RemindersDash
         const total = fetchedReminders.length;
         const active = fetchedReminders.filter(r => r.status === "scheduled").length;
         const completed = fetchedReminders.filter(r => r.status === "sent").length;
-        const groups = new Set(fetchedReminders.map(r => r.group.id)).size;
+        const groups = new Set(fetchedReminders.filter(r => r.group?.id).map(r => r.group!.id)).size;
         
         setStats({ total, active, completed, groups });
       } catch (error) {
@@ -90,7 +90,7 @@ export default function EnhancedRemindersDashboard({ onNavigate }: RemindersDash
         const total = updatedReminders.length;
         const active = updatedReminders.filter(r => r.status === "scheduled").length;
         const completed = updatedReminders.filter(r => r.status === "sent").length;
-        const groups = new Set(updatedReminders.map(r => r.group.id)).size;
+        const groups = new Set(updatedReminders.filter(r => r.group?.id).map(r => r.group!.id)).size;
         
         setStats({ total, active, completed, groups });
         

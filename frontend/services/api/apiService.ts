@@ -5,7 +5,10 @@ import type { Reminder } from "@/types"
 import { authService } from "../auth/authService"
 
 // --- API CONFIGURATION ---
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+// Use empty string to leverage Next.js proxy rewrites (next.config.mjs)
+// Requests go to localhost:3000/api/... -> proxied to localhost:8080/api/...
+// This avoids CORS issues entirely since browser sees same-origin requests
+const API_BASE_URL = ""
 
 // Add authentication token to requests if available
 function getAuthHeaders(): HeadersInit {
@@ -36,18 +39,33 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       return null as T
     }
     
+    // Handle 401 Unauthorized - redirect to login (skip for auth endpoints)
+    if (response.status === 401 && !endpoint.startsWith("/api/auth/")) {
+      authService.logout()
+      if (typeof window !== "undefined") {
+        window.location.href = "/login"
+      }
+      throw new ApiError(401, "Session expired. Please log in again.")
+    }
+
     // Handle error responses
     if (!response.ok) {
       let errorMessage = `Request failed with status ${response.status}`
-      
+
       try {
         const errorData = await response.json()
-        errorMessage = errorData.message || errorData.error || errorMessage
+        if (errorData.validationErrors && Array.isArray(errorData.validationErrors)) {
+          errorMessage = errorData.validationErrors
+            .map((e: { field: string; message: string }) => `${e.field}: ${e.message}`)
+            .join(", ")
+        } else {
+          errorMessage = errorData.message || errorData.error || errorMessage
+        }
       } catch (e) {
         // If we can't parse the error response, use the status text
         errorMessage = response.statusText || errorMessage
       }
-      
+
       throw new ApiError(response.status, errorMessage)
     }
     

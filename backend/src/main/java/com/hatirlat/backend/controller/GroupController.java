@@ -1,14 +1,16 @@
 package com.hatirlat.backend.controller;
 
 import com.hatirlat.backend.dto.*;
+import com.hatirlat.backend.entity.User;
 import com.hatirlat.backend.service.GroupService;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,8 +20,11 @@ import java.util.List;
 @Tag(name = "Groups", description = "Group management endpoints")
 public class GroupController {
 
-    @Autowired
-    private GroupService groupService;
+    private final GroupService groupService;
+
+    public GroupController(GroupService groupService) {
+        this.groupService = groupService;
+    }
 
     @Operation(
             summary = "Get all groups",
@@ -33,10 +38,11 @@ public class GroupController {
             }
     )
     @GetMapping
-    public ResponseEntity<BaseResponse<List<GroupResponse>>> getAllGroups() {
-        List<GroupResponse> groups = groupService.getAllGroups();
-        String message = groups.isEmpty() 
-            ? "No groups found" 
+    public ResponseEntity<BaseResponse<List<GroupResponse>>> getAllGroups(
+            @AuthenticationPrincipal User currentUser) {
+        List<GroupResponse> groups = groupService.getAllGroups(currentUser);
+        String message = groups.isEmpty()
+            ? "No groups found"
             : "Groups retrieved successfully";
         return ResponseEntity.ok(new BaseResponse<>(true, groups, message));
     }
@@ -57,8 +63,10 @@ public class GroupController {
             }
     )
     @GetMapping("/{id}")
-    public ResponseEntity<BaseResponse<GroupResponse>> getGroupById(@PathVariable String id) {
-        GroupResponse group = groupService.getGroupById(id);
+    public ResponseEntity<BaseResponse<GroupResponse>> getGroupById(
+            @PathVariable String id,
+            @AuthenticationPrincipal User currentUser) {
+        GroupResponse group = groupService.getGroupById(id, currentUser);
         return ResponseEntity.ok(new BaseResponse<>(true, group, "Group retrieved successfully"));
     }
 
@@ -78,8 +86,10 @@ public class GroupController {
             }
     )
     @PostMapping
-    public ResponseEntity<BaseResponse<GroupResponse>> createGroup(@RequestBody GroupRequest request) {
-        GroupResponse createdGroup = groupService.createGroup(request);
+    public ResponseEntity<BaseResponse<GroupResponse>> createGroup(
+            @Valid @RequestBody GroupRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        GroupResponse createdGroup = groupService.createGroup(request, currentUser);
         return ResponseEntity.ok(new BaseResponse<>(true, createdGroup, "Group created successfully"));
     }
 
@@ -99,8 +109,11 @@ public class GroupController {
             }
     )
     @PutMapping("/{id}")
-    public ResponseEntity<BaseResponse<GroupResponse>> updateGroup(@PathVariable String id, @RequestBody GroupRequest request) {
-        GroupResponse updatedGroup = groupService.updateGroup(id, request);
+    public ResponseEntity<BaseResponse<GroupResponse>> updateGroup(
+            @PathVariable String id,
+            @Valid @RequestBody GroupRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        GroupResponse updatedGroup = groupService.updateGroup(id, request, currentUser);
         return ResponseEntity.ok(new BaseResponse<>(true, updatedGroup, "Group updated successfully"));
     }
 
@@ -119,8 +132,10 @@ public class GroupController {
             }
     )
     @DeleteMapping("/{id}")
-    public ResponseEntity<BaseResponse<Void>> deleteGroup(@PathVariable String id) {
-        groupService.deleteGroup(id);
+    public ResponseEntity<BaseResponse<Void>> deleteGroup(
+            @PathVariable String id,
+            @AuthenticationPrincipal User currentUser) {
+        groupService.deleteGroup(id, currentUser);
         return ResponseEntity.ok(new BaseResponse<>(true, null, "Group deleted successfully"));
     }
 }

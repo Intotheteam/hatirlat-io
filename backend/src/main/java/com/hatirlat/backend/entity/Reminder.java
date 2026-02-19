@@ -24,9 +24,17 @@ public class Reminder {
     @Enumerated(EnumType.STRING)
     private ReminderStatus status; // Enum for "scheduled", "sent", "paused", "failed"
     
-    private Long contactId; // Foreign key reference instead of relationship
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "contact_id", referencedColumnName = "id")
+    private Contact contact;
     
-    private Long groupId; // Foreign key reference instead of relationship
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", referencedColumnName = "id")
+    private Group group;
     
     @ElementCollection
     @CollectionTable(name = "reminder_channels", joinColumns = @JoinColumn(name = "reminder_id"))
@@ -36,10 +44,24 @@ public class Reminder {
     @Enumerated(EnumType.STRING)
     private RepeatType repeat; // Enum for "none", "hourly", "daily", "weekly", "custom"
     
-    private Long customRepeatId; // Foreign key reference instead of relationship
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "custom_repeat_id", referencedColumnName = "id")
+    private CustomRepeatConfig customRepeatConfig;
 
     // Constructors
     public Reminder() {}
+
+    // Additional constructor for common use cases
+    public Reminder(String title, ReminderType type, String message, LocalDateTime dateTime, 
+                   ReminderStatus status, List<NotificationChannel> channels, RepeatType repeat) {
+        this.title = title;
+        this.type = type;
+        this.message = message;
+        this.dateTime = dateTime;
+        this.status = status;
+        this.channels = channels;
+        this.repeat = repeat;
+    }
 
     // Getters and Setters
     public Long getId() {
@@ -90,20 +112,28 @@ public class Reminder {
         this.status = status;
     }
 
-    public Long getContactId() {
-        return contactId;
+    public User getUser() {
+        return user;
     }
 
-    public void setContactId(Long contactId) {
-        this.contactId = contactId;
+    public void setUser(User user) {
+        this.user = user;
     }
 
-    public Long getGroupId() {
-        return groupId;
+    public Contact getContact() {
+        return contact;
     }
 
-    public void setGroupId(Long groupId) {
-        this.groupId = groupId;
+    public void setContact(Contact contact) {
+        this.contact = contact;
+    }
+
+    public Group getGroup() {
+        return group;
+    }
+
+    public void setGroup(Group group) {
+        this.group = group;
     }
 
     public List<NotificationChannel> getChannels() {
@@ -122,11 +152,11 @@ public class Reminder {
         this.repeat = repeat;
     }
 
-    public Long getCustomRepeatId() {
-        return customRepeatId;
+    public CustomRepeatConfig getCustomRepeatConfig() {
+        return customRepeatConfig;
     }
 
-    public void setCustomRepeatId(Long customRepeatId) {
-        this.customRepeatId = customRepeatId;
+    public void setCustomRepeatConfig(CustomRepeatConfig customRepeatConfig) {
+        this.customRepeatConfig = customRepeatConfig;
     }
 }

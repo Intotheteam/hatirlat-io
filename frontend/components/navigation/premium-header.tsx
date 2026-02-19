@@ -205,7 +205,7 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
-                <Link href="/dashboard">
+                <Link href="/profile">
                   <DropdownMenuItem asChild>
                     <div className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
@@ -213,7 +213,7 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                     </div>
                   </DropdownMenuItem>
                 </Link>
-                <Link href="/dashboard">
+                <Link href="/profile">
                   <DropdownMenuItem asChild>
                     <div className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />

@@ -2,12 +2,12 @@ package com.hatirlat.backend.controller;
 
 import com.hatirlat.backend.dto.*;
 import com.hatirlat.backend.service.ContactService;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,8 +18,11 @@ import java.util.List;
 @Tag(name = "Contacts", description = "Contact management endpoints")
 public class ContactController {
 
-    @Autowired
-    private ContactService contactService;
+    private final ContactService contactService;
+
+    public ContactController(ContactService contactService) {
+        this.contactService = contactService;
+    }
 
     @Operation(
             summary = "Get all contacts",
@@ -57,7 +60,7 @@ public class ContactController {
             }
     )
     @PostMapping
-    public ResponseEntity<BaseResponse<ContactResponse>> createContact(@RequestBody ContactRequest request) {
+    public ResponseEntity<BaseResponse<ContactResponse>> createContact(@Valid @RequestBody ContactRequest request) {
         ContactResponse createdContact = contactService.createContact(request);
         return ResponseEntity.ok(new BaseResponse<>(true, createdContact, "Contact created successfully"));
     }
@@ -78,7 +81,7 @@ public class ContactController {
             }
     )
     @PutMapping("/{id}")
-    public ResponseEntity<BaseResponse<ContactResponse>> updateContact(@PathVariable String id, @RequestBody ContactRequest request) {
+    public ResponseEntity<BaseResponse<ContactResponse>> updateContact(@PathVariable String id, @Valid @RequestBody ContactRequest request) {
         ContactResponse updatedContact = contactService.updateContact(id, request);
         return ResponseEntity.ok(new BaseResponse<>(true, updatedContact, "Contact updated successfully"));
     }

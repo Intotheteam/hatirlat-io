@@ -10,13 +10,17 @@ import { useToast } from "@/hooks/use-toast"
 import { apiManager } from "@/services/api/apiManager"
 import type { View } from "@/types"
 
-interface Group {
+interface GroupData {
   id: string
   name: string
-  description: string
-  memberCount: number
-  inviteLink: string
-  createdAt: string
+  description?: string
+  memberCount?: number
+  createdAt?: string
+}
+
+function getInviteLink(groupId: string): string {
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://hatirlat.io"
+  return `${baseUrl}/invite/${groupId}`
 }
 
 interface GroupManagementProps {
@@ -24,7 +28,7 @@ interface GroupManagementProps {
 }
 
 export default function GroupManagement({ onNavigate }: GroupManagementProps) {
-  const [groups, setGroups] = useState<Group[]>([])
+  const [groups, setGroups] = useState<GroupData[]>([])
   const [isLoadingGroups, setIsLoadingGroups] = useState(true)
   const { toast } = useToast()
 
@@ -62,9 +66,6 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
       const response = await apiManager.createGroup({
         name: newGroup.name,
         description: newGroup.description,
-        memberCount: 1, // Creator
-        inviteLink: "", // Will be set by the backend
-        createdAt: new Date().toISOString().split("T")[0],
       })
 
       // Update the local state with the created group
@@ -158,7 +159,7 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
             <CardContent className="p-3">
               <div className="text-center">
                 <p className="text-xs text-muted-foreground">Total Members</p>
-                <p className="text-lg font-bold">{groups.reduce((acc, g) => acc + g.memberCount, 0)}</p>
+                <p className="text-lg font-bold">{groups.reduce((acc, g) => acc + (g.memberCount || 0), 0)}</p>
               </div>
             </CardContent>
           </Card>
@@ -242,19 +243,35 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
             </div>
           </div>
         ) : groups.length === 0 && !showCreateForm ? (
-          <Card className="rounded-2xl border-2 border-border/60 dark:border-border/40 bg-gradient-to-br from-background to-accent/5 shadow-md dark:shadow-sm">
-            <CardContent className="text-center py-12">
-              <div className="mx-auto p-3 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 w-14 h-14 flex items-center justify-center mb-3">
-                <Users className="h-7 w-7 text-muted-foreground" />
+          <Card className="col-span-full rounded-2xl border-2 border-border/60 dark:border-border/40 bg-gradient-to-br from-background to-accent/5 shadow-md dark:shadow-sm">
+            <CardContent className="text-center py-16">
+              <div className="mx-auto p-4 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 w-16 h-16 flex items-center justify-center mb-4">
+                <Users className="h-8 w-8 text-indigo-400" />
               </div>
-              <h3 className="text-sm font-semibold mb-1">No Groups Yet</h3>
-              <p className="text-xs text-muted-foreground mb-4">Create your first group to start inviting contacts</p>
+              <h3 className="text-base font-semibold mb-1">Henuz grup olusturulmadi</h3>
+              <p className="text-sm text-muted-foreground mb-2 max-w-sm mx-auto">
+                Kisilerinizi gruplandirarak toplu bildirim gonderebilirsiniz
+              </p>
+              <div className="flex flex-col items-center gap-2 text-xs text-muted-foreground mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-indigo-500/10 flex items-center justify-center text-[10px] font-bold text-indigo-500">1</span>
+                  <span>Bir grup olusturun</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-purple-500/10 flex items-center justify-center text-[10px] font-bold text-purple-500">2</span>
+                  <span>Uyeleri ekleyin veya davet linki paylasin</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-pink-500/10 flex items-center justify-center text-[10px] font-bold text-pink-500">3</span>
+                  <span>Gruba toplu hatirlatici gonderin</span>
+                </div>
+              </div>
               <Button
                 onClick={() => setShowCreateForm(true)}
                 className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-md rounded-full text-sm h-9"
               >
                 <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Create First Group
+                Ilk Grubu Olustur
               </Button>
             </CardContent>
           </Card>
@@ -303,14 +320,14 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
                   <div className="flex gap-1.5">
                     <Input
                       type="text"
-                      value={group.inviteLink}
+                      value={getInviteLink(group.id)}
                       readOnly
                       className="text-xs h-7 rounded-lg bg-background/50"
                     />
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => copyInviteLink(group.inviteLink)}
+                      onClick={() => copyInviteLink(getInviteLink(group.id))}
                       className="h-7 w-7 shrink-0 rounded-lg"
                     >
                       <Copy className="h-3 w-3" />
@@ -332,7 +349,7 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => copyInviteLink(group.inviteLink)}
+                    onClick={() => copyInviteLink(getInviteLink(group.id))}
                     className="flex-1 rounded-full h-8 text-xs"
                   >
                     <Copy className="h-3 w-3 mr-1.5" />

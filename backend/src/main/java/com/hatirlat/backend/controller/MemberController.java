@@ -2,12 +2,12 @@ package com.hatirlat.backend.controller;
 
 import com.hatirlat.backend.dto.*;
 import com.hatirlat.backend.service.MemberService;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,8 +18,11 @@ import java.util.List;
 @Tag(name = "Members", description = "Member management endpoints")
 public class MemberController {
 
-    @Autowired
-    private MemberService memberService;
+    private final MemberService memberService;
+
+    public MemberController(MemberService memberService) {
+        this.memberService = memberService;
+    }
 
     @Operation(
             summary = "Get all members in a group",
@@ -57,9 +60,33 @@ public class MemberController {
             }
     )
     @PostMapping("/groups/{groupId}/members")
-    public ResponseEntity<BaseResponse<MemberResponse>> addMemberToGroup(@PathVariable String groupId, @RequestBody MemberRequest request) {
+    public ResponseEntity<BaseResponse<MemberResponse>> addMemberToGroup(@PathVariable String groupId, @Valid @RequestBody MemberRequest request) {
         MemberResponse member = memberService.addMemberToGroup(groupId, request);
         return ResponseEntity.ok(new BaseResponse<>(true, member, "Member added to group successfully"));
+    }
+
+    @Operation(
+            summary = "Update member in group",
+            description = "Update a member's information within a group",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully updated member",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = MemberResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Member or group not found"
+                    )
+            }
+    )
+    @PutMapping("/groups/{groupId}/members/{memberId}")
+    public ResponseEntity<BaseResponse<MemberResponse>> updateMember(
+            @PathVariable String groupId,
+            @PathVariable String memberId,
+            @Valid @RequestBody MemberRequest request) {
+        MemberResponse member = memberService.updateMember(groupId, memberId, request);
+        return ResponseEntity.ok(new BaseResponse<>(true, member, "Member updated successfully"));
     }
 
     @Operation(
@@ -93,7 +120,7 @@ public class MemberController {
             }
     )
     @PostMapping("/members/invite")
-    public ResponseEntity<BaseResponse<String>> inviteMember(@RequestBody InviteRequest request) {
+    public ResponseEntity<BaseResponse<String>> inviteMember(@Valid @RequestBody InviteRequest request) {
         String result = memberService.inviteMember(request.getEmail(), request.getGroupId());
         return ResponseEntity.ok(new BaseResponse<>(true, result, "Invitation sent successfully"));
     }

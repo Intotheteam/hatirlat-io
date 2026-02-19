@@ -61,6 +61,31 @@ public class MemberService {
         return convertToResponse(savedMember);
     }
 
+    public MemberResponse updateMember(String groupId, String memberId, MemberRequest request) {
+        // Verify member is in the group
+        GroupMember groupMember = groupMemberRepository.findByGroupIdAndMemberId(
+            Long.parseLong(groupId),
+            Long.parseLong(memberId)
+        );
+        if (groupMember == null) {
+            throw new ResourceNotFoundException("GroupMember",
+                String.format("Group ID: %s, Member ID: %s", groupId, memberId));
+        }
+
+        Member member = memberRepository.findById(Long.parseLong(memberId))
+            .orElseThrow(() -> new ResourceNotFoundException("Member", memberId));
+
+        if (request.getName() != null) member.setName(request.getName());
+        if (request.getEmail() != null) member.setEmail(request.getEmail());
+        if (request.getPhone() != null) member.setPhone(request.getPhone());
+        if (request.getRole() != null) {
+            member.setRole(MemberRole.valueOf(request.getRole().toUpperCase()));
+        }
+
+        Member updatedMember = memberRepository.save(member);
+        return convertToResponse(updatedMember);
+    }
+
     public boolean removeMemberFromGroup(String groupId, String memberId) {
         // Check if the member is in the group
         GroupMember groupMember = groupMemberRepository.findByGroupIdAndMemberId(
@@ -88,8 +113,8 @@ public class MemberService {
         response.setId(String.valueOf(member.getId()));
         response.setName(member.getName());
         response.setEmail(member.getEmail());
-        response.setRole(member.getRole() != null ? member.getRole().name().toLowerCase() : null);
-        response.setStatus(member.getStatus() != null ? member.getStatus().name().toLowerCase() : null);
+        response.setRole(member.getRole() != null ? member.getRole().name() : null);
+        response.setStatus(member.getStatus() != null ? member.getStatus().name() : null);
         response.setJoinedAt(member.getJoinedAt());
         response.setPhone(member.getPhone());
         response.setLastActivity(member.getLastActivity());

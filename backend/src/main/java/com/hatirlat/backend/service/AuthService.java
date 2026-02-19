@@ -61,22 +61,43 @@ public class AuthService {
         return authResponse;
     }
 
-    public User register(String username, String password, String email, Role role) {
+    public AuthResponse registerAndAuthenticate(String username, String password, String email, Role role) {
         // Check if user already exists
         if (userRepository.findByUsername(username).isPresent()) {
             throw new ResourceAlreadyExistsException("User", username);
         }
-        
+
         if (userRepository.findByEmail(email).isPresent()) {
             throw new ResourceAlreadyExistsException("User with email", email);
         }
-        
+
         User user = new User();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
         user.setEmail(email);
-        user.setRole(role != null ? role : Role.USER); // Default to USER role if not provided
+        user.setRole(role != null ? role : Role.USER);
         user.setEnabled(true);
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        // Generate JWT tokens
+        String jwtToken = jwtService.generateToken(savedUser);
+        String refreshToken = jwtService.generateRefreshToken(savedUser);
+
+        // Create UserResponse
+        UserResponse userResponse = new UserResponse();
+        userResponse.setId(String.valueOf(savedUser.getId()));
+        userResponse.setUsername(savedUser.getUsername());
+        userResponse.setEmail(savedUser.getEmail() != null ? savedUser.getEmail() : "");
+        userResponse.setRole(savedUser.getRole().name());
+
+        // Create AuthResponse
+        AuthResponse authResponse = new AuthResponse();
+        authResponse.setToken(jwtToken);
+        authResponse.setRefreshToken(refreshToken);
+        authResponse.setType("Bearer");
+        authResponse.setExpiresIn(86400L);
+        authResponse.setUser(userResponse);
+
+        return authResponse;
     }
 }

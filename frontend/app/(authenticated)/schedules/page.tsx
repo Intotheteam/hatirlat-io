@@ -35,13 +35,44 @@ export default function SchedulesPage() {
     }
   }, [isAuthenticated, fetchReminders])
 
+  const buildReminderPayload = (reminder: Reminder | Omit<Reminder, "id">) => {
+    // Normalize dateTime: backend expects "yyyy-MM-dd'T'HH:mm:ss" (with seconds)
+    let dateTime = reminder.dateTime || ""
+    if (dateTime && !dateTime.match(/T\d{2}:\d{2}:\d{2}$/)) {
+      dateTime = dateTime + ":00"
+    }
+
+    const payload: Record<string, unknown> = {
+      title: reminder.title,
+      type: reminder.type,
+      message: reminder.message,
+      dateTime,
+      status: reminder.status,
+      channels: reminder.channels,
+      repeat: reminder.repeat,
+      customRepeat: reminder.customRepeat ?? null,
+    }
+
+    if (reminder.type === "group") {
+      // Pass groupId for existing group selection
+      payload.groupId = reminder.group?.id || null
+      payload.contact = null
+    } else {
+      payload.contact = reminder.contact ?? null
+      payload.groupId = null
+    }
+
+    return payload
+  }
+
   const handleSaveReminder = async (reminderToSave: Reminder | Omit<Reminder, "id">) => {
     try {
+      const payload = buildReminderPayload(reminderToSave)
       if ("id" in reminderToSave && reminderToSave.id) {
-        await apiManager.updateReminder(reminderToSave.id, reminderToSave)
+        await apiManager.updateReminder(reminderToSave.id, payload as Partial<Reminder>)
         toast.success("Hatırlatıcı güncellendi!")
       } else {
-        await apiManager.createReminder(reminderToSave as Omit<Reminder, "id">)
+        await apiManager.createReminder(payload as Omit<Reminder, "id">)
         toast.success("Hatırlatıcı oluşturuldu!")
       }
       await fetchReminders()

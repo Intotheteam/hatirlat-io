@@ -3,6 +3,7 @@ export type ReminderType = "personal" | "group"
 export type Channel = "email" | "sms" | "whatsapp" | "push"
 
 export interface Contact {
+  id?: string
   name: string
   phone: string
   email: string
@@ -29,8 +30,8 @@ export interface Reminder {
   message: string
   dateTime: string
   status: ReminderStatus
-  contact: Contact
-  group: Group
+  contact?: Contact | null
+  group?: Group | null
   channels: Channel[]
   channel?: Channel // For backward compatibility
   repeat: "none" | "hourly" | "daily" | "weekly" | "custom"
@@ -62,5 +63,7 @@ export interface BaseResponse<T> {
   data: T
   message?: string
 }
+
+export type { Member } from "@/core/domain/entities/member"
 
 export type View = "dashboard" | "schedule-form" | "groups" | "manage-members" | "schedules"

@@ -67,8 +67,8 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
       const fetchGroups = async () => {
         setIsLoadingGroups(true)
         try {
-          const fetchedGroups = await apiService.get<Group[]>("/groups")
-          setGroups(fetchedGroups || [])
+          const response = await apiService.get<{ success: boolean; data: Group[] }>("/api/groups")
+          setGroups(response.data || [])
         } catch (error) {
           toast.error("Gruplar yüklenemedi.")
         } finally {
@@ -131,10 +131,24 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const finalData = { ...formData }
-    if (formData.type === "group" && groupChoice === "create" && newGroupName) {
-      finalData.group = { id: `new_${Date.now()}`, name: newGroupName }
+    const finalData: Omit<Reminder, "id"> = { ...formData }
+
+    // Normalize dateTime: backend expects "yyyy-MM-dd'T'HH:mm:ss" (with seconds)
+    if (finalData.dateTime && !finalData.dateTime.match(/T\d{2}:\d{2}:\d{2}$/)) {
+      finalData.dateTime = finalData.dateTime + ":00"
     }
+
+    if (formData.type === "personal") {
+      // Personal reminder: clear group fields
+      finalData.group = null
+    } else {
+      // Group reminder: set groupId, clear contact
+      if (groupChoice === "create" && newGroupName) {
+        finalData.group = { id: "", name: newGroupName }
+      }
+      finalData.contact = null
+    }
+
     onSave(finalData)
     setFormData(initialFormData)
     setNewGroupName("")

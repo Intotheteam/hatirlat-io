@@ -18,4 +18,9 @@ public class UserResponse {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    private String timezone;
+
+    public String getTimezone() { return timezone; }
+    public void setTimezone(String timezone) { this.timezone = timezone; }
 }

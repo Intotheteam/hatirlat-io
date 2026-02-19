@@ -8,6 +8,7 @@ import com.hatirlat.backend.dto.UserResponse;
 import com.hatirlat.backend.entity.Role;
 import com.hatirlat.backend.entity.User;
 import com.hatirlat.backend.service.AuthService;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -39,9 +40,9 @@ public class AuthController {
         }
     )
     @PostMapping(value = "/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
-        AuthResponse response = authService.authenticate(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<BaseResponse<AuthResponse>> login(@Valid @RequestBody AuthRequest request) {
+        AuthResponse authResponse = authService.authenticate(request);
+        return ResponseEntity.ok(new BaseResponse<>(true, authResponse, "Login successful"));
     }
 
     @Operation(
@@ -51,20 +52,20 @@ public class AuthController {
             @ApiResponse(
                 responseCode = "200", 
                 description = "Successfully registered user", 
-                content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))
             ),
             @ApiResponse(responseCode = "400", description = "Invalid registration data")
         }
     )
     @PostMapping(value = "/register")
-    public ResponseEntity<User> register(@RequestBody UserRequest userRequest) {
-        User user = authService.register(
-            userRequest.getUsername(), 
-            userRequest.getPassword(), 
-            userRequest.getEmail(), 
+    public ResponseEntity<BaseResponse<AuthResponse>> register(@Valid @RequestBody UserRequest userRequest) {
+        AuthResponse authResponse = authService.registerAndAuthenticate(
+            userRequest.getUsername(),
+            userRequest.getPassword(),
+            userRequest.getEmail(),
             userRequest.getRole() != null ? Role.valueOf(userRequest.getRole()) : Role.USER
         );
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(new BaseResponse<>(true, authResponse, "Registration successful"));
     }
     
     @Operation(

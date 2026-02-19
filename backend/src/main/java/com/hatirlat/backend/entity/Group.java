@@ -15,6 +15,13 @@ public class Group {
     private String description;
     private LocalDateTime createdAt;
 
+    @Column(unique = true)
+    private String inviteCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", referencedColumnName = "id")
+    private User owner;
+
     // Constructors
     public Group() {
         this.createdAt = LocalDateTime.now();
@@ -57,5 +64,21 @@ public class Group {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
+    }
+
+    public String getInviteCode() {
+        return inviteCode;
+    }
+
+    public void setInviteCode(String inviteCode) {
+        this.inviteCode = inviteCode;
     }
 }

@@ -82,8 +82,8 @@ export default function EditReminderModal({ isOpen, onClose, onSave, reminder }:
       const fetchGroups = async () => {
         setIsLoadingGroups(true)
         try {
-          const fetchedGroups = await apiService.get<Group[]>("/groups")
-          setGroups(fetchedGroups || [])
+          const response = await apiService.get<{ success: boolean; data: Group[] }>("/api/groups")
+          setGroups(response.data || [])
         } catch (error) {
           toast.error("Gruplar yüklenemedi.")
         } finally {
@@ -152,7 +152,12 @@ export default function EditReminderModal({ isOpen, onClose, onSave, reminder }:
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (formData) {
-      onSave(formData)
+      const finalData = { ...formData }
+      // Normalize dateTime: backend expects "yyyy-MM-dd'T'HH:mm:ss" (with seconds)
+      if (finalData.dateTime && !finalData.dateTime.match(/T\d{2}:\d{2}:\d{2}$/)) {
+        finalData.dateTime = finalData.dateTime + ":00"
+      }
+      onSave(finalData)
     }
     onClose()
   }
@@ -252,7 +257,7 @@ export default function EditReminderModal({ isOpen, onClose, onSave, reminder }:
               <Input
                 name="name"
                 placeholder="Contact Name"
-                value={formData.contact.name}
+                value={formData.contact?.name ?? ""}
                 onChange={handleContactChange}
                 required
                 className="rounded-xl"
@@ -262,7 +267,7 @@ export default function EditReminderModal({ isOpen, onClose, onSave, reminder }:
                   name="email"
                   type="email"
                   placeholder="Contact Email"
-                  value={formData.contact.email}
+                  value={formData.contact?.email ?? ""}
                   onChange={handleContactChange}
                   required
                   className="rounded-xl"
@@ -273,7 +278,7 @@ export default function EditReminderModal({ isOpen, onClose, onSave, reminder }:
                   name="phone"
                   type="tel"
                   placeholder="Contact Phone"
-                  value={formData.contact.phone}
+                  value={formData.contact?.phone ?? ""}
                   onChange={handleContactChange}
                   required
                   className="rounded-xl"
