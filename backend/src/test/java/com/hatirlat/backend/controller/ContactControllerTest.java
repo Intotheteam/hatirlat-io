@@ -1,6 +1,7 @@
 package com.hatirlat.backend.controller;
 
 import com.hatirlat.backend.dto.*;
+import com.hatirlat.backend.exception.ResourceNotFoundException;
 import com.hatirlat.backend.service.ContactService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,6 +88,18 @@ class ContactControllerTest {
     }
 
     @Test
+    void updateContact_NonExistingContact_ThrowsResourceNotFoundException() {
+        when(contactService.updateContact(eq("999"), any(ContactRequest.class)))
+                .thenThrow(new ResourceNotFoundException("Contact", "999"));
+
+        assertThrows(ResourceNotFoundException.class, () -> {
+            contactController.updateContact("999", contactRequest);
+        });
+
+        verify(contactService, times(1)).updateContact(eq("999"), any(ContactRequest.class));
+    }
+
+    @Test
     void deleteContact_ExistingContact_ReturnsSuccess() {
         doNothing().when(contactService).deleteContact("1");
 
@@ -96,5 +109,17 @@ class ContactControllerTest {
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         verify(contactService, times(1)).deleteContact("1");
+    }
+
+    @Test
+    void deleteContact_NonExistingContact_ThrowsResourceNotFoundException() {
+        doThrow(new ResourceNotFoundException("Contact", "999"))
+                .when(contactService).deleteContact("999");
+
+        assertThrows(ResourceNotFoundException.class, () -> {
+            contactController.deleteContact("999");
+        });
+
+        verify(contactService, times(1)).deleteContact("999");
     }
 }

@@ -1,15 +1,16 @@
 package com.hatirlat.backend.service;  
-import com.hatirlat.backend.entity.User;  
-import com.hatirlat.backend.repository.UserRepository;  
-import org.junit.jupiter.api.BeforeEach;  
-import org.junit.jupiter.api.Test;  
-import org.mockito.InjectMocks;  
-import org.mockito.Mock;  
-import org.mockito.MockitoAnnotations;  
-import org.springframework.security.core.userdetails.UserDetails;  
+import com.hatirlat.backend.entity.User;
+import com.hatirlat.backend.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.util.Optional;
-import static org.junit.jupiter.api.Assertions.*;  
-import static org.mockito.Mockito.*;  
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
   
 class CustomUserDetailsServiceTest {  
     @Mock  
@@ -38,11 +39,18 @@ class CustomUserDetailsServiceTest {
         verify(userRepository).findByUsername(username);  
     } 
   
-    @Test  
-    void loadUserByUsername_NonExistingUser_ThrowsException() {  
-        // Arrange  
-        String username = "nonexistent";  
+    @Test
+    void loadUserByUsername_NonExistingUser_ThrowsException() {
+        // Arrange
+        String username = "nonexistent";
         when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThrows(UsernameNotFoundException.class, () -> {
+            userDetailsService.loadUserByUsername(username);
+        });
+
+        verify(userRepository).findByUsername(username);
     }
   
 } 

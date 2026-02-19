@@ -47,7 +47,15 @@ public class MemberService {
         member.setName(request.getName());
         member.setEmail(request.getEmail());
         member.setPhone(request.getPhone());
-        member.setRole(request.getRole() != null ? MemberRole.valueOf(request.getRole().toUpperCase()) : MemberRole.MEMBER);
+        MemberRole resolvedRole = MemberRole.MEMBER;
+        if (request.getRole() != null) {
+            try {
+                resolvedRole = MemberRole.valueOf(request.getRole().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                resolvedRole = MemberRole.MEMBER;
+            }
+        }
+        member.setRole(resolvedRole);
         member.setStatus(MemberStatus.PENDING); // New members start as pending
 
         Member savedMember = memberRepository.save(member);

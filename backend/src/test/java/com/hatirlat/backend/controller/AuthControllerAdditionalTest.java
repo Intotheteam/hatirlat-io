@@ -2,8 +2,8 @@ package com.hatirlat.backend.controller;
 
 import com.hatirlat.backend.dto.BaseResponse;
 import com.hatirlat.backend.dto.UserResponse;
-import com.hatirlat.backend.service.AuthService;
-import org.junit.jupiter.api.BeforeEach;
+import com.hatirlat.backend.entity.Role;
+import com.hatirlat.backend.entity.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,13 +21,19 @@ class AuthControllerAdditionalTest {
 
     @Test
     void getCurrentUser_ReturnsCurrentUser() {
-        ResponseEntity<BaseResponse<UserResponse>> response = authController.getCurrentUser();
+        User mockUser = new User();
+        mockUser.setId(1L);
+        mockUser.setUsername("testuser");
+        mockUser.setEmail("test@example.com");
+        mockUser.setRole(Role.USER);
+
+        ResponseEntity<BaseResponse<UserResponse>> response = authController.getCurrentUser(mockUser);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         assertNotNull(response.getBody().getData());
-        assertEquals("currentuser", response.getBody().getData().getUsername());
+        assertEquals("testuser", response.getBody().getData().getUsername());
         assertEquals("USER", response.getBody().getData().getRole());
     }
 }

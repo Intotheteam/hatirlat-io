@@ -32,8 +32,8 @@ public class AuthController {
         description = "Authenticate user and return JWT token",
         responses = {
             @ApiResponse(
-                responseCode = "200", 
-                description = "Successfully authenticated", 
+                responseCode = "200",
+                description = "Successfully authenticated",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))
             ),
             @ApiResponse(responseCode = "401", description = "Invalid credentials")
@@ -50,8 +50,8 @@ public class AuthController {
         description = "Register a new user account",
         responses = {
             @ApiResponse(
-                responseCode = "200", 
-                description = "Successfully registered user", 
+                responseCode = "200",
+                description = "Successfully registered user",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))
             ),
             @ApiResponse(responseCode = "400", description = "Invalid registration data")
@@ -67,14 +67,14 @@ public class AuthController {
         );
         return ResponseEntity.ok(new BaseResponse<>(true, authResponse, "Registration successful"));
     }
-    
+
     @Operation(
         summary = "Get current user",
         description = "Get information about the currently authenticated user",
         responses = {
             @ApiResponse(
-                responseCode = "200", 
-                description = "Successfully retrieved user info", 
+                responseCode = "200",
+                description = "Successfully retrieved user info",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserResponse.class))
             ),
             @ApiResponse(responseCode = "401", description = "Unauthorized - user not authenticated")
@@ -87,7 +87,7 @@ public class AuthController {
         userResponse.setUsername(currentUser.getUsername());
         userResponse.setEmail(currentUser.getEmail());
         userResponse.setRole(currentUser.getRole().name());
-        
+
         BaseResponse<UserResponse> response = new BaseResponse<>(true, userResponse, "User info retrieved successfully");
         return ResponseEntity.ok(response);
     }

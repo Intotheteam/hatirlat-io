@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
+import com.hatirlat.backend.exception.ResourceNotFoundException;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -75,15 +77,14 @@ class GroupControllerTest {
     }
 
     @Test
-    void getGroupById_NonExistingGroup_ReturnsNotFound() {
-        when(groupService.getGroupById("999")).thenReturn(null);
+    void getGroupById_NonExistingGroup_ThrowsResourceNotFoundException() {
+        when(groupService.getGroupById("999"))
+                .thenThrow(new ResourceNotFoundException("Group", "999"));
 
-        ResponseEntity<BaseResponse<GroupResponse>> response = groupController.getGroupById("999");
+        assertThrows(ResourceNotFoundException.class, () -> {
+            groupController.getGroupById("999");
+        });
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertNull(response.getBody().getData());
         verify(groupService, times(1)).getGroupById("999");
     }
 
@@ -114,15 +115,14 @@ class GroupControllerTest {
     }
 
     @Test
-    void updateGroup_NonExistingGroup_ReturnsNotFound() {
-        when(groupService.updateGroup(eq("999"), any(GroupRequest.class))).thenReturn(null);
+    void updateGroup_NonExistingGroup_ThrowsResourceNotFoundException() {
+        when(groupService.updateGroup(eq("999"), any(GroupRequest.class)))
+                .thenThrow(new ResourceNotFoundException("Group", "999"));
 
-        ResponseEntity<BaseResponse<GroupResponse>> response = groupController.updateGroup("999", groupRequest);
+        assertThrows(ResourceNotFoundException.class, () -> {
+            groupController.updateGroup("999", groupRequest);
+        });
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertNull(response.getBody().getData());
         verify(groupService, times(1)).updateGroup(eq("999"), any(GroupRequest.class));
     }
 
@@ -139,14 +139,14 @@ class GroupControllerTest {
     }
 
     @Test
-    void deleteGroup_NonExistingGroup_ReturnsNotFound() {
-        when(groupService.deleteGroup("999")).thenReturn(false);
+    void deleteGroup_NonExistingGroup_ThrowsResourceNotFoundException() {
+        doThrow(new ResourceNotFoundException("Group", "999"))
+                .when(groupService).deleteGroup("999");
 
-        ResponseEntity<BaseResponse<Void>> response = groupController.deleteGroup("999");
+        assertThrows(ResourceNotFoundException.class, () -> {
+            groupController.deleteGroup("999");
+        });
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
         verify(groupService, times(1)).deleteGroup("999");
     }
 }
