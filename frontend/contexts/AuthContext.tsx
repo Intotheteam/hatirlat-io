@@ -2,14 +2,17 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { authService } from "@/services/auth/authService";
+import { creditService } from "@/services/auth/creditService";
 import type { User } from "@/types";
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (credentials: { username: string; password: string }) => Promise<void>;
   register: (userData: { username: string; password: string; email: string }) => Promise<void>;
   logout: () => void;
+  updateCredits: (newCredits: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,16 +20,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Check if user is already authenticated on app load
     const token = authService.getToken();
     const currentUser = authService.getCurrentUser();
-    
+
     if (token && currentUser) {
       setUser(currentUser);
       setIsAuthenticated(true);
+
+      // Fetch latest credit balance on load
+      creditService.getBalance().then((balance) => {
+        updateCredits(balance);
+      }).catch(err => console.error("Could not fetch credits on load", err));
     }
+
+    setIsLoading(false);
   }, []);
 
   const login = async (credentials: { username: string; password: string }) => {
@@ -56,8 +67,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
   };
 
+  const updateCredits = (newCredits: number) => {
+    if (user) {
+      const updatedUser = { ...user, credits: newCredits };
+      setUser(updatedUser);
+      // Optional: You could update local storage here if authService provides a method for it
+      localStorage.setItem('user', JSON.stringify(updatedUser)); // Keep local state in sync
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout, updateCredits }}>
       {children}
     </AuthContext.Provider>
   );

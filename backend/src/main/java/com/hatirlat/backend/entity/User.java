@@ -36,7 +36,10 @@ public class User implements UserDetails {
     @Column(name = "timezone")
     private String timezone = "Europe/Istanbul"; // Default timezone
 
-    // Constructors  
+    @Column(name = "credits", nullable = false)
+    private Integer credits = 10; // New users get 10 free credits by default
+
+    // Constructors
     public User() {
     }
 
@@ -133,5 +136,13 @@ public class User implements UserDetails {
 
     public void setTimezone(String timezone) {
         this.timezone = timezone;
+    }
+
+    public Integer getCredits() {
+        return credits;
+    }
+
+    public void setCredits(Integer credits) {
+        this.credits = credits;
     }
 }

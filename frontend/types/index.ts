@@ -44,6 +44,17 @@ export interface User {
   username: string
   email: string
   role: string
+  credits: number
+}
+
+export type TransactionType = "ADD" | "DEDUCT"
+
+export interface CreditTransaction {
+  id: number
+  amount: number
+  transactionType: TransactionType
+  description: string
+  createdAt: string
 }
 
 export interface AuthRequest {

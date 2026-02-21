@@ -7,7 +7,9 @@ export const tr = {
         logout: "Çıkış Yap",
         profile: "Profil",
         smart_reminders: "Akıllı Hatırlatıcılar",
-        upgrade_premium: "Premium'a Yükselt"
+        upgrade_premium: "Premium'a Yükselt",
+        credits: "Kredi: {amount}",
+        buy_credits: "Kredi Yükle"
     },
     dashboard: {
         title: "Kontrol Paneli",
@@ -231,5 +233,23 @@ export const tr = {
         select_frequency: "Sıklık seçin",
         time_period_desc: "Tercihlerinize göre yeni bir hatırlatıcı ayarlayın",
         contact_name_placeholder: "İletişim Kurulacak Kişi Adı"
+    },
+    credits: {
+        title: "Kredi Yönetimi",
+        subtitle: "Mevcut kredinizi görün ve yeni paketler satın alın",
+        balance: "Mevcut Krediniz",
+        transaction_history: "İşlem Geçmişi",
+        date: "Tarih",
+        amount: "Miktar",
+        type: "Tür",
+        description: "Açıklama",
+        buy_package_1: "100 Kredi Yükle",
+        buy_package_2: "500 Kredi Yükle",
+        buy_package_3: "1000 Kredi Yükle",
+        type_add: "Yüklendi",
+        type_deduct: "Kullanıldı",
+        no_history: "Henüz bir işlem geçmişiniz bulunmuyor.",
+        buy_success: "{amount} kredi başarıyla yüklendi!",
+        buy_error: "Kredi yüklenirken bir hata oluştu."
     }
 };

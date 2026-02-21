@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   Sparkles,
-  User
+  User,
+  Coins
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -233,6 +234,14 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
             {/* Settings Button */}
             <div className="hidden lg:block">
               <SettingsButton />
+            </div>
+
+            {/* Credits Display */}
+            <div className="hidden sm:flex items-center px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-200/30 dark:border-amber-500/30 gap-1.5 cursor-pointer hover:bg-amber-500/20 transition-colors" onClick={() => router.push('/credits')}>
+              <Coins className="h-4 w-4 text-amber-500" />
+              <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                {user?.credits || 0}
+              </span>
             </div>
 
             {/* Upgrade Button */}

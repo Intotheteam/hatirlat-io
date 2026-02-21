@@ -7,7 +7,9 @@ export const en = {
         logout: "Log Out",
         profile: "Profile",
         smart_reminders: "Smart Reminders",
-        upgrade_premium: "Upgrade to Premium"
+        upgrade_premium: "Upgrade to Premium",
+        credits: "Credits: {amount}",
+        buy_credits: "Buy Credits"
     },
     dashboard: {
         title: "Dashboard",
@@ -231,5 +233,23 @@ export const en = {
         select_frequency: "Select frequency",
         time_period_desc: "Set up a new reminder according to your preferences",
         contact_name_placeholder: "Contact Name"
+    },
+    credits: {
+        title: "Credit Management",
+        subtitle: "View your current balance and buy new credit packages",
+        balance: "Current Balance",
+        transaction_history: "Transaction History",
+        date: "Date",
+        amount: "Amount",
+        type: "Type",
+        description: "Description",
+        buy_package_1: "Buy 100 Credits",
+        buy_package_2: "Buy 500 Credits",
+        buy_package_3: "Buy 1000 Credits",
+        type_add: "Added",
+        type_deduct: "Deducted",
+        no_history: "You have no transaction history yet.",
+        buy_success: "{amount} credits successfully added!",
+        buy_error: "An error occurred while adding credits."
     }
 };
