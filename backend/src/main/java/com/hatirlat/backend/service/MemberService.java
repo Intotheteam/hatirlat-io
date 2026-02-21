@@ -24,10 +24,10 @@ public class MemberService {
 
     @Autowired
     private MemberRepository memberRepository;
-    
+
     @Autowired
     private GroupRepository groupRepository;
-    
+
     @Autowired
     private GroupMemberRepository groupMemberRepository;
 
@@ -41,7 +41,7 @@ public class MemberService {
     public MemberResponse addMemberToGroup(String groupId, MemberRequest request) {
         // Verify group exists
         Group group = groupRepository.findById(Long.parseLong(groupId))
-            .orElseThrow(() -> new ResourceNotFoundException("Group", groupId));
+                .orElseThrow(() -> new ResourceNotFoundException("Group", groupId));
 
         Member member = new Member();
         member.setName(request.getName());
@@ -50,7 +50,7 @@ public class MemberService {
         MemberRole resolvedRole = MemberRole.MEMBER;
         if (request.getRole() != null) {
             try {
-                resolvedRole = MemberRole.valueOf(request.getRole().toUpperCase());
+                resolvedRole = MemberRole.valueOf(request.getRole().toUpperCase(java.util.Locale.ENGLISH));
             } catch (IllegalArgumentException e) {
                 resolvedRole = MemberRole.MEMBER;
             }
@@ -72,22 +72,24 @@ public class MemberService {
     public MemberResponse updateMember(String groupId, String memberId, MemberRequest request) {
         // Verify member is in the group
         GroupMember groupMember = groupMemberRepository.findByGroupIdAndMemberId(
-            Long.parseLong(groupId),
-            Long.parseLong(memberId)
-        );
+                Long.parseLong(groupId),
+                Long.parseLong(memberId));
         if (groupMember == null) {
             throw new ResourceNotFoundException("GroupMember",
-                String.format("Group ID: %s, Member ID: %s", groupId, memberId));
+                    String.format("Group ID: %s, Member ID: %s", groupId, memberId));
         }
 
         Member member = memberRepository.findById(Long.parseLong(memberId))
-            .orElseThrow(() -> new ResourceNotFoundException("Member", memberId));
+                .orElseThrow(() -> new ResourceNotFoundException("Member", memberId));
 
-        if (request.getName() != null) member.setName(request.getName());
-        if (request.getEmail() != null) member.setEmail(request.getEmail());
-        if (request.getPhone() != null) member.setPhone(request.getPhone());
+        if (request.getName() != null)
+            member.setName(request.getName());
+        if (request.getEmail() != null)
+            member.setEmail(request.getEmail());
+        if (request.getPhone() != null)
+            member.setPhone(request.getPhone());
         if (request.getRole() != null) {
-            member.setRole(MemberRole.valueOf(request.getRole().toUpperCase()));
+            member.setRole(MemberRole.valueOf(request.getRole().toUpperCase(java.util.Locale.ENGLISH)));
         }
 
         Member updatedMember = memberRepository.save(member);
@@ -97,12 +99,11 @@ public class MemberService {
     public boolean removeMemberFromGroup(String groupId, String memberId) {
         // Check if the member is in the group
         GroupMember groupMember = groupMemberRepository.findByGroupIdAndMemberId(
-            Long.parseLong(groupId), 
-            Long.parseLong(memberId)
-        );
+                Long.parseLong(groupId),
+                Long.parseLong(memberId));
         if (groupMember == null) {
-            throw new ResourceNotFoundException("GroupMember", 
-                String.format("Group ID: %s, Member ID: %s", groupId, memberId));
+            throw new ResourceNotFoundException("GroupMember",
+                    String.format("Group ID: %s, Member ID: %s", groupId, memberId));
         }
 
         // Remove the GroupMember entry

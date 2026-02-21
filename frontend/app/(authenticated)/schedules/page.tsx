@@ -109,7 +109,7 @@ export default function SchedulesPage() {
   }
 
   const handleNavigate = (view: View) => {
-    switch(view) {
+    switch (view) {
       case "dashboard":
         router.push("/dashboard");
         break;

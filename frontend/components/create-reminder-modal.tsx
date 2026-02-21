@@ -12,9 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Bell, Users, Mail, MessageSquare, Phone, UserIcon, Calendar, Clock, Repeat } from "lucide-react"
-import type { Reminder, CustomRepeatConfig, Group } from "@/types"
+import type { Reminder, CustomRepeatConfig, Group, Channel } from "@/types"
 import { apiService } from "@/services/api/apiService"
 import { toast } from "sonner"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 interface CreateReminderModalProps {
   isOpen: boolean
@@ -22,7 +23,7 @@ interface CreateReminderModalProps {
   onSave: (reminder: Omit<Reminder, "id">) => void
 }
 
-const channelOptions = [
+const channelOptions: { id: Channel; label: string; icon: any }[] = [
   { id: "email", label: "Email", icon: Mail },
   { id: "sms", label: "SMS", icon: Phone },
   { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
@@ -56,21 +57,23 @@ const initialFormData: Omit<Reminder, "id"> = {
 }
 
 export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateReminderModalProps) {
+  const { t } = useLanguage()
   const [formData, setFormData] = useState<Omit<Reminder, "id">>(initialFormData)
   const [groups, setGroups] = useState<Group[]>([])
   const [isLoadingGroups, setIsLoadingGroups] = useState(false)
   const [groupChoice, setGroupChoice] = useState<"select" | "create">("select")
   const [newGroupName, setNewGroupName] = useState("")
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (isOpen && formData.type === "group") {
       const fetchGroups = async () => {
-        setIsLoadingGroups(true)
         try {
-          const response = await apiService.get<{ success: boolean; data: Group[] }>("/api/groups")
-          setGroups(response.data || [])
+          setIsLoadingGroups(true)
+          const response = await apiService.get("/groups")
+          setGroups((response as Group[]) || [])
         } catch (error) {
-          toast.error("Gruplar yüklenemedi.")
+          toast.error(t("modals.groups_failed"))
         } finally {
           setIsLoadingGroups(false)
         }
@@ -82,14 +85,21 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }))
   }
 
   const handleContactChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      contact: { ...prev.contact, [name]: value },
+      contact: {
+        name: prev.contact?.name || "",
+        phone: prev.contact?.phone || "",
+        email: prev.contact?.email || "",
+        [name]: value || ""
+      } as Reminder["contact"],
     }))
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }))
   }
 
   const handleTypeChange = (value: "personal" | "group") => {
@@ -98,11 +108,13 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
 
   const handleChannelChange = (channelId: string) => {
     setFormData((prev) => {
-      const newChannels = prev.channels.includes(channelId)
-        ? prev.channels.filter((c) => c !== channelId)
-        : [...prev.channels, channelId]
+      const channel = channelId as Channel
+      const newChannels = prev.channels.includes(channel)
+        ? prev.channels.filter((c) => c !== channel)
+        : [...prev.channels, channel]
       return { ...prev, channels: newChannels }
     })
+    if (errors.channels) setErrors(prev => ({ ...prev, channels: "" }))
   }
 
   const handleRepeatChange = (value: Reminder["repeat"]) => {
@@ -131,6 +143,41 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Frontend validation
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.title.trim()) newErrors.title = "Başlık zorunludur"
+    if (!formData.dateTime) newErrors.dateTime = "Tarih ve saat zorunludur"
+    if (!formData.message.trim()) newErrors.message = "Mesaj zorunludur"
+
+    if (formData.channels.length === 0) {
+      newErrors.channels = "En az bir bildirim kanalı seçilmelidir"
+    }
+
+    if (formData.type === "personal") {
+      if (!formData.contact?.name?.trim()) newErrors.name = "Kişi adı zorunludur"
+      if (formData.channels.includes("email") && !formData.contact?.email?.trim()) {
+        newErrors.email = "E-posta kanalı için e-posta adresi zorunludur"
+      }
+      if ((formData.channels.includes("sms") || formData.channels.includes("whatsapp")) && !formData.contact?.phone?.trim()) {
+        newErrors.phone = "SMS / WhatsApp için telefon zorunludur"
+      }
+    } else {
+      if (groupChoice === "select" && (!formData.group || !formData.group.id)) {
+        newErrors.group = "Lütfen listeden bir grup seçin"
+      }
+      if (groupChoice === "create" && !newGroupName.trim()) {
+        newErrors.newGroupName = "Yeni grup adı zorunludur"
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      toast.error(t("modals.fix_errors"))
+      return
+    }
+
     const finalData: Omit<Reminder, "id"> = { ...formData }
 
     // Normalize dateTime: backend expects "yyyy-MM-dd'T'HH:mm:ss" (with seconds)
@@ -153,6 +200,7 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
     setFormData(initialFormData)
     setNewGroupName("")
     setGroupChoice("select")
+    setErrors({})
     onClose()
   }
 
@@ -166,89 +214,85 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[540px] bg-gradient-to-br from-background via-background to-accent/5 rounded-2xl border-2 border-border/60 dark:border-border/40 shadow-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-3 border-b border-border/40">
+      <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-3 border-b">
           <DialogTitle className="flex items-center gap-2.5 text-base">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/50 dark:border-indigo-500/20">
-              <Bell className="h-4 w-4 text-indigo-500" />
+            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+              <Bell className="h-4 w-4 text-primary" />
             </div>
-            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent font-bold">
-              Create New Reminder
+            <span className="font-bold text-foreground">
+              {t("modals.create_title")}
             </span>
           </DialogTitle>
-          <p className="text-[11px] text-muted-foreground mt-0.5 ml-[44px]">Set up a new reminder with your preferences</p>
+          <p className="text-sm text-muted-foreground mt-1 ml-12">{t("modals.time_period_desc")}</p>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5 py-3">
           {/* Basic Information Section */}
           <div className="space-y-3.5">
             <div>
-              <Label htmlFor="title" className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
-                <Bell className="h-3 w-3 text-indigo-500" />
-                Reminder Title
+              <Label htmlFor="title" className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
+                <Bell className="h-3.5 w-3.5 text-primary" />
+                {t("modals.title_label")}
               </Label>
               <Input
                 id="title"
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
-                className="rounded-xl h-9 border-border/60 dark:border-border/40 focus:border-indigo-500 dark:focus:border-indigo-500 transition-colors text-sm"
-                placeholder="e.g., Team Meeting, Birthday Call"
+                className={`rounded-xl h-10 transition-colors text-sm ${errors.title ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
+                placeholder={t("modals.title_placeholder")}
                 required
               />
+              {errors.title && <p className="text-xs text-destructive mt-1.5 font-medium">{errors.title}</p>}
             </div>
 
             <div>
-              <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
-                <UserIcon className="h-3 w-3 text-purple-500" />
-                Reminder Type
+              <Label className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
+                <UserIcon className="h-3.5 w-3.5 text-primary" />
+                {t("modals.type_label")}
               </Label>
               <div className="grid grid-cols-2 gap-2.5">
                 <Button
                   type="button"
                   variant={formData.type === "personal" ? "default" : "outline"}
                   onClick={() => handleTypeChange("personal")}
-                  className={`h-9 flex justify-center items-center gap-1.5 rounded-xl transition-all text-sm ${
-                    formData.type === "personal"
-                      ? "bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white border-0 shadow-md"
-                      : "border-border/60 dark:border-border/40 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20"
-                  }`}
+                  className={`h-10 flex justify-center items-center gap-1.5 rounded-xl transition-all text-sm ${formData.type === "personal" ? "shadow-md" : "hover:bg-accent"
+                    }`}
                 >
-                  <UserIcon className="h-3.5 w-3.5" />
-                  <span className="font-medium">Personal</span>
+                  <UserIcon className="h-4 w-4" />
+                  <span className="font-medium">{t("dashboard.personal")}</span>
                 </Button>
                 <Button
                   type="button"
                   variant={formData.type === "group" ? "default" : "outline"}
                   onClick={() => handleTypeChange("group")}
-                  className={`h-9 flex justify-center items-center gap-1.5 rounded-xl transition-all text-sm ${
-                    formData.type === "group"
-                      ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-md"
-                      : "border-border/60 dark:border-border/40 hover:border-purple-300 dark:hover:border-purple-700 hover:bg-purple-50/50 dark:hover:bg-purple-950/20"
-                  }`}
+                  className={`h-10 flex justify-center items-center gap-1.5 rounded-xl transition-all text-sm ${formData.type === "group" ? "shadow-md" : "hover:bg-accent"
+                    }`}
                 >
-                  <Users className="h-3.5 w-3.5" />
-                  <span className="font-medium">Group</span>
+                  <Users className="h-4 w-4" />
+                  <span className="font-medium">{t("dashboard.group")}</span>
                 </Button>
               </div>
             </div>
           </div>
 
           {/* Notification Channels Section */}
-          <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-indigo-950/20 dark:via-purple-950/10 dark:to-pink-950/20 border border-indigo-200/50 dark:border-border/40">
-            <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-2.5">
-              <MessageSquare className="h-3 w-3 text-pink-500" />
-              Notification Channels
+          <div className="p-4 rounded-xl bg-accent/20 border border-border">
+            <Label className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-3">
+              <MessageSquare className="h-3.5 w-3.5 text-primary" />
+              {t("modals.channel_label")}
             </Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 border-0">
               {channelOptions.map(({ id, label, icon: Icon }) => (
                 <label
                   key={id}
-                  className={`flex flex-col items-center justify-center gap-1.5 p-2.5 border-2 rounded-xl cursor-pointer transition-all ${
-                    formData.channels.includes(id)
-                      ? "border-indigo-500 dark:border-indigo-500 bg-gradient-to-br from-indigo-500/15 to-purple-500/15 dark:from-indigo-500/20 dark:to-purple-500/20 shadow-sm"
-                      : "border-border/60 dark:border-border/40 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-accent/50"
-                  }`}
+                  className={`flex flex-col items-center justify-center gap-1.5 p-3 border-2 rounded-xl cursor-pointer transition-all ${formData.channels.includes(id)
+                    ? "border-primary bg-primary/5 shadow-sm"
+                    : errors.channels
+                      ? "border-destructive/50 hover:border-destructive hover:bg-destructive/5"
+                      : "border-border hover:border-primary/50 hover:bg-accent/50"
+                    }`}
                 >
                   <Checkbox
                     id={`create-channel-${id}`}
@@ -256,118 +300,143 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
                     onCheckedChange={() => handleChannelChange(id)}
                     className="hidden"
                   />
-                  <Icon className={`h-4 w-4 ${formData.channels.includes(id) ? "text-indigo-600 dark:text-indigo-400" : "text-muted-foreground"}`} />
-                  <span className={`text-[11px] font-medium ${formData.channels.includes(id) ? "text-indigo-600 dark:text-indigo-400" : ""}`}>{label}</span>
+                  <Icon className={`h-4 w-4 ${formData.channels.includes(id) ? "text-primary" : errors.channels ? "text-destructive" : "text-muted-foreground"}`} />
+                  <span className={`text-xs font-medium ${formData.channels.includes(id) ? "text-primary" : errors.channels ? "text-destructive" : ""}`}>{label}</span>
                 </label>
               ))}
             </div>
+            {errors.channels && <p className="text-xs text-destructive mt-2 font-medium">{errors.channels}</p>}
           </div>
 
           {/* Recipient Section */}
           {formData.type === "personal" ? (
-            <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-200/50 dark:border-border/40 space-y-2.5">
-              <Label className="text-xs font-semibold text-foreground">Contact Information</Label>
-              <Input
-                name="name"
-                placeholder="Contact Name"
-                value={formData.contact.name}
-                onChange={handleContactChange}
-                required
-                className="rounded-xl h-9 border-border/60 dark:border-border/40 text-sm"
-              />
+            <div className={`p-4 rounded-xl border space-y-3 ${errors.name || errors.email || errors.phone ? "border-destructive/50 bg-destructive/5" : "bg-accent/20 border-border"}`}>
+              <Label className="text-sm font-semibold text-foreground">{t("modals.contact_info")}</Label>
+              <div>
+                <Input
+                  name="name"
+                  placeholder={t("modals.contact_name_placeholder")}
+                  value={formData.contact?.name || ""}
+                  onChange={handleContactChange}
+                  required
+                  className={`rounded-xl h-10 text-sm ${errors.name ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
+                />
+                {errors.name && <p className="text-xs text-destructive mt-1.5 font-medium">{errors.name}</p>}
+              </div>
+
               {showEmailField && (
-                <Input
-                  name="email"
-                  type="email"
-                  placeholder="email@example.com"
-                  value={formData.contact.email}
-                  onChange={handleContactChange}
-                  required
-                  className="rounded-xl h-9 border-border/60 dark:border-border/40 text-sm"
-                />
+                <div>
+                  <Input
+                    name="email"
+                    type="email"
+                    placeholder="eposta@ornek.com"
+                    value={formData.contact?.email || ""}
+                    onChange={handleContactChange}
+                    required
+                    className={`rounded-xl h-10 text-sm ${errors.email ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
+                  />
+                  {errors.email && <p className="text-xs text-destructive mt-1.5 font-medium">{errors.email}</p>}
+                </div>
               )}
+
               {showPhoneField && (
-                <Input
-                  name="phone"
-                  type="tel"
-                  placeholder="+1 (555) 000-0000"
-                  value={formData.contact.phone}
-                  onChange={handleContactChange}
-                  required
-                  className="rounded-xl h-9 border-border/60 dark:border-border/40 text-sm"
-                />
+                <div>
+                  <Input
+                    name="phone"
+                    type="tel"
+                    placeholder="+90 (555) 000-0000"
+                    value={formData.contact?.phone || ""}
+                    onChange={handleContactChange}
+                    required
+                    className={`rounded-xl h-10 text-sm ${errors.phone ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
+                  />
+                  {errors.phone && <p className="text-xs text-destructive mt-1.5 font-medium">{errors.phone}</p>}
+                </div>
               )}
             </div>
           ) : (
-            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200/50 dark:border-border/40 space-y-3">
-              <Label className="text-xs font-semibold text-foreground">Group Selection</Label>
+            <div className={`p-4 rounded-xl border space-y-3 ${errors.group || errors.newGroupName ? "border-destructive/50 bg-destructive/5" : "bg-accent/20 border-border"}`}>
+              <Label className="text-sm font-semibold text-foreground">{t("modals.select_group")}</Label>
               <RadioGroup
                 value={groupChoice}
                 onValueChange={(v) => setGroupChoice(v as "select" | "create")}
-                className="flex gap-3"
+                className="flex gap-4"
               >
-                <div className="flex items-center space-x-1.5">
-                  <RadioGroupItem value="select" id="select-group" className="border-purple-500 h-4 w-4" />
-                  <Label htmlFor="select-group" className="text-xs font-medium cursor-pointer">Select Existing</Label>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="select" id="select-group" className="h-4 w-4" />
+                  <Label htmlFor="select-group" className="text-sm font-medium cursor-pointer">{t("modals.select_existing_group")}</Label>
                 </div>
-                <div className="flex items-center space-x-1.5">
-                  <RadioGroupItem value="create" id="create-group" className="border-pink-500 h-4 w-4" />
-                  <Label htmlFor="create-group" className="text-xs font-medium cursor-pointer">Create New</Label>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="create" id="create-group" className="h-4 w-4" />
+                  <Label htmlFor="create-group" className="text-sm font-medium cursor-pointer">{t("modals.create_new_group")}</Label>
                 </div>
               </RadioGroup>
 
               {groupChoice === "select" ? (
-                <Select
-                  onValueChange={handleGroupSelectChange}
-                  value={formData.group.id}
-                  disabled={isLoadingGroups}
-                >
-                  <SelectTrigger className="rounded-xl h-9 border-border/60 dark:border-border/40 text-sm">
-                    <SelectValue placeholder={isLoadingGroups ? "Loading groups..." : "Select a group"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {groups.map((group) => (
-                      <SelectItem key={group.id} value={group.id}>
-                        {group.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div>
+                  <Select
+                    onValueChange={(val) => {
+                      handleGroupSelectChange(val)
+                      if (errors.group) setErrors(prev => ({ ...prev, group: "" }))
+                    }}
+                    value={formData.group?.id || ""}
+                    disabled={isLoadingGroups}
+                  >
+                    <SelectTrigger className={`rounded-xl h-10 text-sm ${errors.group ? "border-destructive focus:ring-destructive" : "border-border"}`}>
+                      <SelectValue placeholder={isLoadingGroups ? t("modals.loading_groups") : t("modals.select_group_placeholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {groups.map((group) => (
+                        <SelectItem key={group.id} value={group.id}>
+                          {group.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.group && <p className="text-xs text-destructive mt-1.5 font-medium">{errors.group}</p>}
+                </div>
               ) : (
-                <Input
-                  id="new-group-name"
-                  placeholder="e.g., Project Team, Family"
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  className="rounded-xl h-9 border-border/60 dark:border-border/40 text-sm"
-                />
+                <div>
+                  <Input
+                    id="new-group-name"
+                    placeholder={t("modals.new_group_name_placeholder")}
+                    value={newGroupName}
+                    onChange={(e) => {
+                      setNewGroupName(e.target.value)
+                      if (errors.newGroupName) setErrors(prev => ({ ...prev, newGroupName: "" }))
+                    }}
+                    className={`rounded-xl h-10 text-sm ${errors.newGroupName ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
+                  />
+                  {errors.newGroupName && <p className="text-xs text-destructive mt-1.5 font-medium">{errors.newGroupName}</p>}
+                </div>
               )}
             </div>
           )}
 
           {/* Message Section */}
           <div>
-            <Label htmlFor="message" className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
-              <MessageSquare className="h-3 w-3 text-indigo-500" />
-              Message
+            <Label htmlFor="message" className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
+              <MessageSquare className="h-3.5 w-3.5 text-primary" />
+              {t("modals.msg_label")}
             </Label>
             <Textarea
               id="message"
               name="message"
               value={formData.message}
               onChange={handleInputChange}
-              className="rounded-xl min-h-[85px] border-border/60 dark:border-border/40 focus:border-indigo-500 dark:focus:border-indigo-500 resize-none text-sm"
-              placeholder="Enter the message to be sent with this reminder..."
+              className={`rounded-xl min-h-[90px] resize-none text-sm ${errors.message ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
+              placeholder={t("modals.msg_placeholder")}
               required
             />
+            {errors.message && <p className="text-xs text-destructive mt-1.5 font-medium">{errors.message}</p>}
           </div>
 
           {/* Schedule Section */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="datetime" className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
-                <Calendar className="h-3 w-3 text-purple-500" />
-                Date & Time
+              <Label htmlFor="datetime" className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
+                <Calendar className="h-3.5 w-3.5 text-primary" />
+                {t("modals.datetime_label")}
               </Label>
               <Input
                 id="datetime"
@@ -375,26 +444,27 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
                 type="datetime-local"
                 value={formData.dateTime}
                 onChange={handleInputChange}
-                className="rounded-xl h-9 border-border/60 dark:border-border/40 text-sm"
+                className={`rounded-xl h-10 text-sm ${errors.dateTime ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
                 required
               />
+              {errors.dateTime && <p className="text-xs text-destructive mt-1.5 font-medium">{errors.dateTime}</p>}
             </div>
 
             <div>
-              <Label htmlFor="repeat" className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
-                <Repeat className="h-3 w-3 text-pink-500" />
-                Repeat
+              <Label htmlFor="repeat" className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
+                <Repeat className="h-3.5 w-3.5 text-primary" />
+                {t("modals.repeat_label")}
               </Label>
               <Select value={formData.repeat} onValueChange={handleRepeatChange}>
-                <SelectTrigger id="repeat" className="rounded-xl h-9 border-border/60 dark:border-border/40 text-sm">
-                  <SelectValue placeholder="Select frequency" />
+                <SelectTrigger id="repeat" className="rounded-xl h-10 border-border text-sm">
+                  <SelectValue placeholder={t("modals.select_frequency")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="hourly">Hourly</SelectItem>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
+                  <SelectItem value="none">{t("modals.frequency_none")}</SelectItem>
+                  <SelectItem value="hourly">{t("modals.frequency_hourly")}</SelectItem>
+                  <SelectItem value="daily">{t("modals.frequency_daily")}</SelectItem>
+                  <SelectItem value="weekly">{t("modals.frequency_weekly")}</SelectItem>
+                  <SelectItem value="custom">{t("modals.frequency_custom")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -402,13 +472,13 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
 
           {/* Custom Repeat Section */}
           {formData.repeat === "custom" && (
-            <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-200/50 dark:border-border/40 space-y-3">
-              <Label className="text-xs font-semibold text-foreground">Custom Repeat Settings</Label>
+            <div className="p-4 rounded-xl bg-accent/20 border border-border space-y-3">
+              <Label className="text-sm font-semibold text-foreground">{t("modals.custom_repeat_settings")}</Label>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-muted-foreground">Repeat every</span>
+                <span className="text-xs font-medium text-muted-foreground">{t("modals.every")}</span>
                 <Input
                   type="number"
-                  className="w-16 h-8 rounded-lg border-border/60 dark:border-border/40 text-sm"
+                  className="w-16 h-10 rounded-xl border-border text-sm"
                   value={formData.customRepeat?.interval || 1}
                   onChange={(e) => handleCustomRepeatChange("interval", e.target.value)}
                   min={1}
@@ -417,23 +487,23 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
                   value={formData.customRepeat?.frequency || "week"}
                   onValueChange={(value: "day" | "week" | "month") => handleCustomRepeatChange("frequency", value)}
                 >
-                  <SelectTrigger className="w-28 h-8 rounded-lg border-border/60 dark:border-border/40 text-sm">
+                  <SelectTrigger className="w-28 h-10 rounded-xl border-border text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="day">Day(s)</SelectItem>
-                    <SelectItem value="week">Week(s)</SelectItem>
-                    <SelectItem value="month">Month(s)</SelectItem>
+                    <SelectItem value="day">{t("modals.day")}</SelectItem>
+                    <SelectItem value="week">{t("modals.week")}</SelectItem>
+                    <SelectItem value="month">{t("modals.month")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {formData.customRepeat?.frequency === "week" && (
                 <div>
-                  <Label className="text-[11px] font-medium text-muted-foreground mb-2 block">On days</Label>
+                  <Label className="text-xs font-medium text-muted-foreground mb-2 block">{t("modals.on_days")}</Label>
                   <ToggleGroup
                     type="multiple"
                     variant="outline"
-                    className="justify-start flex-wrap gap-1.5"
+                    className="justify-start flex-wrap gap-2"
                     value={formData.customRepeat?.daysOfWeek || []}
                     onValueChange={(days) => handleCustomRepeatChange("daysOfWeek", days)}
                   >
@@ -441,7 +511,7 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
                       <ToggleGroupItem
                         key={day.value}
                         value={day.value}
-                        className="h-8 px-2.5 rounded-lg data-[state=on]:bg-indigo-500 data-[state=on]:text-white text-xs"
+                        className="h-9 px-3 rounded-lg data-[state=on]:bg-primary data-[state=on]:text-primary-foreground text-xs"
                       >
                         {day.label}
                       </ToggleGroupItem>
@@ -453,21 +523,21 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
           )}
         </form>
 
-        <DialogFooter className="gap-2 pt-3 border-t border-border/40">
+        <DialogFooter className="gap-2 pt-3 border-t">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="rounded-full h-9 px-5 border-border/60 dark:border-border/40 hover:bg-accent text-sm"
+            className="rounded-full h-10 px-6 hover:bg-accent text-sm font-medium"
           >
-            Cancel
+            {t("modals.cancel_btn")}
           </Button>
           <Button
             type="submit"
             onClick={handleSubmit}
-            className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-lg hover:shadow-xl rounded-full h-9 px-7 font-semibold transition-all text-sm"
+            className="rounded-full h-10 px-8 font-semibold transition-all text-sm shadow-md"
           >
-            Create Reminder
+            {t("modals.create_btn")}
           </Button>
         </DialogFooter>
       </DialogContent>

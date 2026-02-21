@@ -73,7 +73,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                   {this.state.errorInfo?.componentStack && (
                     <details className="mt-2">
                       <summary className="text-xs text-red-500 cursor-pointer">Stack trace</summary>
-                      <pre className="text-[10px] font-mono text-red-500/80 mt-1 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap">
+                      <pre className="text-xs font-mono text-red-500/80 mt-1 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap">
                         {this.state.errorInfo.componentStack}
                       </pre>
                     </details>

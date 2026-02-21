@@ -5,8 +5,10 @@ import com.hatirlat.backend.dto.GroupResponse;
 import com.hatirlat.backend.entity.Group;
 import com.hatirlat.backend.exception.ResourceNotFoundException;
 import com.hatirlat.backend.mapper.GroupMapper;
+import com.hatirlat.backend.repository.GroupMemberRepository;
 import com.hatirlat.backend.repository.GroupRepository;
 import com.hatirlat.backend.repository.MemberRepository;
+import com.hatirlat.backend.repository.ReminderRepository;
 import com.hatirlat.backend.util.LoggingUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,16 +32,22 @@ class GroupServiceTest {
 
     @Mock
     private GroupRepository groupRepository;
-    
+
     @Mock
     private MemberRepository memberRepository;
-    
+
+    @Mock
+    private GroupMemberRepository groupMemberRepository;
+
+    @Mock
+    private ReminderRepository reminderRepository;
+
     @Mock
     private GroupMapper groupMapper;
-    
+
     @Mock
     private LoggingUtil loggingUtil;
-    
+
     @InjectMocks
     private GroupService groupService;
 
@@ -49,11 +57,15 @@ class GroupServiceTest {
 
     @BeforeEach
     void setUp() {
+        User currentUser = new com.hatirlat.backend.entity.User();
+        currentUser.setId(1L);
+
         group = new Group();
         group.setId(1L);
         group.setName("Test Group");
         group.setDescription("Test Description");
         group.setCreatedAt(LocalDateTime.now());
+        group.setOwner(currentUser);
 
         groupResponse = new GroupResponse();
         groupResponse.setId("1");
@@ -68,27 +80,31 @@ class GroupServiceTest {
     @Test
     void testGetAllGroups() {
         // Given
-        when(groupRepository.findAll()).thenReturn(Arrays.asList(group));
+        User currentUser = new com.hatirlat.backend.entity.User();
+        currentUser.setId(1L);
+        when(groupRepository.findByOwner(currentUser)).thenReturn(Arrays.asList(group));
         when(groupMapper.toDto(group)).thenReturn(groupResponse);
 
         // When
-        List<GroupResponse> result = groupService.getAllGroups();
+        List<GroupResponse> result = groupService.getAllGroups(currentUser);
 
         // Then
         assertEquals(1, result.size());
         assertEquals("Test Group", result.get(0).getName());
-        verify(groupRepository, times(1)).findAll();
+        verify(groupRepository, times(1)).findByOwner(currentUser);
         verify(groupMapper, times(1)).toDto(group);
     }
 
     @Test
     void testGetGroupById() {
         // Given
+        User currentUser = new com.hatirlat.backend.entity.User();
+        currentUser.setId(1L);
         when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
         when(groupMapper.toDto(group)).thenReturn(groupResponse);
 
         // When
-        GroupResponse result = groupService.getGroupById("1");
+        GroupResponse result = groupService.getGroupById("1", currentUser);
 
         // Then
         assertEquals("1", result.getId());
@@ -99,11 +115,13 @@ class GroupServiceTest {
     @Test
     void testGetGroupById_NotFound() {
         // Given
+        User currentUser = new com.hatirlat.backend.entity.User();
+        currentUser.setId(1L);
         when(groupRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
         assertThrows(ResourceNotFoundException.class, () -> {
-            groupService.getGroupById("1");
+            groupService.getGroupById("1", currentUser);
         });
         verify(groupRepository, times(1)).findById(1L);
     }
@@ -111,11 +129,13 @@ class GroupServiceTest {
     @Test
     void testCreateGroup() {
         // Given
+        User currentUser = new com.hatirlat.backend.entity.User();
+        currentUser.setId(1L);
         when(groupRepository.save(any(Group.class))).thenReturn(group);
         when(groupMapper.toDto(any(Group.class))).thenReturn(groupResponse);
 
         // When
-        GroupResponse result = groupService.createGroup(groupRequest);
+        GroupResponse result = groupService.createGroup(groupRequest, currentUser);
 
         // Then
         assertEquals("1", result.getId());
@@ -125,12 +145,14 @@ class GroupServiceTest {
     @Test
     void testUpdateGroup() {
         // Given
+        User currentUser = new com.hatirlat.backend.entity.User();
+        currentUser.setId(1L);
         when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
         when(groupRepository.save(any(Group.class))).thenReturn(group);
         when(groupMapper.toDto(any(Group.class))).thenReturn(groupResponse);
 
         // When
-        GroupResponse result = groupService.updateGroup("1", groupRequest);
+        GroupResponse result = groupService.updateGroup("1", groupRequest, currentUser);
 
         // Then
         assertEquals("1", result.getId());
@@ -141,11 +163,13 @@ class GroupServiceTest {
     @Test
     void testUpdateGroup_NotFound() {
         // Given
+        User currentUser = new com.hatirlat.backend.entity.User();
+        currentUser.setId(1L);
         when(groupRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
         assertThrows(ResourceNotFoundException.class, () -> {
-            groupService.updateGroup("1", groupRequest);
+            groupService.updateGroup("1", groupRequest, currentUser);
         });
         verify(groupRepository, times(1)).findById(1L);
     }
@@ -153,25 +177,31 @@ class GroupServiceTest {
     @Test
     void testDeleteGroup() {
         // Given
-        when(groupRepository.existsById(1L)).thenReturn(true);
+        User currentUser = new com.hatirlat.backend.entity.User();
+        currentUser.setId(1L);
+        when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
 
         // When
-        boolean result = groupService.deleteGroup("1");
+        boolean result = groupService.deleteGroup("1", currentUser);
 
         // Then
         assertTrue(result);
+        verify(reminderRepository, times(1)).deleteByGroup(group);
+        verify(groupMemberRepository, times(1)).deleteByGroupId(group.getId());
         verify(groupRepository, times(1)).deleteById(1L);
     }
 
     @Test
     void testDeleteGroup_NotFound() {
         // Given
-        when(groupRepository.existsById(1L)).thenReturn(false);
+        User currentUser = new com.hatirlat.backend.entity.User();
+        currentUser.setId(1L);
+        when(groupRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
         assertThrows(ResourceNotFoundException.class, () -> {
-            groupService.deleteGroup("1");
+            groupService.deleteGroup("1", currentUser);
         });
-        verify(groupRepository, times(1)).existsById(1L);
+        verify(groupRepository, times(1)).findById(1L);
     }
 }

@@ -1,0 +1,28 @@
+## Hatirlat.io - AI Agent Rules
+
+### Project Overview
+Hatirlat.io is a reminder management application with Spring Boot 3.3.4 backend (Java 17) and Next.js 15 frontend (React 19, TypeScript).
+
+### Critical Rules
+
+1. **Always use BaseResponse<T> wrapper** for all API responses: `{ success, data, message }`
+2. **Always include @AuthenticationPrincipal User currentUser** in authenticated endpoints
+3. **Always filter data by userId** - never expose other users' data
+4. **UI text must be in Turkish** - code and variable names in English
+5. **Use String IDs in DTOs** - convert with Long.parseLong() in service layer
+6. **Frontend API calls go through Next.js proxy** - API_BASE_URL = "" (not localhost:8080)
+7. **Use Shadcn/Radix UI + Tailwind CSS** for frontend components
+8. **Add @Valid on all @RequestBody parameters**
+9. **Write tests for every new service method** (JUnit 5 + Mockito)
+10. **Use context7 MCP** for library/framework documentation lookups
+11. **Use sequential-thinking MCP** for complex multi-step problem solving
+
+### MCP Servers Available
+- **context7:** Up-to-date library docs (Spring Boot, Next.js, React, Tailwind, Shadcn)
+- **sequential-thinking:** Structured problem decomposition for complex tasks
+
+### Tech Stack Quick Reference
+- Backend: Spring Boot 3.3.4, Java 17, Maven, H2/PostgreSQL, Spring Security + JWT
+- Frontend: Next.js 15 App Router, React 19, TypeScript, Tailwind CSS, Shadcn/UI
+- Auth: JWT (HS256), localStorage, 401 auto-redirect
+- Pattern: Repository + Service + Mapper + Controller layers

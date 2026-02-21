@@ -1,0 +1,21 @@
+{
+  "success": true,
+  "data": {
+    "id": "7",
+    "title": "Test Reminder",
+    "type": "personal",
+    "message": "Test message",
+    "dateTime": "2026-05-15T15:00:00",
+    "status": "scheduled",
+    "contact": {
+      "name": "Test Person",
+      "phone": "",
+      "email": "test@example.com"
+    },
+    "group": null,
+    "channels": [],
+    "repeat": "none",
+    "customRepeat": null
+  },
+  "message": "Reminder created successfully"
+}

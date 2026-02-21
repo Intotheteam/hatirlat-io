@@ -4,4 +4,5 @@ export interface Group {
   description: string
   memberCount: number
   createdAt: string
+  inviteCode?: string
 }

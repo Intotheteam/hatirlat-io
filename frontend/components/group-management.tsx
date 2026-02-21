@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { apiManager } from "@/services/api/apiManager"
+import { useLanguage } from "@/contexts/LanguageContext"
 import type { View } from "@/types"
 
 interface GroupData {
@@ -16,11 +17,12 @@ interface GroupData {
   description?: string
   memberCount?: number
   createdAt?: string
+  inviteCode?: string
 }
 
-function getInviteLink(groupId: string): string {
+function getInviteLink(inviteCode: string): string {
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://hatirlat.io"
-  return `${baseUrl}/invite/${groupId}`
+  return `${baseUrl}/invite/${inviteCode}`
 }
 
 interface GroupManagementProps {
@@ -28,6 +30,7 @@ interface GroupManagementProps {
 }
 
 export default function GroupManagement({ onNavigate }: GroupManagementProps) {
+  const { t } = useLanguage()
   const [groups, setGroups] = useState<GroupData[]>([])
   const [isLoadingGroups, setIsLoadingGroups] = useState(true)
   const { toast } = useToast()
@@ -41,7 +44,7 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
       } catch (error) {
         console.error("Failed to fetch groups:", error)
         toast({
-          title: "Error",
+          title: t("common.error"),
           description: "Failed to load groups. Please try again.",
           variant: "destructive",
         })
@@ -74,14 +77,14 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
       setShowCreateForm(false)
 
       toast({
-        title: "Group Created",
-        description: "Your group has been created successfully",
+        title: t("common.success"),
+        description: "Grup başarıyla oluşturuldu",
       })
     } catch (error) {
       console.error("Failed to create group:", error)
       toast({
-        title: "Error",
-        description: "Failed to create group. Please try again.",
+        title: t("common.error"),
+        description: "Grup oluşturulamadı. Lütfen tekrar deneyin.",
         variant: "destructive",
       })
     } finally {
@@ -92,8 +95,8 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
   const copyInviteLink = (link: string) => {
     navigator.clipboard.writeText(link)
     toast({
-      title: "Link Copied",
-      description: "Invite link copied to clipboard",
+      title: t("manage_groups.copied"),
+      description: "Davet bağlantısı panoya kopyalandı",
     })
   }
 
@@ -104,16 +107,16 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
 
       // Update the local state to remove the group
       setGroups((prev) => prev.filter((g) => g.id !== groupId))
-      
+
       toast({
-        title: "Group Deleted",
-        description: "Group has been deleted successfully",
+        title: t("common.success"),
+        description: "Grup başarıyla silindi",
       })
     } catch (error) {
       console.error("Failed to delete group:", error)
       toast({
-        title: "Error",
-        description: "Failed to delete group. Please try again.",
+        title: t("common.error"),
+        description: "Grup silinemedi. Lütfen tekrar deneyin.",
         variant: "destructive",
       })
     }
@@ -124,22 +127,22 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
       {/* Compact Header with Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Header Card */}
-        <Card className="lg:col-span-5 rounded-2xl border-2 border-border/60 dark:border-border/40 bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-indigo-950/20 dark:via-purple-950/10 dark:to-pink-950/20 shadow-md dark:shadow-sm">
+        <Card className="lg:col-span-5 rounded-xl border bg-card text-card-foreground shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Group Manager
+                <h1 className="text-xl font-bold tracking-tight">
+                  {t("manage_groups.title")}
                 </h1>
-                <p className="text-xs text-muted-foreground mt-1">Organize and manage your notification groups</p>
+                <p className="text-sm text-muted-foreground mt-1">{t("manage_groups.subtitle")}</p>
               </div>
               <Button
                 onClick={() => setShowCreateForm(true)}
                 size="sm"
-                className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-md rounded-full"
+                className="rounded-full shadow-sm"
               >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                New
+                <Plus className="mr-1.5 h-4 w-4" />
+                {t("dashboard.create_new")}
               </Button>
             </div>
           </CardContent>
@@ -147,28 +150,28 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
 
         {/* Quick Stats */}
         <div className="lg:col-span-7 grid grid-cols-3 gap-3">
-          <Card className="rounded-2xl border-2 border-indigo-200/60 dark:border-border/40 bg-gradient-to-br from-background to-indigo-50/30 dark:to-indigo-950/10 shadow-md dark:shadow-sm">
-            <CardContent className="p-3">
+          <Card className="rounded-xl border bg-card shadow-sm">
+            <CardContent className="p-4">
               <div className="text-center">
-                <p className="text-xs text-muted-foreground">Total Groups</p>
-                <p className="text-lg font-bold">{groups.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("manage_groups.total_groups")}</p>
+                <p className="text-2xl font-bold">{groups.length}</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-2 border-purple-200/60 dark:border-border/40 bg-gradient-to-br from-background to-purple-50/30 dark:to-purple-950/10 shadow-md dark:shadow-sm">
-            <CardContent className="p-3">
+          <Card className="rounded-xl border bg-card shadow-sm">
+            <CardContent className="p-4">
               <div className="text-center">
-                <p className="text-xs text-muted-foreground">Total Members</p>
-                <p className="text-lg font-bold">{groups.reduce((acc, g) => acc + (g.memberCount || 0), 0)}</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("manage_groups.total_members")}</p>
+                <p className="text-2xl font-bold">{groups.reduce((acc, g) => acc + (g.memberCount || 0), 0)}</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-2 border-pink-200/60 dark:border-border/40 bg-gradient-to-br from-background to-pink-50/30 dark:to-pink-950/10 shadow-md dark:shadow-sm">
-            <CardContent className="p-3">
+          <Card className="rounded-xl border bg-card shadow-sm">
+            <CardContent className="p-4">
               <div className="text-center">
-                <p className="text-xs text-muted-foreground">Avg Size</p>
-                <p className="text-lg font-bold">
-                  {groups.length > 0 ? Math.round(groups.reduce((acc, g) => acc + g.memberCount, 0) / groups.length) : 0}
+                <p className="text-sm font-medium text-muted-foreground">{t("manage_groups.avg_members")}</p>
+                <p className="text-2xl font-bold">
+                  {groups.length > 0 ? Math.round(groups.reduce((acc, g) => acc + (g.memberCount || 0), 0) / groups.length) : 0}
                 </p>
               </div>
             </CardContent>
@@ -178,54 +181,54 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
 
       {/* Create Group Form */}
       {showCreateForm && (
-        <Card className="rounded-2xl border-2 border-border/60 dark:border-border/40 bg-gradient-to-br from-background to-accent/5 shadow-md dark:shadow-sm">
-          <CardHeader className="pb-3 px-4 pt-4">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Users className="h-4 w-4 text-indigo-500" />
-              Create New Group
+        <Card className="rounded-xl border bg-card shadow-sm">
+          <CardHeader className="pb-3 px-4 pt-4 border-b">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              {t("manage_groups.create_group")}
             </CardTitle>
-            <CardDescription className="text-xs">
-              Set up a new notification group for your contacts
+            <CardDescription className="text-sm">
+              Kişileriniz için yeni bir bildirim grubu ayarlayın
             </CardDescription>
           </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <form onSubmit={handleCreateGroup} className="space-y-3">
+          <CardContent className="px-5 pt-4 pb-5">
+            <form onSubmit={handleCreateGroup} className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Group Name</label>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">{t("manage_groups.group_name")}</label>
                 <Input
                   type="text"
                   value={newGroup.name}
                   onChange={(e) => setNewGroup((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Family, Work Team"
+                  placeholder={t("manage_groups.group_name_placeholder")}
                   required
-                  className="rounded-xl h-9 text-sm"
+                  className="rounded-lg h-10 text-sm"
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Description</label>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">{t("manage_groups.description")}</label>
                 <Input
                   type="text"
                   value={newGroup.description}
                   onChange={(e) => setNewGroup((prev) => ({ ...prev, description: e.target.value }))}
-                  placeholder="Brief description of the group"
-                  className="rounded-xl h-9 text-sm"
+                  placeholder={t("manage_groups.description_placeholder")}
+                  className="rounded-lg h-10 text-sm"
                 />
               </div>
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-3 pt-2">
                 <Button
                   type="submit"
-                  className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 rounded-full text-sm h-9"
+                  className="rounded-full shadow-sm text-sm h-10 px-6"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Creating..." : "Create Group"}
+                  {isLoading ? t("common.loading") : t("manage_groups.submit_create")}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowCreateForm(false)}
-                  className="rounded-full text-sm h-9"
+                  className="rounded-full text-sm h-10 px-6"
                 >
-                  Cancel
+                  {t("manage_groups.back")}
                 </Button>
               </div>
             </form>
@@ -239,121 +242,123 @@ export default function GroupManagement({ onNavigate }: GroupManagementProps) {
           <div className="col-span-full flex justify-center items-center py-10">
             <div className="flex flex-col items-center gap-2">
               <div className="h-8 w-8 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
-              <span className="text-sm text-muted-foreground">Loading groups...</span>
+              <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
             </div>
           </div>
         ) : groups.length === 0 && !showCreateForm ? (
-          <Card className="col-span-full rounded-2xl border-2 border-border/60 dark:border-border/40 bg-gradient-to-br from-background to-accent/5 shadow-md dark:shadow-sm">
+          <Card className="col-span-full rounded-xl border bg-card shadow-sm">
             <CardContent className="text-center py-16">
-              <div className="mx-auto p-4 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 w-16 h-16 flex items-center justify-center mb-4">
-                <Users className="h-8 w-8 text-indigo-400" />
+              <div className="mx-auto p-4 rounded-full bg-accent/50 w-16 h-16 flex items-center justify-center mb-4">
+                <Users className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-base font-semibold mb-1">Henuz grup olusturulmadi</h3>
+              <h3 className="text-base font-semibold mb-1 text-foreground">{t("manage_groups.no_groups")}</h3>
               <p className="text-sm text-muted-foreground mb-2 max-w-sm mx-auto">
-                Kisilerinizi gruplandirarak toplu bildirim gonderebilirsiniz
+                {t("manage_groups.no_groups_desc")}
               </p>
-              <div className="flex flex-col items-center gap-2 text-xs text-muted-foreground mb-6">
+              <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground mb-6 mt-4">
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-indigo-500/10 flex items-center justify-center text-[10px] font-bold text-indigo-500">1</span>
-                  <span>Bir grup olusturun</span>
+                  <span className="w-6 h-6 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-foreground">1</span>
+                  <span>{t("manage_groups.step_1")}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-purple-500/10 flex items-center justify-center text-[10px] font-bold text-purple-500">2</span>
-                  <span>Uyeleri ekleyin veya davet linki paylasin</span>
+                  <span className="w-6 h-6 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-foreground">2</span>
+                  <span>{t("manage_groups.step_2")}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-pink-500/10 flex items-center justify-center text-[10px] font-bold text-pink-500">3</span>
-                  <span>Gruba toplu hatirlatici gonderin</span>
+                  <span className="w-6 h-6 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-foreground">3</span>
+                  <span>{t("manage_groups.step_3")}</span>
                 </div>
               </div>
               <Button
                 onClick={() => setShowCreateForm(true)}
-                className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-md rounded-full text-sm h-9"
+                className="rounded-full shadow-sm"
               >
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Ilk Grubu Olustur
+                <Plus className="h-4 w-4 mr-1.5" />
+                {t("manage_groups.first_group")}
               </Button>
             </CardContent>
           </Card>
         ) : (
           groups.map((group) => (
-            <Card key={group.id} className="rounded-2xl border-2 border-border/60 dark:border-border/40 bg-gradient-to-br from-background to-accent/5 shadow-md dark:shadow-sm hover:shadow-lg dark:hover:shadow-md transition-all">
-              <CardHeader className="pb-3 px-4 pt-4">
+            <Card key={group.id} className="rounded-xl border bg-card shadow-sm hover:shadow-md transition-all">
+              <CardHeader className="pb-3 px-5 pt-5 border-b">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-2 flex-1 min-w-0">
-                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/50 dark:border-indigo-500/20 shrink-0">
-                      <Users className="h-4 w-4 text-indigo-500" />
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
+                      <Users className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="text-sm font-semibold truncate">{group.name}</CardTitle>
-                      <CardDescription className="text-xs truncate mt-0.5">{group.description}</CardDescription>
+                      <CardTitle className="text-base font-semibold truncate">{group.name}</CardTitle>
+                      <CardDescription className="text-sm truncate mt-1">{group.description}</CardDescription>
                     </div>
                   </div>
                   <Button
-                    variant="ghost"
+                    variant="destructive"
                     size="icon"
                     onClick={() => deleteGroup(group.id)}
-                    className="h-7 w-7 shrink-0 text-pink-500 hover:bg-pink-500/10 hover:text-pink-600 rounded-full"
+                    className="h-8 w-8 shrink-0 rounded-full"
+                    title={t("manage_groups.delete_group")}
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="px-4 pb-4 space-y-3">
+              <CardContent className="px-5 pb-5 space-y-4 pt-4">
                 {/* Stats */}
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Users className="h-3 w-3" />
-                    <span>{group.memberCount} members</span>
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Users className="h-4 w-4" />
+                    <span>{group.memberCount} {t("manage_groups.members")}</span>
                   </div>
                   <span className="text-muted-foreground">
-                    {new Date(group.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {new Date(group.createdAt || new Date()).toLocaleDateString('tr-TR', { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
 
                 {/* Invite Link */}
-                <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-200/50 dark:border-border/20">
-                  <label className="text-[10px] font-medium text-muted-foreground flex items-center gap-1 mb-1.5">
-                    <Link className="h-3 w-3" />
-                    Invite Link
+                <div className="p-3 rounded-lg bg-accent/20 border border-border">
+                  <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-2">
+                    <Link className="h-3.5 w-3.5" />
+                    {t("manage_groups.invite_link")}
                   </label>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-2">
                     <Input
                       type="text"
-                      value={getInviteLink(group.id)}
+                      value={getInviteLink(group.inviteCode || group.id)}
                       readOnly
-                      className="text-xs h-7 rounded-lg bg-background/50"
+                      className="text-sm h-9 rounded-lg bg-background"
                     />
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => copyInviteLink(getInviteLink(group.id))}
-                      className="h-7 w-7 shrink-0 rounded-lg"
+                      onClick={() => copyInviteLink(getInviteLink(group.inviteCode || group.id))}
+                      className="h-9 w-9 shrink-0 rounded-lg"
+                      title={t("manage_groups.copy")}
                     >
-                      <Copy className="h-3 w-3" />
+                      <Copy className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-1">
+                <div className="flex gap-2 pt-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => onNavigate("manage-members", group.id)}
-                    className="flex-1 rounded-full h-8 text-xs"
+                    className="flex-1 rounded-lg h-9 text-sm font-medium"
                   >
-                    <UserPlus className="h-3 w-3 mr-1.5" />
-                    Members
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    {t("manage_groups.manage_members")}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => copyInviteLink(getInviteLink(group.id))}
-                    className="flex-1 rounded-full h-8 text-xs"
+                    onClick={() => copyInviteLink(getInviteLink(group.inviteCode || group.id))}
+                    className="flex-1 rounded-lg h-9 text-sm font-medium"
                   >
-                    <Copy className="h-3 w-3 mr-1.5" />
-                    Copy
+                    <Copy className="h-4 w-4 mr-2" />
+                    {t("manage_groups.copy")}
                   </Button>
                 </div>
               </CardContent>

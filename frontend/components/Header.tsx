@@ -4,6 +4,8 @@ import type React from "react"
 
 import { Bell, ListChecks, Users, Settings, LogOut } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { Button } from "@/components/ui/button"
 import type { View } from "@/types"
 
@@ -13,41 +15,42 @@ interface HeaderProps {
   showNavigation: boolean
 }
 
-const navButtons: { view: View; label: string; icon: React.ElementType }[] = [
-  { view: "dashboard", label: "Dashboard", icon: ListChecks },
-  { view: "schedules", label: "Schedules", icon: Bell },
-  { view: "groups", label: "Groups", icon: Users },
+const navButtons: { view: View; labelKey: string; icon: React.ElementType }[] = [
+  { view: "dashboard", labelKey: "dashboard", icon: ListChecks },
+  { view: "schedules", labelKey: "schedules", icon: Bell },
+  { view: "groups", labelKey: "groups", icon: Users },
 ]
 
 export function Header({ currentView, onNavigate, showNavigation }: HeaderProps) {
+  const { t } = useLanguage()
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-primary/40 bg-primary text-primary-foreground">
       <div className="container grid h-16 max-w-screen-2xl grid-cols-3 items-center">
         {/* Left Section: Logo */}
         <div className="flex items-center justify-start">
-          <a href="#" onClick={() => onNavigate("dashboard")} className="flex items-center space-x-2">
+          <button onClick={() => onNavigate("dashboard")} className="flex items-center space-x-2 outline-none focus-visible:ring-2 focus-visible:ring-secondary rounded-md p-1">
             <Bell className="h-6 w-6" />
             <span className="hidden font-bold sm:inline-block">Hatirlat.io</span>
-          </a>
+          </button>
         </div>
 
         {/* Center Section: Navigation */}
         <div className="flex items-center justify-center">
           {showNavigation && (
             <nav className="hidden items-center space-x-1 md:flex">
-              {navButtons.map(({ view, label, icon: Icon }) => (
+              {navButtons.map(({ view, labelKey, icon: Icon }) => (
                 <Button
                   key={view}
                   variant="ghost"
                   onClick={() => onNavigate(view)}
-                  className={`h-16 rounded-none border-b-4 px-4 text-base font-semibold transition-all duration-300 hover:bg-primary/20 ${
-                    currentView === view
-                      ? "border-secondary text-secondary-foreground"
-                      : "border-transparent text-primary-foreground/70 hover:text-primary-foreground"
-                  }`}
+                  className={`h-16 rounded-none border-b-4 px-4 text-base font-semibold transition-all duration-300 hover:bg-primary/20 ${currentView === view
+                    ? "border-secondary text-secondary-foreground"
+                    : "border-transparent text-primary-foreground/70 hover:text-primary-foreground"
+                    }`}
                 >
                   <Icon className="mr-2 h-5 w-5" />
-                  {label}
+                  {t(`header.${labelKey}`)}
                 </Button>
               ))}
             </nav>
@@ -57,13 +60,14 @@ export function Header({ currentView, onNavigate, showNavigation }: HeaderProps)
         {/* Right Section: Actions */}
         <div className="flex items-center justify-end space-x-2">
           <ThemeToggle />
+          <LanguageSwitcher />
           <Button variant="ghost" size="icon">
             <Settings className="h-5 w-5" />
-            <span className="sr-only">Settings</span>
+            <span className="sr-only">{t("header.settings")}</span>
           </Button>
           <Button variant="ghost" size="icon">
             <LogOut className="h-5 w-5" />
-            <span className="sr-only">Log Out</span>
+            <span className="sr-only">{t("header.logout")}</span>
           </Button>
         </div>
       </div>

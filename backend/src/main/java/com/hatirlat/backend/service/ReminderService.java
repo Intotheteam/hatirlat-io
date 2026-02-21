@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.util.Locale;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,13 +41,13 @@ public class ReminderService {
     private final LoggingUtil loggingUtil;
 
     public ReminderService(ReminderRepository reminderRepository,
-                          GroupRepository groupRepository,
-                          MemberRepository memberRepository,
-                          ContactRepository contactRepository,
-                          CustomRepeatConfigRepository customRepeatConfigRepository,
-                          ReminderMapper reminderMapper,
-                          ContactMapper contactMapper,
-                          LoggingUtil loggingUtil) {
+            GroupRepository groupRepository,
+            MemberRepository memberRepository,
+            ContactRepository contactRepository,
+            CustomRepeatConfigRepository customRepeatConfigRepository,
+            ReminderMapper reminderMapper,
+            ContactMapper contactMapper,
+            LoggingUtil loggingUtil) {
         this.reminderRepository = reminderRepository;
         this.groupRepository = groupRepository;
         this.memberRepository = memberRepository;
@@ -62,8 +63,10 @@ public class ReminderService {
         loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "getAllReminders");
         try {
             List<Reminder> reminders = reminderRepository.findByUser(currentUser);
-            List<ReminderResponse> responses = reminders.stream().map(reminderMapper::toDto).collect(Collectors.toList());
-            loggingUtil.logServiceMethodExit(this.getClass().getSimpleName(), "getAllReminders", responses.size() + " reminders retrieved");
+            List<ReminderResponse> responses = reminders.stream().map(reminderMapper::toDto)
+                    .collect(Collectors.toList());
+            loggingUtil.logServiceMethodExit(this.getClass().getSimpleName(), "getAllReminders",
+                    responses.size() + " reminders retrieved");
             return responses;
         } catch (Exception e) {
             loggingUtil.logServiceMethodError(this.getClass().getSimpleName(), "getAllReminders", e);
@@ -76,8 +79,10 @@ public class ReminderService {
         loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "searchReminders", query);
         try {
             List<Reminder> reminders = reminderRepository.searchByUserAndTitleOrMessage(currentUser, query);
-            List<ReminderResponse> responses = reminders.stream().map(reminderMapper::toDto).collect(Collectors.toList());
-            loggingUtil.logServiceMethodExit(this.getClass().getSimpleName(), "searchReminders", responses.size() + " reminders found");
+            List<ReminderResponse> responses = reminders.stream().map(reminderMapper::toDto)
+                    .collect(Collectors.toList());
+            loggingUtil.logServiceMethodExit(this.getClass().getSimpleName(), "searchReminders",
+                    responses.size() + " reminders found");
             return responses;
         } catch (Exception e) {
             loggingUtil.logServiceMethodError(this.getClass().getSimpleName(), "searchReminders", e);
@@ -93,7 +98,8 @@ public class ReminderService {
             Page<Reminder> reminderPage = reminderRepository.findByUser(currentUser, pageable);
             List<ReminderResponse> responses = reminderPage.getContent().stream()
                     .map(reminderMapper::toDto).collect(Collectors.toList());
-            return new PageResponse<>(responses, page, size, reminderPage.getTotalElements(), reminderPage.getTotalPages());
+            return new PageResponse<>(responses, page, size, reminderPage.getTotalElements(),
+                    reminderPage.getTotalPages());
         } catch (Exception e) {
             loggingUtil.logServiceMethodError(this.getClass().getSimpleName(), "getAllRemindersPaged", e);
             throw e;
@@ -105,10 +111,12 @@ public class ReminderService {
         loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "searchRemindersPaged", query);
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "dateTime"));
-            Page<Reminder> reminderPage = reminderRepository.searchByUserAndTitleOrMessage(currentUser, query, pageable);
+            Page<Reminder> reminderPage = reminderRepository.searchByUserAndTitleOrMessage(currentUser, query,
+                    pageable);
             List<ReminderResponse> responses = reminderPage.getContent().stream()
                     .map(reminderMapper::toDto).collect(Collectors.toList());
-            return new PageResponse<>(responses, page, size, reminderPage.getTotalElements(), reminderPage.getTotalPages());
+            return new PageResponse<>(responses, page, size, reminderPage.getTotalElements(),
+                    reminderPage.getTotalPages());
         } catch (Exception e) {
             loggingUtil.logServiceMethodError(this.getClass().getSimpleName(), "searchRemindersPaged", e);
             throw e;
@@ -159,7 +167,7 @@ public class ReminderService {
                 try {
                     Long groupId = Long.parseLong(request.getGroupId());
                     Group group = groupRepository.findById(groupId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Group", request.getGroupId()));
+                            .orElseThrow(() -> new ResourceNotFoundException("Group", request.getGroupId()));
                     reminder.setGroup(group);
                     logger.debug("Group associated with reminder: {}", groupId);
                 } catch (NumberFormatException e) {
@@ -192,16 +200,19 @@ public class ReminderService {
         loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "updateReminder", id);
         try {
             Reminder existingReminder = reminderRepository.findById(Long.parseLong(id))
-                .orElseThrow(() -> new ResourceNotFoundException("Reminder", id));
+                    .orElseThrow(() -> new ResourceNotFoundException("Reminder", id));
             verifyOwnership(existingReminder, currentUser);
 
             existingReminder.setTitle(request.getTitle());
-            existingReminder.setType(parseEnumSafely(request.getType(), ReminderType.class, existingReminder.getType()));
+            existingReminder
+                    .setType(parseEnumSafely(request.getType(), ReminderType.class, existingReminder.getType()));
             existingReminder.setMessage(request.getMessage());
             existingReminder.setDateTime(request.getDateTime());
-            existingReminder.setStatus(parseEnumSafely(request.getStatus(), ReminderStatus.class, existingReminder.getStatus()));
+            existingReminder.setStatus(
+                    parseEnumSafely(request.getStatus(), ReminderStatus.class, existingReminder.getStatus()));
             existingReminder.setChannels(convertChannelStringsToEnums(request.getChannels()));
-            existingReminder.setRepeat(parseEnumSafely(request.getRepeat(), RepeatType.class, existingReminder.getRepeat()));
+            existingReminder
+                    .setRepeat(parseEnumSafely(request.getRepeat(), RepeatType.class, existingReminder.getRepeat()));
 
             // Update contact if provided
             if (request.getContact() != null) {
@@ -216,7 +227,7 @@ public class ReminderService {
                 try {
                     Long groupId = Long.parseLong(request.getGroupId());
                     Group group = groupRepository.findById(groupId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Group", request.getGroupId()));
+                            .orElseThrow(() -> new ResourceNotFoundException("Group", request.getGroupId()));
                     existingReminder.setGroup(group);
                     logger.debug("Group updated for reminder: {}", groupId);
                 } catch (NumberFormatException e) {
@@ -252,7 +263,7 @@ public class ReminderService {
         loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "updateReminderStatus", id, status);
         try {
             Reminder reminder = reminderRepository.findById(Long.parseLong(id))
-                .orElseThrow(() -> new ResourceNotFoundException("Reminder", id));
+                    .orElseThrow(() -> new ResourceNotFoundException("Reminder", id));
             verifyOwnership(reminder, currentUser);
 
             ReminderStatus newStatus = parseEnumSafely(status, ReminderStatus.class, ReminderStatus.SCHEDULED);
@@ -273,7 +284,7 @@ public class ReminderService {
         loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "deleteReminder", id);
         try {
             Reminder reminder = reminderRepository.findById(Long.parseLong(id))
-                .orElseThrow(() -> new ResourceNotFoundException("Reminder", id));
+                    .orElseThrow(() -> new ResourceNotFoundException("Reminder", id));
             verifyOwnership(reminder, currentUser);
             reminderRepository.deleteById(Long.parseLong(id));
             loggingUtil.logDatabaseOperation("DELETE", "Reminder", id);
@@ -291,18 +302,19 @@ public class ReminderService {
         }
     }
 
-    private CustomRepeatConfig createCustomRepeatConfig(com.hatirlat.backend.dto.CustomRepeatRequest customRepeatRequest) {
+    private CustomRepeatConfig createCustomRepeatConfig(
+            com.hatirlat.backend.dto.CustomRepeatRequest customRepeatRequest) {
         CustomRepeatConfig customRepeat = new CustomRepeatConfig();
         customRepeat.setInterval(customRepeatRequest.getInterval());
         if (customRepeatRequest.getFrequency() != null) {
-            customRepeat.setFrequency(parseEnumSafely(customRepeatRequest.getFrequency(), RepeatFrequency.class, RepeatFrequency.DAY));
+            customRepeat.setFrequency(
+                    parseEnumSafely(customRepeatRequest.getFrequency(), RepeatFrequency.class, RepeatFrequency.DAY));
         }
         if (customRepeatRequest.getDaysOfWeek() != null) {
             customRepeat.setDaysOfWeek(
-                customRepeatRequest.getDaysOfWeek().stream()
-                    .map(day -> parseEnumSafely(day, DayOfWeek.class, DayOfWeek.MON))
-                    .collect(Collectors.toList())
-            );
+                    customRepeatRequest.getDaysOfWeek().stream()
+                            .map(day -> parseEnumSafely(day, DayOfWeek.class, DayOfWeek.MON))
+                            .collect(Collectors.toList()));
         }
         return customRepeat;
     }
@@ -312,15 +324,17 @@ public class ReminderService {
             return defaultValue;
         }
         try {
-            return Enum.valueOf(enumClass, value.toUpperCase().trim());
+            return Enum.valueOf(enumClass, value.toUpperCase(Locale.ENGLISH).trim());
         } catch (IllegalArgumentException e) {
-            logger.debug("Invalid enum value '{}' for {}, using default: {}", value, enumClass.getSimpleName(), defaultValue);
+            logger.debug("Invalid enum value '{}' for {}, using default: {}", value, enumClass.getSimpleName(),
+                    defaultValue);
             return defaultValue;
         }
     }
 
     private List<NotificationChannel> convertChannelStringsToEnums(List<String> channelStrings) {
-        if (channelStrings == null) return null;
+        if (channelStrings == null)
+            return null;
         return channelStrings.stream()
                 .map(channel -> parseEnumSafely(channel, NotificationChannel.class, null))
                 .filter(java.util.Objects::nonNull) // Filter out any invalid enum values

@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Plus, 
-  Bell, 
-  Users, 
-  MoreHorizontal, 
-  Edit, 
-  Trash2, 
-  CheckCircle, 
+import {
+  Plus,
+  Bell,
+  Users,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  CheckCircle,
   Clock,
   TrendingUp,
   Calendar,
@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { CustomProgressBar } from "@/components/ui/custom-progress-bar";
 import { apiManager } from "@/services/api/apiManager";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import type { View, Reminder } from "@/types";
 import EditReminderModal from "../edit-reminder-modal";
 
@@ -44,6 +45,7 @@ interface StatsData {
 }
 
 export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) {
+  const { t, language } = useLanguage();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [stats, setStats] = useState<StatsData>({
     total: 0,
@@ -65,14 +67,14 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
         setLoading(true);
         const fetchedReminders = await apiManager.getReminders();
         setReminders(fetchedReminders);
-        
+
         // Calculate stats
         const now = new Date();
         const total = fetchedReminders.length;
         const active = fetchedReminders.filter(r => r.status === "scheduled").length;
         const completed = fetchedReminders.filter(r => r.status === "sent").length;
-        const groups = new Set(fetchedReminders.map(r => r.group.id)).size;
-        const overdue = fetchedReminders.filter(r => 
+        const groups = new Set(fetchedReminders.map(r => r.group?.id || '')).size;
+        const overdue = fetchedReminders.filter(r =>
           new Date(r.dateTime) < now && r.status === "scheduled"
         ).length;
         const today = fetchedReminders.filter(r => {
@@ -80,7 +82,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
           const todayDate = new Date();
           return reminderDate.toDateString() === todayDate.toDateString() && r.status === "scheduled";
         }).length;
-        
+
         setStats({ total, active, completed, groups, overdue, today });
       } catch (error) {
         toast({
@@ -100,7 +102,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
     if (action === "edit") {
       setSelectedReminder(reminder);
       setEditModalOpen(true);
-    } 
+    }
     else if (action === "delete") {
       try {
         await apiManager.deleteReminder(reminder.id);
@@ -111,8 +113,8 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
         const total = updatedReminders.length;
         const active = updatedReminders.filter(r => r.status === "scheduled").length;
         const completed = updatedReminders.filter(r => r.status === "sent").length;
-        const groups = new Set(updatedReminders.map(r => r.group.id)).size;
-        const overdue = updatedReminders.filter(r => 
+        const groups = new Set(updatedReminders.map(r => r.group?.id || '')).size;
+        const overdue = updatedReminders.filter(r =>
           new Date(r.dateTime) < now && r.status === "scheduled"
         ).length;
         const today = updatedReminders.filter(r => {
@@ -120,9 +122,9 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
           const todayDate = new Date();
           return reminderDate.toDateString() === todayDate.toDateString() && r.status === "scheduled";
         }).length;
-        
+
         setStats({ total, active, completed, groups, overdue, today });
-        
+
         toast({
           title: "Success",
           description: "Reminder deleted successfully"
@@ -140,27 +142,27 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
         const newStatus = reminder.status === "scheduled" ? "paused" : "scheduled";
         const updatedReminder = await apiManager.updateReminder(reminder.id, { ...reminder, status: newStatus });
         setReminders(reminders.map(r => r.id === reminder.id ? updatedReminder : r));
-        
+
         // Recalculate stats after toggle
         const now = new Date();
-        const active = reminders.map(r => r.id === reminder.id ? {...r, status: newStatus} : r)
+        const active = reminders.map(r => r.id === reminder.id ? { ...r, status: newStatus } : r)
           .filter(r => r.status === "scheduled").length;
-        const overdue = reminders.map(r => r.id === reminder.id ? {...r, status: newStatus} : r)
+        const overdue = reminders.map(r => r.id === reminder.id ? { ...r, status: newStatus } : r)
           .filter(r => new Date(r.dateTime) < now && r.status === "scheduled").length;
-        const today = reminders.map(r => r.id === reminder.id ? {...r, status: newStatus} : r)
+        const today = reminders.map(r => r.id === reminder.id ? { ...r, status: newStatus } : r)
           .filter(r => {
             const reminderDate = new Date(r.dateTime);
             const todayDate = new Date();
             return reminderDate.toDateString() === todayDate.toDateString() && r.status === "scheduled";
           }).length;
-        
+
         setStats(prev => ({
           ...prev,
           active,
           overdue,
           today
         }));
-        
+
         toast({
           title: "Success",
           description: `Reminder ${newStatus}`
@@ -209,7 +211,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
 
   if (loading) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="space-y-6"
@@ -278,10 +280,10 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Welcome back!
+                  {t("dashboard.welcome_back")}
                 </h1>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                  {new Date().toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
                 </p>
               </div>
               <Button
@@ -290,7 +292,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                 className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-md rounded-full"
               >
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
-                New
+                {t("dashboard.new")}
               </Button>
             </div>
           </CardContent>
@@ -305,7 +307,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                   <Activity className="h-3.5 w-3.5 text-indigo-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground truncate">Active</p>
+                  <p className="text-xs text-muted-foreground truncate">{t("dashboard.active_status")}</p>
                   <p className="text-lg font-bold">{stats.active}</p>
                 </div>
               </div>
@@ -318,7 +320,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                   <Calendar className="h-3.5 w-3.5 text-purple-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground truncate">Today</p>
+                  <p className="text-xs text-muted-foreground truncate">{t("dashboard.today")}</p>
                   <p className="text-lg font-bold">{stats.today}</p>
                 </div>
               </div>
@@ -331,7 +333,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                   <Clock className="h-3.5 w-3.5 text-pink-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground truncate">Overdue</p>
+                  <p className="text-xs text-muted-foreground truncate">{t("dashboard.overdue")}</p>
                   <p className="text-lg font-bold">{stats.overdue}</p>
                 </div>
               </div>
@@ -349,28 +351,28 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
             <CardHeader className="pb-3 px-4 pt-4 border-b border-border/30 dark:border-border/20">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-indigo-500" />
-                Statistics Overview
+                {t("dashboard.statistics_overview")}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-2">
               <div className="flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-200/50 dark:border-border/20">
                 <div className="flex items-center gap-2">
                   <Bell className="h-3.5 w-3.5 text-indigo-500" />
-                  <span className="text-xs font-medium">Total Reminders</span>
+                  <span className="text-xs font-medium">{t("dashboard.total_reminders")}</span>
                 </div>
                 <Badge variant="secondary" className="text-xs">{stats.total}</Badge>
               </div>
               <div className="flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200/50 dark:border-border/20">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-3.5 w-3.5 text-purple-500" />
-                  <span className="text-xs font-medium">Completed</span>
+                  <span className="text-xs font-medium">{t("dashboard.completed")}</span>
                 </div>
                 <Badge variant="secondary" className="text-xs">{stats.completed}</Badge>
               </div>
               <div className="flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-pink-50/50 to-rose-50/50 dark:from-pink-950/20 dark:to-rose-950/20 border border-pink-200/50 dark:border-border/20">
                 <div className="flex items-center gap-2">
                   <Users className="h-3.5 w-3.5 text-pink-500" />
-                  <span className="text-xs font-medium">Groups</span>
+                  <span className="text-xs font-medium">{t("header.groups")}</span>
                 </div>
                 <Badge variant="secondary" className="text-xs">{stats.groups}</Badge>
               </div>
@@ -382,13 +384,13 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
             <CardHeader className="pb-3 px-4 pt-4">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-indigo-500" />
-                Performance
+                {t("dashboard.performance")}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-3">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium">Completion Rate</span>
+                  <span className="text-xs font-medium">{t("dashboard.completion_rate")}</span>
                   <span className="text-xs font-bold">{completionPercentage}%</span>
                 </div>
                 <CustomProgressBar value={completionPercentage} max={100} />
@@ -396,11 +398,11 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <div className="text-center p-2 rounded-lg bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-200/50 dark:border-border/20">
                   <div className="text-sm font-bold">{stats.completed}</div>
-                  <div className="text-[10px] text-muted-foreground">Done</div>
+                  <div className="text-xs text-muted-foreground">{t("dashboard.done")}</div>
                 </div>
                 <div className="text-center p-2 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200/50 dark:border-border/20">
                   <div className="text-sm font-bold">{stats.active}</div>
-                  <div className="text-[10px] text-muted-foreground">Pending</div>
+                  <div className="text-xs text-muted-foreground">{t("dashboard.pending")}</div>
                 </div>
               </div>
             </CardContent>
@@ -411,7 +413,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
             <CardHeader className="pb-3 px-4 pt-4">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Target className="h-4 w-4 text-indigo-500" />
-                Quick Actions
+                {t("dashboard.quick_actions")}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-2">
@@ -421,7 +423,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                 className="w-full justify-start rounded-xl text-xs h-9 border-border/40"
               >
                 <Calendar className="mr-2 h-3.5 w-3.5" />
-                View All Schedules
+                {t("dashboard.view_all_schedules")}
               </Button>
               <Button
                 onClick={() => onNavigate("groups")}
@@ -429,7 +431,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                 className="w-full justify-start rounded-xl text-xs h-9 border-border/40"
               >
                 <Users className="mr-2 h-3.5 w-3.5" />
-                Manage Groups
+                {t("dashboard.manage_groups")}
               </Button>
             </CardContent>
           </Card>
@@ -445,7 +447,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                   <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-200/50 dark:border-indigo-500/20">
                     <Bell className="h-4 w-4 text-indigo-500" />
                   </div>
-                  <span>Upcoming Reminders</span>
+                  <span>{t("dashboard.upcoming_reminders")}</span>
                 </div>
                 <Button
                   variant="ghost"
@@ -453,7 +455,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                   onClick={() => onNavigate("schedules")}
                   className="text-xs h-7 rounded-full"
                 >
-                  View All
+                  {t("dashboard.view_all")}
                 </Button>
               </CardTitle>
             </CardHeader>
@@ -477,8 +479,8 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate text-xs">{reminder.title}</p>
                             <div className="flex items-center gap-1.5 mt-0.5">
-                              <p className="text-[10px] text-muted-foreground truncate">
-                                {new Date(reminder.dateTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              <p className="text-xs text-muted-foreground truncate">
+                                {new Date(reminder.dateTime).toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                               </p>
                               <div className="flex gap-0.5">
                                 {reminder.channels.slice(0, 2).map((channel) => {
@@ -487,7 +489,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                                   else if (channel === 'sms') icon = "📱";
                                   else if (channel === 'whatsapp') icon = "💬";
                                   return (
-                                    <span key={channel} className="text-[10px]" title={channel}>
+                                    <span key={channel} className="text-xs" title={channel}>
                                       {icon}
                                     </span>
                                   );
@@ -505,14 +507,14 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onSelect={() => handleReminderAction("edit", reminder)}>
                               <Edit className="mr-2 h-3.5 w-3.5" />
-                              <span className="text-xs">Edit</span>
+                              <span className="text-xs">{t("common.edit")}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
                               onSelect={() => handleReminderAction("delete", reminder)}
                             >
                               <Trash2 className="mr-2 h-3.5 w-3.5" />
-                              <span className="text-xs">Delete</span>
+                              <span className="text-xs">{t("common.delete")}</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -529,21 +531,21 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                       </div>
                       {stats.total === 0 ? (
                         <>
-                          <h3 className="mt-3 text-sm font-medium">Henuz hatirlatici yok</h3>
-                          <p className="text-xs text-muted-foreground mt-1">Ilk hatirlaticiyi olusturarak baslayabilirsiniz</p>
+                          <h3 className="mt-3 text-sm font-medium">{t("dashboard.no_reminders_title")}</h3>
+                          <p className="text-xs text-muted-foreground mt-1">{t("dashboard.no_reminders_hint")}</p>
                           <Button
                             onClick={() => onNavigate("schedules")}
                             size="sm"
                             className="mt-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-md rounded-full text-xs"
                           >
                             <Plus className="mr-1.5 h-3 w-3" />
-                            Hatirlatici Olustur
+                            {t("dashboard.create_reminder")}
                           </Button>
                         </>
                       ) : (
                         <>
-                          <h3 className="mt-3 text-sm font-medium">Yaklasan hatirlatici yok</h3>
-                          <p className="text-xs text-muted-foreground mt-1">Tum isler tamamlandi!</p>
+                          <h3 className="mt-3 text-sm font-medium">{t("dashboard.no_upcoming_reminders")}</h3>
+                          <p className="text-xs text-muted-foreground mt-1">{t("dashboard.all_tasks_completed")}</p>
                         </>
                       )}
                     </div>
@@ -560,7 +562,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                 <div className="p-1.5 rounded-lg bg-purple-500/10 border border-purple-200/50 dark:border-purple-500/20">
                   <Target className="h-4 w-4 text-purple-500" />
                 </div>
-                Quick Tips
+                {t("dashboard.quick_tips")}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-2">
@@ -570,8 +572,8 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                     <Bell className="h-3 w-3 text-indigo-500" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-medium">Optimal Timing</h4>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Schedule 1-2 hours before events</p>
+                    <h4 className="text-xs font-medium">{t("dashboard.optimal_timing")}</h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.optimal_timing_desc")}</p>
                   </div>
                 </div>
               </div>
@@ -581,8 +583,8 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                     <MessageSquare className="h-3 w-3 text-purple-500" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-medium">Channel Selection</h4>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">WhatsApp for urgent, Email for details</p>
+                    <h4 className="text-xs font-medium">{t("dashboard.channel_selection")}</h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.channel_selection_desc")}</p>
                   </div>
                 </div>
               </div>
@@ -599,7 +601,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                 <div className="p-1.5 rounded-lg bg-pink-500/10 border border-pink-200/50 dark:border-pink-500/20">
                   <MessageSquare className="h-4 w-4 text-pink-500" />
                 </div>
-                Channels
+                {t("dashboard.channels")}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
@@ -607,22 +609,22 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                 <div className="p-2.5 rounded-lg bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-200/50 dark:border-border/20 text-center">
                   <div className="text-base mb-0.5">✉️</div>
                   <div className="text-sm font-bold">{reminders.filter(r => r.channels.includes('email')).length}</div>
-                  <p className="text-[10px] text-muted-foreground">Email</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.channel_email")}</p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200/50 dark:border-border/20 text-center">
                   <div className="text-base mb-0.5">📱</div>
                   <div className="text-sm font-bold">{reminders.filter(r => r.channels.includes('sms')).length}</div>
-                  <p className="text-[10px] text-muted-foreground">SMS</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.channel_sms")}</p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-gradient-to-br from-pink-50/50 to-rose-50/50 dark:from-pink-950/20 dark:to-rose-950/20 border border-pink-200/50 dark:border-border/20 text-center">
                   <div className="text-base mb-0.5">💬</div>
                   <div className="text-sm font-bold">{reminders.filter(r => r.channels.includes('whatsapp')).length}</div>
-                  <p className="text-[10px] text-muted-foreground">WhatsApp</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.channel_whatsapp")}</p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-gradient-to-br from-indigo-50/50 to-blue-50/50 dark:from-indigo-950/20 dark:to-blue-950/20 border border-indigo-200/50 dark:border-border/20 text-center">
                   <div className="text-base mb-0.5">🔔</div>
                   <div className="text-sm font-bold">{reminders.filter(r => r.channels.includes('push')).length}</div>
-                  <p className="text-[10px] text-muted-foreground">Push</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.channel_push")}</p>
                 </div>
               </div>
             </CardContent>
@@ -635,7 +637,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                 <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-200/50 dark:border-indigo-500/20">
                   <Activity className="h-4 w-4 text-indigo-500" />
                 </div>
-                Recent Activity
+                {t("dashboard.recent_activity")}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
@@ -650,8 +652,8 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium truncate">{item.title}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {item.status === "sent" ? "Completed" : "Scheduled"}
+                      <p className="text-xs text-muted-foreground">
+                        {item.status === "sent" ? t("dashboard.completed") : t("dashboard.scheduled_status")}
                       </p>
                     </div>
                   </div>
@@ -661,8 +663,8 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                     <div className="mx-auto p-2 rounded-full bg-gradient-to-br from-purple-500/10 to-pink-500/10 w-10 h-10 flex items-center justify-center mb-2">
                       <Activity className="h-5 w-5 text-purple-400" />
                     </div>
-                    <p className="text-xs text-muted-foreground">Henuz bir aktivite bulunmuyor</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Hatirlatici olusturdukca burada gorunecek</p>
+                    <p className="text-xs text-muted-foreground">{t("dashboard.no_activity")}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.activity_hint")}</p>
                   </div>
                 )}
               </div>

@@ -16,11 +16,13 @@ import {
   User
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { SettingsButton } from "./settings-button";
 import { UpgradeButton } from "./upgrade-button";
 import type { View } from "@/types";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -36,14 +38,15 @@ interface PremiumHeaderProps {
 }
 
 const navItems = [
-  { view: "dashboard" as View, label: "Home", icon: Home, path: "/dashboard" },
-  { view: "schedules" as View, label: "Schedule", icon: Calendar, path: "/schedules" },
-  { view: "groups" as View, label: "Groups", icon: Users, path: "/groups" },
+  { view: "dashboard" as View, labelKey: "dashboard", icon: Home, path: "/dashboard" },
+  { view: "schedules" as View, labelKey: "schedules", icon: Calendar, path: "/schedules" },
+  { view: "groups" as View, labelKey: "groups", icon: Users, path: "/groups" },
 ];
 
 export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
 
   const handleNavigation = (view: View) => {
@@ -51,7 +54,7 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
       onNavigate(view);
     } else {
       // Default behavior: navigate to the corresponding route
-      switch(view) {
+      switch (view) {
         case "dashboard":
           router.push("/dashboard");
           break;
@@ -92,45 +95,45 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
           <div className="flex items-center">
             <Link href="/dashboard" className="flex items-center gap-3 group flex-shrink-0">
               <div className="relative">
-              {/* Animated gradient glow */}
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 group-hover:blur-xl transition-all duration-500 animate-pulse"></div>
+                {/* Animated gradient glow */}
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl blur-lg opacity-50 group-hover:opacity-75 group-hover:blur-xl transition-all duration-500 animate-pulse"></div>
 
-              {/* Icon container with enhanced styling */}
-              <div className="relative p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300 border border-white/20">
-                <div className="relative">
-                  <Bell className="h-5 w-5 text-white drop-shadow-md" />
-                  {/* Small notification dot */}
-                  <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-white rounded-full shadow-sm group-hover:scale-110 transition-transform"></div>
+                {/* Icon container with enhanced styling */}
+                <div className="relative p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300 border border-white/20">
+                  <div className="relative">
+                    <Bell className="h-5 w-5 text-white drop-shadow-md" />
+                    {/* Small notification dot */}
+                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-white rounded-full shadow-sm group-hover:scale-110 transition-transform"></div>
+                  </div>
+                </div>
+
+                {/* Decorative ring */}
+                <div className="absolute inset-0 rounded-xl border-2 border-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" style={{ padding: '2px' }}></div>
+              </div>
+
+              <div className="flex flex-col gap-0.5">
+                {/* Main logo text with enhanced gradient */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-indigo-500 group-hover:via-purple-500 group-hover:to-pink-500 transition-all duration-300">
+                    Hatirlat.io
+                  </span>
+                  {/* Premium badge */}
+                  <div className="hidden sm:flex items-center px-1.5 py-0.5 rounded-md bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 dark:border-indigo-500/30">
+                    <Sparkles className="h-2.5 w-2.5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                </div>
+
+                {/* Tagline with icon */}
+                <div className="flex items-center gap-1 hidden sm:flex">
+                  <div className="w-1 h-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                  <span className="text-xs text-muted-foreground font-medium tracking-wide">{t("header.smart_reminders")}</span>
                 </div>
               </div>
+            </Link>
+          </div>
 
-              {/* Decorative ring */}
-              <div className="absolute inset-0 rounded-xl border-2 border-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" style={{ padding: '2px' }}></div>
-            </div>
-
-            <div className="flex flex-col gap-0.5">
-              {/* Main logo text with enhanced gradient */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-indigo-500 group-hover:via-purple-500 group-hover:to-pink-500 transition-all duration-300">
-                  Hatirlat.io
-                </span>
-                {/* Premium badge */}
-                <div className="hidden sm:flex items-center px-1.5 py-0.5 rounded-md bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 dark:border-indigo-500/30">
-                  <Sparkles className="h-2.5 w-2.5 text-indigo-600 dark:text-indigo-400" />
-                </div>
-              </div>
-
-              {/* Tagline with icon */}
-              <div className="flex items-center gap-1 hidden sm:flex">
-                <div className="w-1 h-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-                <span className="text-[10px] text-muted-foreground font-medium tracking-wide">Smart Reminders</span>
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2">
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.view;
@@ -139,11 +142,10 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                   <Link href={item.path}>
                     <Button
                       variant="ghost"
-                      className={`px-6 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden ${
-                        isActive
-                          ? "text-foreground font-semibold shadow-md bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-pink-950/30 border border-indigo-200/40 dark:border-indigo-500/30"
-                          : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-br hover:from-accent/50 hover:to-accent/30 hover:border hover:border-border/40"
-                      }`}
+                      className={`px-6 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden ${isActive
+                        ? "text-foreground font-semibold shadow-md bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-pink-950/30 border border-indigo-200/40 dark:border-indigo-500/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-br hover:from-accent/50 hover:to-accent/30 hover:border hover:border-border/40"
+                        }`}
                       onClick={(e) => {
                         e.preventDefault(); // Prevent default click behavior since we're using Link
                         handleNavigation(item.view);
@@ -155,17 +157,15 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                       )}
 
                       {/* Icon with enhanced styling */}
-                      <div className={`relative p-1 rounded-lg mr-2 inline-flex ${
-                        isActive
-                          ? "bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 dark:border-indigo-500/30"
-                          : "group-hover:bg-accent/50"
-                      }`}>
-                        <Icon className={`h-4 w-4 transition-transform duration-300 ${
-                          isActive ? "text-indigo-600 dark:text-indigo-400" : ""
-                        } group-hover:scale-110`} />
+                      <div className={`relative p-1 rounded-lg mr-2 inline-flex ${isActive
+                        ? "bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 dark:border-indigo-500/30"
+                        : "group-hover:bg-accent/50"
+                        }`}>
+                        <Icon className={`h-4 w-4 transition-transform duration-300 ${isActive ? "text-indigo-600 dark:text-indigo-400" : ""
+                          } group-hover:scale-110`} />
                       </div>
 
-                      <span className="relative z-10">{item.label}</span>
+                      <span className="relative z-10">{t(`header.${item.labelKey}`)}</span>
 
                       {/* Hover glow effect */}
                       <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-indigo-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 transition-all duration-300"></div>
@@ -192,6 +192,8 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
           <div className="flex items-center gap-3">
             {/* Theme Toggle */}
             <ThemeToggle />
+            {/* Language Switcher */}
+            <LanguageSwitcher />
 
             {/* User Profile */}
             <DropdownMenu>
@@ -209,7 +211,7 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                   <DropdownMenuItem asChild>
                     <div className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
+                      <span>{t("header.profile")}</span>
                     </div>
                   </DropdownMenuItem>
                 </Link>
@@ -217,13 +219,13 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                   <DropdownMenuItem asChild>
                     <div className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
+                      <span>{t("header.settings")}</span>
                     </div>
                   </DropdownMenuItem>
                 </Link>
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
+                  <span>{t("header.logout")}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -284,23 +286,20 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                       <Link href={item.path} onClick={() => handleNavigation(item.view)}>
                         <Button
                           variant={isActive ? "secondary" : "ghost"}
-                          className={`w-full justify-start rounded-xl transition-all duration-300 ${
-                            isActive
-                              ? "bg-gradient-to-r from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-pink-950/30 border-2 border-indigo-200/40 dark:border-indigo-500/30 shadow-md font-semibold"
-                              : "hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/30 hover:border hover:border-border/40"
-                          }`}
+                          className={`w-full justify-start rounded-xl transition-all duration-300 ${isActive
+                            ? "bg-gradient-to-r from-indigo-50/50 via-purple-50/30 to-pink-50/50 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-pink-950/30 border-2 border-indigo-200/40 dark:border-indigo-500/30 shadow-md font-semibold"
+                            : "hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/30 hover:border hover:border-border/40"
+                            }`}
                         >
                           {/* Icon container */}
-                          <div className={`p-1.5 rounded-lg mr-3 ${
-                            isActive
-                              ? "bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 dark:border-indigo-500/30"
-                              : "group-hover:bg-accent/50"
-                          }`}>
-                            <Icon className={`h-5 w-5 ${
-                              isActive ? "text-indigo-600 dark:text-indigo-400" : ""
-                            } group-hover:scale-110 transition-transform`} />
+                          <div className={`p-1.5 rounded-lg mr-3 ${isActive
+                            ? "bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 dark:border-indigo-500/30"
+                            : "group-hover:bg-accent/50"
+                            }`}>
+                            <Icon className={`h-5 w-5 ${isActive ? "text-indigo-600 dark:text-indigo-400" : ""
+                              } group-hover:scale-110 transition-transform`} />
                           </div>
-                          {item.label}
+                          {t(`header.${item.labelKey}`)}
 
                           {/* Active indicator */}
                           {isActive && (
@@ -329,7 +328,7 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                       <div className="p-1 rounded-lg bg-white/10 mr-2 inline-flex">
                         <Sparkles className="h-4 w-4 animate-pulse" />
                       </div>
-                      Upgrade to Premium
+                      {t("header.upgrade_premium")}
                     </Button>
                   </div>
 
@@ -347,7 +346,7 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                         <div className="p-1 rounded-lg group-hover:bg-accent/50 mr-2 inline-flex">
                           <Settings className="h-4 w-4 group-hover:rotate-90 transition-transform duration-500" />
                         </div>
-                        Settings
+                        {t("header.settings")}
                       </Button>
                     </Link>
                     <div className="relative group flex-1">
@@ -359,7 +358,7 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                         <div className="p-1 rounded-lg group-hover:bg-accent/50 mr-2 inline-flex">
                           <LogOut className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                         </div>
-                        Logout
+                        {t("header.logout")}
                       </Button>
                     </div>
                   </div>

@@ -26,6 +26,8 @@ public interface ReminderRepository extends JpaRepository<Reminder, Long> {
 
     List<Reminder> findByGroup(Group group);
 
+    void deleteByGroup(Group group);
+
     @Query("SELECT r FROM Reminder r WHERE LOWER(r.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(r.message) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<Reminder> searchByTitleOrMessage(@Param("query") String query);
 
@@ -37,5 +39,6 @@ public interface ReminderRepository extends JpaRepository<Reminder, Long> {
     List<Reminder> searchByUserAndTitleOrMessage(@Param("user") User user, @Param("query") String query);
 
     @Query("SELECT r FROM Reminder r WHERE r.user = :user AND (LOWER(r.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(r.message) LIKE LOWER(CONCAT('%', :query, '%')))")
-    Page<Reminder> searchByUserAndTitleOrMessage(@Param("user") User user, @Param("query") String query, Pageable pageable);
+    Page<Reminder> searchByUserAndTitleOrMessage(@Param("user") User user, @Param("query") String query,
+            Pageable pageable);
 }

@@ -8,6 +8,7 @@ import com.hatirlat.backend.mapper.GroupMapper;
 import com.hatirlat.backend.repository.GroupMemberRepository;
 import com.hatirlat.backend.repository.GroupRepository;
 import com.hatirlat.backend.repository.MemberRepository;
+import com.hatirlat.backend.repository.ReminderRepository;
 import com.hatirlat.backend.util.LoggingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,14 +28,17 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final MemberRepository memberRepository;
     private final GroupMemberRepository groupMemberRepository;
+    private final ReminderRepository reminderRepository;
     private final GroupMapper groupMapper;
     private final LoggingUtil loggingUtil;
 
     public GroupService(GroupRepository groupRepository, MemberRepository memberRepository,
-                        GroupMemberRepository groupMemberRepository, GroupMapper groupMapper, LoggingUtil loggingUtil) {
+            GroupMemberRepository groupMemberRepository, ReminderRepository reminderRepository, GroupMapper groupMapper,
+            LoggingUtil loggingUtil) {
         this.groupRepository = groupRepository;
         this.memberRepository = memberRepository;
         this.groupMemberRepository = groupMemberRepository;
+        this.reminderRepository = reminderRepository;
         this.groupMapper = groupMapper;
         this.loggingUtil = loggingUtil;
     }
@@ -45,7 +49,8 @@ public class GroupService {
         try {
             List<Group> groups = groupRepository.findByOwner(currentUser);
             List<GroupResponse> responses = groups.stream().map(groupMapper::toDto).collect(Collectors.toList());
-            loggingUtil.logServiceMethodExit(this.getClass().getSimpleName(), "getAllGroups", responses.size() + " groups retrieved");
+            loggingUtil.logServiceMethodExit(this.getClass().getSimpleName(), "getAllGroups",
+                    responses.size() + " groups retrieved");
             return responses;
         } catch (Exception e) {
             loggingUtil.logServiceMethodError(this.getClass().getSimpleName(), "getAllGroups", e);
@@ -116,6 +121,11 @@ public class GroupService {
             Group group = groupRepository.findById(Long.parseLong(id))
                     .orElseThrow(() -> new ResourceNotFoundException("Group", id));
             verifyOwnership(group, currentUser);
+
+            // Delete associated entities to prevent foreign key constraint violations
+            reminderRepository.deleteByGroup(group);
+            groupMemberRepository.deleteByGroupId(group.getId());
+
             groupRepository.deleteById(Long.parseLong(id));
             loggingUtil.logDatabaseOperation("DELETE", "Group", id);
             loggingUtil.logServiceMethodExit(this.getClass().getSimpleName(), "deleteGroup", true);
@@ -158,7 +168,7 @@ public class GroupService {
     }
 
     private String generateInviteCode() {
-        return UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        return UUID.randomUUID().toString().substring(0, 8).toUpperCase(java.util.Locale.ENGLISH);
     }
 
     private void verifyOwnership(Group group, User currentUser) {
