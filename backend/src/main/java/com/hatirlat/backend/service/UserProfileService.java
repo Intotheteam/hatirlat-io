@@ -32,6 +32,8 @@ public class UserProfileService {
         response.setEmail(currentUser.getEmail());
         response.setRole(currentUser.getRole().name());
         response.setTimezone(currentUser.getTimezone());
+        response.setPremium(currentUser.isPremium());
+        response.setCredits(currentUser.getCredits() != null ? currentUser.getCredits() : 0);
         return response;
     }
 
@@ -73,6 +75,8 @@ public class UserProfileService {
         response.setEmail(savedUser.getEmail());
         response.setRole(savedUser.getRole().name());
         response.setTimezone(savedUser.getTimezone());
+        response.setPremium(savedUser.isPremium());
+        response.setCredits(savedUser.getCredits() != null ? savedUser.getCredits() : 0);
         return response;
     }
 

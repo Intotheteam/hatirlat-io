@@ -1,9 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Check, Sparkles, Zap, Shield, Users, Bell, ArrowLeft, Crown } from "lucide-react"
+import { Check, Sparkles, Zap, Shield, Users, Bell, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -28,7 +27,6 @@ const premiumPlanFeatures = [
 ]
 
 export default function PremiumPage() {
-    const router = useRouter()
     const { t } = useLanguage()
     const { user } = useAuth()
     const [isLoading, setIsLoading] = useState(false)
@@ -44,18 +42,6 @@ export default function PremiumPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50/50 to-pink-50 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-pink-950/30 py-12 px-4">
-            {/* Back button */}
-            <div className="max-w-5xl mx-auto mb-8">
-                <Button
-                    variant="ghost"
-                    className="gap-2 text-muted-foreground hover:text-foreground"
-                    onClick={() => router.back()}
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    Geri Dön
-                </Button>
-            </div>
-
             {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: -24 }}

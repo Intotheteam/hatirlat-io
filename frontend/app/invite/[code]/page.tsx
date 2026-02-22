@@ -3,18 +3,21 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { Users, Check, Shield, Loader2 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Users, Check, Shield, Loader2, Bell, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import Link from "next/link"
 
 interface GroupInfo {
-  id: string;
-  name: string;
-  description: string;
-  memberCount: number;
+  id: string
+  name: string
+  description: string
+  memberCount: number
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
@@ -50,11 +53,11 @@ export default function InvitePage() {
         })
         setStep("consent")
       } else {
-        setErrorMessage(data.message || "Invalid invite code")
+        setErrorMessage(data.message || "Geçersiz davet kodu")
         setStep("error")
       }
     } catch (error) {
-      setErrorMessage("Failed to validate invite code")
+      setErrorMessage("Davet kodu doğrulanamadı")
       setStep("error")
     }
   }
@@ -63,7 +66,7 @@ export default function InvitePage() {
     e.preventDefault()
 
     if (!consentGiven) {
-      toast.error("Please accept the terms to join the group")
+      toast.error("Gruba katılmak için onay vermeniz gerekiyor.")
       return
     }
 
@@ -78,12 +81,12 @@ export default function InvitePage() {
 
       if (data.success) {
         setStep("success")
-        toast.success("Successfully joined the group!")
+        toast.success("Gruba başarıyla katıldınız!")
       } else {
-        toast.error(data.message || "Failed to join group")
+        toast.error(data.message || "Gruba katılırken bir hata oluştu.")
       }
     } catch (error) {
-      toast.error("Failed to join group. Please try again.")
+      toast.error("Gruba katılırken bir hata oluştu. Lütfen tekrar deneyin.")
     } finally {
       setIsLoading(false)
     }
@@ -91,164 +94,207 @@ export default function InvitePage() {
 
   if (step === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/10">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+          className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full"
+        />
       </div>
     )
   }
 
   if (step === "error") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="text-center py-12">
-            <h2 className="text-2xl font-bold text-red-600 mb-2">Invalid Invite</h2>
-            <p className="text-muted-foreground">{errorMessage}</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/10 flex items-center justify-center p-4">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+          <Card className="w-full max-w-md border-2 border-rose-200/40 rounded-2xl shadow-xl text-center">
+            <CardContent className="py-12 px-8">
+              <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 rounded-full flex items-center justify-center mx-auto mb-5">
+                <Shield className="h-8 w-8 text-rose-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-rose-600 mb-2">Geçersiz Davet</h2>
+              <p className="text-muted-foreground mb-6">{errorMessage}</p>
+              <Link href="/login">
+                <Button className="rounded-xl">Giriş Yap</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     )
   }
 
   if (step === "success") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-lg">
-          <CardContent className="text-center py-12">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Welcome to the Group!</h2>
-            <p className="text-muted-foreground mb-6">
-              You have successfully joined &quot;{groupData?.name}&quot;. You will now receive notifications from this group.
-            </p>
-            <div className="space-y-3 text-sm text-muted-foreground">
-              <div className="flex items-center justify-center space-x-2">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/10 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Card className="w-full max-w-md border-2 border-emerald-200/40 rounded-2xl shadow-xl text-center">
+            <CardContent className="py-12 px-8">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", delay: 0.2 }}
+                className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg"
+              >
+                <Check className="h-10 w-10 text-white" />
+              </motion.div>
+              <h2 className="text-2xl font-bold mb-2">Hoş Geldiniz!</h2>
+              <p className="text-muted-foreground mb-6">
+                <span className="font-semibold text-foreground">&quot;{groupData?.name}&quot;</span> grubuna başarıyla katıldınız. Artık bu grubun bildirimlerini alacaksınız.
+              </p>
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-8">
                 <Users className="h-4 w-4" />
-                <span>{(groupData?.memberCount || 0) + 1} members</span>
+                <span>{(groupData?.memberCount || 0) + 1} üye</span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              <Link href="/login">
+                <Button className="rounded-xl w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-0">
+                  Giriş Yap <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-2xl font-bold">Hatirlat.io</h1>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50/40 to-pink-50 dark:from-indigo-950/20 dark:via-purple-950/10 dark:to-pink-950/10 flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-5">
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-200/40 mb-4">
+            <Bell className="h-4 w-4 text-indigo-600" />
+            <span className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">Hatirlat.io</span>
           </div>
-          <h2 className="text-xl font-semibold mb-2">You are Invited!</h2>
+          <h1 className="text-3xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+            Davet Edildiniz!
+          </h1>
           <p className="text-muted-foreground">
-            You have been invited to join &quot;{groupData?.name}&quot;
+            <span className="font-semibold text-foreground">&quot;{groupData?.name}&quot;</span> grubuna katılmak için bilgilerinizi doldurun.
           </p>
-        </div>
+        </motion.div>
 
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <span>{groupData?.name}</span>
-            </CardTitle>
-            <CardDescription>{groupData?.description}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground">
-              <div className="flex justify-between items-center">
-                <span>Current members:</span>
-                <span className="font-medium">{groupData?.memberCount}</span>
+        {/* Group Info Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="border-2 border-indigo-200/40 dark:border-indigo-500/20 bg-gradient-to-br from-indigo-50/50 to-purple-50/30 dark:from-indigo-950/30 dark:to-purple-950/20 rounded-2xl shadow-md">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 shadow-md flex-shrink-0">
+                <Users className="h-6 w-6 text-white" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              <span>Join Group</span>
-            </CardTitle>
-            <CardDescription>
-              Please provide your information and consent to receive notifications
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmitConsent} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Name</label>
-                <Input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Phone Number</label>
-                <Input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="+90 555 123 4567"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  This number will be used to send you notifications
-                </p>
-              </div>
-
-              <div className="bg-muted p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Privacy & Data Protection</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>Your information will only be used for group notifications</li>
-                  <li>You can leave the group at any time</li>
-                  <li>Your data is protected according to GDPR/KVKK regulations</li>
-                </ul>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="consent"
-                  checked={consentGiven}
-                  onCheckedChange={(checked) => setConsentGiven(checked as boolean)}
-                  className="mt-1"
-                />
-                <label htmlFor="consent" className="text-sm leading-relaxed">
-                  I consent to receive notifications from this group via SMS, email, or WhatsApp. I understand that I
-                  can withdraw my consent at any time.
-                </label>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading || !consentGiven}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Joining Group...
-                  </>
-                ) : (
-                  "Join Group"
+              <div className="flex-1 min-w-0">
+                <h2 className="font-semibold text-foreground truncate">{groupData?.name}</h2>
+                {groupData?.description && (
+                  <p className="text-sm text-muted-foreground truncate">{groupData.description}</p>
                 )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+              </div>
+              <Badge variant="outline" className="flex-shrink-0">
+                {groupData?.memberCount ?? 0} üye
+              </Badge>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Join Form */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="border-2 border-border/40 rounded-2xl shadow-md">
+            <CardHeader className="p-5 border-b border-border/40">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Shield className="h-5 w-5 text-purple-500" /> Bilgilerinizi Girin
+              </CardTitle>
+              <CardDescription>Bildirim almak için bilgilerinizi ve onayınızı verin.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-5">
+              <form onSubmit={handleSubmitConsent} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Ad Soyad *</label>
+                  <Input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Adınız ve soyadınız"
+                    className="rounded-xl"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">E-posta</label>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="ornek@email.com"
+                    className="rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Telefon Numarası</label>
+                  <Input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+90 555 123 4567"
+                    className="rounded-xl"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">SMS veya WhatsApp bildirimleri için kullanılacak.</p>
+                </div>
+
+                <div className="bg-muted/50 rounded-xl p-4">
+                  <h4 className="font-medium text-sm mb-2">Gizlilik & KVKK</h4>
+                  <ul className="text-xs text-muted-foreground space-y-1">
+                    <li>• Bilgileriniz yalnızca grup bildirimleri için kullanılacaktır.</li>
+                    <li>• İstediğiniz zaman gruptan çıkabilirsiniz.</li>
+                    <li>• Verileriniz GDPR/KVKK kapsamında korunmaktadır.</li>
+                  </ul>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="consent"
+                    checked={consentGiven}
+                    onCheckedChange={(checked) => setConsentGiven(checked as boolean)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="consent" className="text-sm leading-relaxed text-muted-foreground cursor-pointer">
+                    Bu gruptan SMS, e-posta veya WhatsApp bildirimleri almayı kabul ediyorum. Onayımı istediğim zaman geri çekebilirim.
+                  </label>
+                </div>
+
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-all duration-300" />
+                  <Button
+                    type="submit"
+                    className="relative w-full rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow font-semibold"
+                    disabled={isLoading || !consentGiven}
+                  >
+                    {isLoading ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Katılıyor...</>
+                    ) : (
+                      <>Gruba Katıl <ArrowRight className="h-4 w-4 ml-2" /></>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </div>
   )

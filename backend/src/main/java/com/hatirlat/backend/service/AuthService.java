@@ -21,13 +21,13 @@ public class AuthService {
 
     @Autowired
     private AuthenticationManager authenticationManager;
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private PasswordEncoder passwordEncoder;
-    
+
     @Autowired
     private JwtService jwtService;
 
@@ -35,22 +35,23 @@ public class AuthService {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
-                        request.getPassword()
-                ));
+                        request.getPassword()));
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + request.getUsername()));
-        
+
         // Generate JWT tokens
         String jwtToken = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
-        
+
         // Create UserResponse object
         UserResponse userResponse = new UserResponse();
         userResponse.setId(String.valueOf(user.getId()));
         userResponse.setUsername(user.getUsername());
         userResponse.setEmail(user.getEmail() != null ? user.getEmail() : "");
         userResponse.setRole(user.getRole().name());
-        
+        userResponse.setPremium(user.isPremium());
+        userResponse.setCredits(user.getCredits() != null ? user.getCredits() : 0);
+
         // Create and populate AuthResponse
         AuthResponse authResponse = new AuthResponse();
         authResponse.setToken(jwtToken);
@@ -58,7 +59,7 @@ public class AuthService {
         authResponse.setType("Bearer");
         authResponse.setExpiresIn(86400L); // Token expires in 24 hours (in seconds)
         authResponse.setUser(userResponse);
-        
+
         return authResponse;
     }
 
@@ -90,6 +91,8 @@ public class AuthService {
         userResponse.setUsername(savedUser.getUsername());
         userResponse.setEmail(savedUser.getEmail() != null ? savedUser.getEmail() : "");
         userResponse.setRole(savedUser.getRole().name());
+        userResponse.setPremium(savedUser.isPremium());
+        userResponse.setCredits(savedUser.getCredits() != null ? savedUser.getCredits() : 0);
 
         // Create AuthResponse
         AuthResponse authResponse = new AuthResponse();

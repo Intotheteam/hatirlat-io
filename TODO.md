@@ -36,17 +36,17 @@
 - [ ] Gercek e-posta bildirimi entegrasyonu (SMTP/SendGrid/AWS SES)
 - [ ] Gercek SMS bildirimi entegrasyonu (Twilio/AWS SNS)
 - [ ] Gercek WhatsApp bildirimi entegrasyonu (WhatsApp Business API)
-- [ ] ReminderScheduler method signature hatasinin duzeltilmesi
-- [ ] Tekrarlayan hatirlaticilarin sonraki calisma zamani uretimi
-- [ ] Kullanici profili sayfasi (bilgi goruntuleme/duzenleme)
-- [ ] Sifre degistirme ozelligi
-- [ ] Sifremi unuttum akisi (email ile reset)
+- [ ] ReminderScheduler method signature hatasinin duzeltilmesi (backend calisiyor, SMTP gerekmeli)
+- [x] Tekrarlayan hatirlaticilarin sonraki calisma zamani uretimi
+- [x] Kullanici profili sayfasi (bilgi goruntuleme/duzenleme)
+- [x] Sifre degistirme ozelligi
+- [ ] Sifremi unuttum akisi (email ile reset) - backend hazir, gercek SMTP gerekli
 - [ ] Email dogrulama (kayit sonrasi)
-- [ ] Davet kodu dogrulama backend endpoint'i
-- [ ] Davet uzerinden gruba katilma akisi
-- [ ] Bildirim gecmisi / teslim kayitlari (NotificationLog tablosu)
+- [x] Davet kodu dogrulama backend endpoint'i
+- [x] Davet uzerinden gruba katilma akisi
+- [x] Bildirim gecmisi / teslim kayitlari (NotificationLog tablosu)
 - [ ] Sayfalama (pagination) - buyuk veri setleri icin
-- [ ] Zaman dilimi (timezone) destegi
+- [x] Zaman dilimi (timezone) destegi
 - [x] Error boundary (React hata sinir bilesenleri)
 - [x] Logout butonunun calisir hale getirilmesi
 - [x] Bos durum (empty state) mesajlari iyilestirmesi
@@ -58,7 +58,7 @@
 - [ ] Toplu islemler (coklu secim ile sil/durum degistir)
 - [ ] Bildirim tercihleri sayfasi (rahatsiz etmeyin saatleri vb.)
 - [ ] Onboarding / ilk kullanim rehberi
-- [ ] Sifre guc gostergesi (kayit formunda)
+- [x] Sifre guc gostergesi (kayit formunda)
 - [ ] Hatirlatici sablon sistemi (sik kullanilan hatirlaticilar)
 - [ ] Takvim gorunumu (hatirlaticilari takvimde gorme)
 - [ ] Dosya eki destegi (hatirlaticilara dosya ekleme)
