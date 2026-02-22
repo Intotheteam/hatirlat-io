@@ -103,6 +103,7 @@ export const en = {
         status_scheduled: "Scheduled",
         status_sent: "Sent",
         status_paused: "Paused",
+        status_updated: "Status updated to: {status}",
         delete_confirm_title: "Are you sure you want to delete?",
         delete_confirm_desc: "This action cannot be undone. This reminder will be permanently deleted.",
         delete_cancel: "Cancel",
@@ -150,6 +151,7 @@ export const en = {
         role_member: "Member",
         status_active: "Active",
         status_pending: "Pending",
+        status_inactive: "Inactive",
         remove_member: "Remove Member",
         remove_confirm_title: "Are you sure you want to remove this member?",
         remove_confirm_desc: "This member will be removed from the group and stop receiving group reminders.",
@@ -166,7 +168,11 @@ export const en = {
         invite_error: "An error occurred while inviting the member.",
         removed_success: "Member successfully removed from the group.",
         remove_error: "An error occurred while removing the member.",
-        fetch_error: "An error occurred while loading members."
+        fetch_error: "An error occurred while loading members.",
+        status_updated_success: "Member status successfully updated.",
+        status_error: "An error occurred while updating the member's status.",
+        group_full: "This group has reached its maximum member limit.",
+        rate_limit_exceeded: "Too many requests from this IP address. Please try again later."
     },
     modals: {
         create_title: "Create New Reminder",

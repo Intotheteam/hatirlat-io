@@ -45,6 +45,7 @@ export interface User {
   email: string
   role: string
   credits: number
+  premium?: boolean
 }
 
 export type TransactionType = "ADD" | "DEDUCT"

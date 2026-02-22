@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Bell, Users, Mail, MessageSquare, Phone, UserIcon, Calendar, Clock, Repeat } from "lucide-react"
 import type { Reminder, CustomRepeatConfig, Group, Channel } from "@/types"
 import { apiService } from "@/services/api/apiService"
+import { apiManager } from "@/services/api/apiManager"
 import { toast } from "sonner"
 import { useLanguage } from "@/contexts/LanguageContext"
 
@@ -70,8 +71,8 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
       const fetchGroups = async () => {
         try {
           setIsLoadingGroups(true)
-          const response = await apiService.get("/groups")
-          setGroups((response as Group[]) || [])
+          const fetchedGroups = await apiManager.getGroups()
+          setGroups(fetchedGroups)
         } catch (error) {
           toast.error(t("modals.groups_failed"))
         } finally {

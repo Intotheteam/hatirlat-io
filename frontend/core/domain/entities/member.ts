@@ -3,7 +3,7 @@ export interface Member {
   name: string
   email: string
   role: "ADMIN" | "MEMBER"
-  status: "ACTIVE" | "PENDING"
+  status: "ACTIVE" | "PENDING" | "INACTIVE"
   joinedAt: string
   phone?: string
   lastActivity?: string

@@ -7,7 +7,12 @@ import com.hatirlat.backend.entity.GroupMember;
 import com.hatirlat.backend.entity.Member;
 import com.hatirlat.backend.entity.MemberRole;
 import com.hatirlat.backend.entity.MemberStatus;
+import com.hatirlat.backend.entity.GroupJoinAudit;
+import com.hatirlat.backend.entity.User;
+import com.hatirlat.backend.exception.GroupFullException;
+import com.hatirlat.backend.exception.RateLimitExceededException;
 import com.hatirlat.backend.exception.ResourceNotFoundException;
+import com.hatirlat.backend.repository.GroupJoinAuditRepository;
 import com.hatirlat.backend.repository.GroupMemberRepository;
 import com.hatirlat.backend.repository.GroupRepository;
 import com.hatirlat.backend.repository.MemberRepository;
@@ -31,6 +36,9 @@ public class MemberService {
     @Autowired
     private GroupMemberRepository groupMemberRepository;
 
+    @Autowired
+    private GroupJoinAuditRepository groupJoinAuditRepository;
+
     public List<MemberResponse> getGroupMembers(String groupId) {
         List<Member> members = memberRepository.findMembersByGroupId(Long.parseLong(groupId));
         return members.stream()
@@ -38,10 +46,34 @@ public class MemberService {
                 .collect(Collectors.toList());
     }
 
-    public MemberResponse addMemberToGroup(String groupId, MemberRequest request) {
+    public MemberResponse addMemberToGroup(String groupId, MemberRequest request, String ipAddress) {
         // Verify group exists
         Group group = groupRepository.findById(Long.parseLong(groupId))
                 .orElseThrow(() -> new ResourceNotFoundException("Group", groupId));
+
+        // 1. IP Rate Limiting Check (Max 3 joins per IP per 24 hours per group)
+        if (ipAddress != null && !ipAddress.isEmpty()) {
+            LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
+            long recentAttempts = groupJoinAuditRepository.countByGroupIdAndIpAddressAndJoinedAtAfter(group.getId(),
+                    ipAddress, yesterday);
+            if (recentAttempts >= 3) {
+                throw new RateLimitExceededException(
+                        "Too many join attempts from this IP address. Please try again later.");
+            }
+        }
+
+        // 2. Tier-Based Capacity Check
+        long currentMemberCount = groupMemberRepository.countByGroupId(group.getId());
+        User owner = group.getOwner();
+
+        int maxAllowedMembers = 10; // Free tier default
+        if (owner != null && owner.isPremium()) {
+            maxAllowedMembers = 300; // Premium tier
+        }
+
+        if (currentMemberCount >= maxAllowedMembers) {
+            throw new GroupFullException("Bu grup maksimum üye sınırına ulaşmıştır.");
+        }
 
         Member member = new Member();
         member.setName(request.getName());
@@ -65,6 +97,12 @@ public class MemberService {
         groupMember.setGroupId(Long.parseLong(groupId));
         groupMember.setMemberId(savedMember.getId());
         groupMemberRepository.save(groupMember);
+
+        // Record Join Audit
+        if (ipAddress != null && !ipAddress.isEmpty()) {
+            GroupJoinAudit audit = new GroupJoinAudit(group.getId(), ipAddress);
+            groupJoinAuditRepository.save(audit);
+        }
 
         return convertToResponse(savedMember);
     }
@@ -111,10 +149,45 @@ public class MemberService {
         return true;
     }
 
-    public String inviteMember(String email, String groupId) {
+    public String inviteMember(String email, String groupId, String ipAddress) {
+        // Basic check for rate limits logic if invites are exposed publicly without
+        // auth
+        if (ipAddress != null && !ipAddress.isEmpty()) {
+            LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
+            long recentAttempts = groupJoinAuditRepository
+                    .countByGroupIdAndIpAddressAndJoinedAtAfter(Long.parseLong(groupId), ipAddress, yesterday);
+            if (recentAttempts >= 3) {
+                throw new RateLimitExceededException(
+                        "Too many invite attempts from this IP address. Please try again later.");
+            }
+        }
+
         // In a real implementation, you would send an email invitation
         // For now, we'll just return a message
         return "Invitation sent to " + email + " for group " + groupId;
+    }
+
+    public MemberResponse toggleMemberStatus(String groupId, String memberId) {
+        // Verify member is in the group
+        GroupMember groupMember = groupMemberRepository.findByGroupIdAndMemberId(
+                Long.parseLong(groupId),
+                Long.parseLong(memberId));
+        if (groupMember == null) {
+            throw new ResourceNotFoundException("GroupMember",
+                    String.format("Group ID: %s, Member ID: %s", groupId, memberId));
+        }
+
+        Member member = memberRepository.findById(Long.parseLong(memberId))
+                .orElseThrow(() -> new ResourceNotFoundException("Member", memberId));
+
+        if (member.getStatus() == MemberStatus.ACTIVE) {
+            member.setStatus(MemberStatus.INACTIVE);
+        } else if (member.getStatus() == MemberStatus.INACTIVE || member.getStatus() == MemberStatus.PENDING) {
+            member.setStatus(MemberStatus.ACTIVE);
+        }
+
+        Member updatedMember = memberRepository.save(member);
+        return convertToResponse(updatedMember);
     }
 
     private MemberResponse convertToResponse(Member member) {

@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import { Trash2, UserPlus, ArrowLeft, Copy, RefreshCw } from "lucide-react"
 import type { Member } from "@/core/domain/entities/member"
 import { MemberRepository } from "@/services/repositories/MemberRepository"
@@ -76,8 +77,19 @@ export default function ManageMembers({ groupId, groupName, onNavigate }: Manage
       setMembers((prev) => [...prev, newMember])
       setInviteEmail("")
       toast.success(t("members.invited_success", { email: newMember.email }))
-    } catch (err) {
-      const errorMessage = err instanceof ApiError ? err.message : t("members.invite_error")
+      toast.success(t("members.invited_success", { email: newMember.email }))
+    } catch (err: any) {
+      let errorMessage = t("members.invite_error")
+
+      if (err instanceof ApiError || (err && err.status)) {
+        if (err.status === 403) {
+          errorMessage = t("members.group_full")
+        } else if (err.status === 429) {
+          errorMessage = t("members.rate_limit_exceeded")
+        } else {
+          errorMessage = err.message
+        }
+      }
       toast.error(errorMessage)
     } finally {
       setIsInviting(false)
@@ -93,6 +105,32 @@ export default function ManageMembers({ groupId, groupName, onNavigate }: Manage
     } catch (err) {
       setMembers(originalMembers)
       const errorMessage = err instanceof ApiError ? err.message : t("members.remove_error")
+      toast.error(errorMessage)
+    }
+  }
+
+  const handleToggleStatus = async (memberId: string) => {
+    const memberToUpdate = members.find((m) => m.id === memberId)
+    if (!memberToUpdate) return
+
+    // Optimistic UI update
+    const originalMembers = [...members]
+    setMembers((prev) =>
+      prev.map((m) => {
+        if (m.id === memberId) {
+          const newStatus = m.status === "ACTIVE" ? "INACTIVE" : "ACTIVE"
+          return { ...m, status: newStatus }
+        }
+        return m
+      })
+    )
+
+    try {
+      await memberRepository.toggleMemberStatus(groupId, memberId)
+      toast.success(t("members.status_updated_success"))
+    } catch (err) {
+      setMembers(originalMembers)
+      const errorMessage = err instanceof ApiError ? err.message : t("members.status_error")
       toast.error(errorMessage)
     }
   }
@@ -242,15 +280,17 @@ export default function ManageMembers({ groupId, groupName, onNavigate }: Manage
                     >
                       {member.role === "ADMIN" ? t("members.role_admin") : t("members.role_member")}
                     </Badge>
-                    <Badge
-                      variant={member.status === "ACTIVE" ? "default" : "outline"}
-                      className={`text-xs h-5 ${member.status === "ACTIVE"
-                        ? "bg-secondary text-secondary-foreground border-0"
-                        : ""
-                        }`}
-                    >
-                      {member.status === "ACTIVE" ? t("members.status_active") : t("members.status_pending")}
-                    </Badge>
+                    <div className="flex flex-col items-center justify-center gap-1 mx-2">
+                      <span className={`text-[10px] font-medium uppercase tracking-wider ${member.status === "ACTIVE" ? "text-green-600 dark:text-green-400" : member.status === "PENDING" ? "text-amber-500" : "text-muted-foreground"}`}>
+                        {member.status === "ACTIVE" ? t("members.status_active") : member.status === "PENDING" ? t("members.status_pending") : t("members.status_inactive")}
+                      </span>
+                      <Switch
+                        checked={member.status === "ACTIVE"}
+                        onCheckedChange={() => handleToggleStatus(member.id)}
+                        aria-label="Toggle member status"
+                        className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-700 h-4 w-8 [&>span]:h-3 [&>span]:w-3 [&>span]:data-[state=checked]:translate-x-4"
+                      />
+                    </div>
                     <Button
                       variant="destructive"
                       size="icon"

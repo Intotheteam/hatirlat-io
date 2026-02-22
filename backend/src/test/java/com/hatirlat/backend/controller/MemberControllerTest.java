@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -28,6 +29,9 @@ class MemberControllerTest {
 
     @InjectMocks
     private MemberController memberController;
+
+    @Mock
+    private HttpServletRequest request;
 
     private MemberRequest memberRequest;
     private MemberResponse memberResponse;
@@ -67,15 +71,18 @@ class MemberControllerTest {
 
     @Test
     void addMemberToGroup_ValidRequest_ReturnsMember() {
-        when(memberService.addMemberToGroup(eq("1"), any(MemberRequest.class))).thenReturn(memberResponse);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(memberService.addMemberToGroup(eq("1"), any(MemberRequest.class), eq("127.0.0.1")))
+                .thenReturn(memberResponse);
 
-        ResponseEntity<BaseResponse<MemberResponse>> response = memberController.addMemberToGroup("1", memberRequest);
+        ResponseEntity<BaseResponse<MemberResponse>> response = memberController.addMemberToGroup("1", memberRequest,
+                request);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         assertEquals("Test Member", response.getBody().getData().getName());
-        verify(memberService, times(1)).addMemberToGroup(eq("1"), any(MemberRequest.class));
+        verify(memberService, times(1)).addMemberToGroup(eq("1"), any(MemberRequest.class), eq("127.0.0.1"));
     }
 
     @Test
@@ -107,18 +114,19 @@ class MemberControllerTest {
     @Test
     void inviteMember_ValidRequest_ReturnsSuccess() {
         String expectedMessage = "Invitation sent to test@example.com for group 1";
-        when(memberService.inviteMember("test@example.com", "1")).thenReturn(expectedMessage);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(memberService.inviteMember("test@example.com", "1", "127.0.0.1")).thenReturn(expectedMessage);
 
         InviteRequest inviteRequest = new InviteRequest();
         inviteRequest.setEmail("test@example.com");
         inviteRequest.setGroupId("1");
 
-        ResponseEntity<BaseResponse<String>> response = memberController.inviteMember(inviteRequest);
+        ResponseEntity<BaseResponse<String>> response = memberController.inviteMember(inviteRequest, request);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         assertEquals(expectedMessage, response.getBody().getData());
-        verify(memberService, times(1)).inviteMember("test@example.com", "1");
+        verify(memberService, times(1)).inviteMember("test@example.com", "1", "127.0.0.1");
     }
 }

@@ -2,8 +2,11 @@
 
 import { Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 
 export function UpgradeButton() {
+  const router = useRouter()
+
   return (
     <div className="relative group">
       {/* Animated gradient glow */}
@@ -16,6 +19,7 @@ export function UpgradeButton() {
       <Button
         variant="default"
         size="sm"
+        onClick={() => router.push('/premium')}
         className="relative bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 rounded-full font-semibold overflow-hidden"
       >
         {/* Premium border overlay */}

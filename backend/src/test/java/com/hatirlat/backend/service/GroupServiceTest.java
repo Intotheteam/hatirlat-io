@@ -3,6 +3,7 @@ package com.hatirlat.backend.service;
 import com.hatirlat.backend.dto.GroupRequest;
 import com.hatirlat.backend.dto.GroupResponse;
 import com.hatirlat.backend.entity.Group;
+import com.hatirlat.backend.entity.User;
 import com.hatirlat.backend.exception.ResourceNotFoundException;
 import com.hatirlat.backend.mapper.GroupMapper;
 import com.hatirlat.backend.repository.GroupMemberRepository;

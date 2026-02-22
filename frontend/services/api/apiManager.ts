@@ -82,6 +82,13 @@ export class ApiManager {
     await apiService.delete(`/api/groups/${groupId}/members/${memberId}`);
   }
 
+  async toggleMemberStatus(groupId: string, memberId: string): Promise<Member> {
+    const response = await apiService.patch<{ success: boolean; data: Member }>(
+      `/api/groups/${groupId}/members/${memberId}/status`
+    );
+    return response.data;
+  }
+
   // Contact methods
   async getContacts(): Promise<Contact[]> {
     const response = await apiService.get<{ success: boolean; data: Contact[] }>("/api/contacts");

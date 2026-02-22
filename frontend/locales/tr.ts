@@ -103,6 +103,7 @@ export const tr = {
         status_scheduled: "Planlandı",
         status_sent: "Gönderildi",
         status_paused: "Beklemeye Alındı",
+        status_updated: "Durum güncellendi: {status}",
         delete_confirm_title: "Silmek İstediğinize Emin Misiniz?",
         delete_confirm_desc: "Bu işlem geri alınamaz. Bu hatırlatıcı kalıcı olarak silinecektir.",
         delete_cancel: "İptal",
@@ -150,6 +151,7 @@ export const tr = {
         role_member: "Üye",
         status_active: "Aktif",
         status_pending: "Bekliyor",
+        status_inactive: "Pasif",
         remove_member: "Üyeyi Çıkar",
         remove_confirm_title: "Üyeyi Çıkarmak İstediğinize Emin Misiniz?",
         remove_confirm_desc: "Bu üye gruptan çıkarılacak ve grup hatırlatıcılarını alamayacaktır.",
@@ -166,7 +168,11 @@ export const tr = {
         invite_error: "Üye davet edilirken bir hata oluştu.",
         removed_success: "Üye başarıyla gruptan çıkarıldı.",
         remove_error: "Üye çıkarılırken bir hata oluştu.",
-        fetch_error: "Üyeler yüklenirken bir hata oluştu."
+        fetch_error: "Üyeler yüklenirken bir hata oluştu.",
+        status_updated_success: "Üyenin durumu başarıyla güncellendi.",
+        status_error: "Üye durumu güncellenirken bir hata oluştu.",
+        group_full: "Bu grup maksimum üye sınırına ulaşmıştır.",
+        rate_limit_exceeded: "Bu IP adresinden çok fazla istek atıldı. Lütfen daha sonra tekrar deneyin."
     },
     modals: {
         create_title: "Yeni Hatırlatıcı Oluştur",

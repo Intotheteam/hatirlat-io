@@ -18,27 +18,27 @@ function getAuthHeaders(): HeadersInit {
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`
-  
+
   // Add authentication headers for all requests except login/register
   const authHeaders = getAuthHeaders()
-  
+
   const config: RequestInit = {
     ...options,
-    headers: { 
-      "Content-Type": "application/json", 
+    headers: {
+      "Content-Type": "application/json",
       ...authHeaders,
-      ...options.headers 
+      ...options.headers
     },
   }
 
   try {
     const response = await fetch(url, config)
-    
+
     // Handle 204 No Content responses
     if (response.status === 204) {
       return null as T
     }
-    
+
     // Handle 401 Unauthorized - redirect to login (skip for auth endpoints)
     if (response.status === 401 && !endpoint.startsWith("/api/auth/")) {
       authService.logout()
@@ -68,7 +68,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
       throw new ApiError(response.status, errorMessage)
     }
-    
+
     // Parse successful responses
     return await response.json()
   } catch (error) {
@@ -79,10 +79,12 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 }
 
 export const apiService = {
-  get: (endpoint: string, options?: RequestInit) => request(endpoint, { ...options, method: "GET" }),
-  post: (endpoint: string, body: any, options?: RequestInit) =>
-    request(endpoint, { ...options, method: "POST", body: JSON.stringify(body) }),
-  put: (endpoint: string, body: any, options?: RequestInit) =>
-    request(endpoint, { ...options, method: "PUT", body: JSON.stringify(body) }),
-  delete: (endpoint: string, options?: RequestInit) => request(endpoint, { ...options, method: "DELETE" }),
+  get: <T>(endpoint: string, options?: RequestInit) => request<T>(endpoint, { ...options, method: "GET" }),
+  post: <T>(endpoint: string, body: any, options?: RequestInit) =>
+    request<T>(endpoint, { ...options, method: "POST", body: JSON.stringify(body) }),
+  put: <T>(endpoint: string, body: any, options?: RequestInit) =>
+    request<T>(endpoint, { ...options, method: "PUT", body: JSON.stringify(body) }),
+  patch: <T>(endpoint: string, body?: any, options?: RequestInit) =>
+    request<T>(endpoint, { ...options, method: "PATCH", body: body ? JSON.stringify(body) : undefined }),
+  delete: <T>(endpoint: string, options?: RequestInit) => request<T>(endpoint, { ...options, method: "DELETE" }),
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
+import { useLanguage } from "@/contexts/LanguageContext"
 import ScheduleList from "@/components/schedule-list"
 import type { Reminder, View } from "@/types"
 import { apiManager } from "@/services/api/apiManager"
@@ -12,6 +13,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner"
 export default function SchedulesPage() {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
+  const { t } = useLanguage()
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -100,7 +102,8 @@ export default function SchedulesPage() {
     const newStatus = reminder.status === "paused" ? "scheduled" : "paused"
     try {
       await apiManager.updateReminderStatus(id, newStatus)
-      toast.success(`Hatırlatıcı durumu güncellendi: ${newStatus}`)
+      const localizedStatus = t(`schedule_list.status_${newStatus}`)
+      toast.success(t('schedule_list.status_updated', { status: localizedStatus }))
       await fetchReminders()
     } catch (error: any) {
       console.error("Failed to toggle reminder status:", error)

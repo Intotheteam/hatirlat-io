@@ -47,13 +47,13 @@
 - [ ] Bildirim gecmisi / teslim kayitlari (NotificationLog tablosu)
 - [ ] Sayfalama (pagination) - buyuk veri setleri icin
 - [ ] Zaman dilimi (timezone) destegi
-- [ ] Error boundary (React hata sinir bilesenleri)
-- [ ] Logout butonunun calisir hale getirilmesi
-- [ ] Bos durum (empty state) mesajlari iyilestirmesi
+- [x] Error boundary (React hata sinir bilesenleri)
+- [x] Logout butonunun calisir hale getirilmesi
+- [x] Bos durum (empty state) mesajlari iyilestirmesi
 
 ## C. Gelistirilmesi Gereken (Nice-to-Have) Ozellikler
 
-- [ ] Coklu dil destegi (i18n - Turkce/Ingilizce)
+- [x] Coklu dil destegi (i18n - Turkce/Ingilizce)
 - [ ] Gercek zamanli guncellemeler (WebSocket veya polling)
 - [ ] Toplu islemler (coklu secim ile sil/durum degistir)
 - [ ] Bildirim tercihleri sayfasi (rahatsiz etmeyin saatleri vb.)
@@ -70,6 +70,6 @@
 - [ ] PWA (Progressive Web App) destegi
 - [ ] Webhook entegrasyonu (3. parti sistemlerle)
 - [ ] Disa aktarim (CSV/PDF export)
-- [ ] Premium abonelik ve odeme sistemi
+- [x] Premium abonelik ve odeme sistemi
 - [ ] 2FA (iki faktorlu kimlik dogrulama)
 - [ ] Aktivite loglari / audit trail

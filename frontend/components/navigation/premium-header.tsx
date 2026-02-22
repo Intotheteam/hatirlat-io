@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { SettingsButton } from "./settings-button";
 import { UpgradeButton } from "./upgrade-button";
 import type { View } from "@/types";
 import Link from "next/link";
@@ -231,10 +230,7 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Settings Button */}
-            <div className="hidden lg:block">
-              <SettingsButton />
-            </div>
+
 
             {/* Credits Display */}
             <div className="hidden sm:flex items-center px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-200/30 dark:border-amber-500/30 gap-1.5 cursor-pointer hover:bg-amber-500/20 transition-colors" onClick={() => router.push('/credits')}>
@@ -245,9 +241,11 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
             </div>
 
             {/* Upgrade Button */}
-            <div className="hidden md:block">
-              <UpgradeButton />
-            </div>
+            {!user?.premium && (
+              <div className="hidden md:block">
+                <UpgradeButton />
+              </div>
+            )}
 
             {/* Enhanced Mobile Menu Button */}
             <div className="relative group lg:hidden">
@@ -328,18 +326,20 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                   className="pt-4 space-y-2"
                 >
                   {/* Enhanced Upgrade Button */}
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl blur-lg opacity-40 group-hover:opacity-60 transition-all duration-300 animate-pulse"></div>
-                    <Button
-                      variant="default"
-                      className="relative w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-lg hover:shadow-xl rounded-xl font-semibold border border-white/20"
-                    >
-                      <div className="p-1 rounded-lg bg-white/10 mr-2 inline-flex">
-                        <Sparkles className="h-4 w-4 animate-pulse" />
-                      </div>
-                      {t("header.upgrade_premium")}
-                    </Button>
-                  </div>
+                  {!user?.premium && (
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl blur-lg opacity-40 group-hover:opacity-60 transition-all duration-300 animate-pulse"></div>
+                      <Button
+                        variant="default"
+                        className="relative w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-lg hover:shadow-xl rounded-xl font-semibold border border-white/20"
+                      >
+                        <div className="p-1 rounded-lg bg-white/10 mr-2 inline-flex">
+                          <Sparkles className="h-4 w-4 animate-pulse" />
+                        </div>
+                        {t("header.upgrade_premium")}
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Enhanced Settings & Logout buttons */}
                   <div className="flex gap-2">

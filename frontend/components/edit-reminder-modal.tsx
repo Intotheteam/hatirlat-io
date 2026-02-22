@@ -13,6 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Bell, Users, Mail, MessageSquare, Phone, UserIcon } from "lucide-react"
 import type { Reminder, CustomRepeatConfig, Group } from "@/types"
 import { apiService } from "@/services/api/apiService"
+import { apiManager } from "@/services/api/apiManager"
 import { toast } from "sonner"
 import { useLanguage } from "@/contexts/LanguageContext"
 
@@ -85,8 +86,8 @@ export default function EditReminderModal({ isOpen, onClose, onSave, reminder }:
       const fetchGroups = async () => {
         setIsLoadingGroups(true)
         try {
-          const response = await apiService.get("/groups")
-          setGroups((response as Group[]) || [])
+          const fetchedGroups = await apiManager.getGroups()
+          setGroups(fetchedGroups)
         } catch (error) {
           toast.error(t("modals.groups_failed"))
         } finally {

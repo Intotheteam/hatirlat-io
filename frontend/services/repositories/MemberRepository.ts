@@ -34,6 +34,13 @@ export class MemberRepository implements IMemberRepository {
     await apiService.delete(`/api/groups/${groupId}/members/${memberId}`)
   }
 
+  async toggleMemberStatus(groupId: string, memberId: string): Promise<Member> {
+    const response = await apiService.patch<{ success: boolean; data: Member }>(
+      `/api/groups/${groupId}/members/${memberId}/status`
+    )
+    return response.data
+  }
+
   async inviteMember(email: string, groupId: string): Promise<string> {
     const response = await apiService.post<{ success: boolean; data: string }>(
       "/api/members/invite",

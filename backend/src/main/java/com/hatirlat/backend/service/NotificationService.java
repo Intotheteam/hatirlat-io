@@ -19,15 +19,17 @@ public class NotificationService {
 
     private final Map<NotificationChannel, NotificationStrategy> strategies;
     private final NotificationLogRepository notificationLogRepository;
+    private final MemberService memberService; // To fetch group members
 
     public NotificationService(List<NotificationStrategy> notificationStrategies,
-                               NotificationLogRepository notificationLogRepository) {
+            NotificationLogRepository notificationLogRepository,
+            MemberService memberService) {
         this.strategies = notificationStrategies.stream()
                 .collect(Collectors.toMap(
                         NotificationStrategy::getChannelType,
-                        strategy -> strategy
-                ));
+                        strategy -> strategy));
         this.notificationLogRepository = notificationLogRepository;
+        this.memberService = memberService;
     }
 
     /**
@@ -42,10 +44,34 @@ public class NotificationService {
             return;
         }
 
-        String recipient = resolveRecipient(reminder);
         String subject = reminder.getTitle();
         String message = reminder.getMessage();
 
+        // 1. If it's a group reminder, broadcast to all members (skip INACTIVE)
+        if (reminder.getGroup() != null) {
+            Group group = reminder.getGroup();
+            logger.info("Broadcasting notification for group reminder '{}' to group ID {}", subject, group.getId());
+
+            // Re-use MemberService to get members. Note: MemberResponse is returned, we can
+            // use its status and email/phone.
+            var members = memberService.getGroupMembers(String.valueOf(group.getId()));
+            for (var m : members) {
+                // Skip INACTIVE members
+                if ("INACTIVE".equalsIgnoreCase(m.getStatus())) {
+                    logger.debug("Skipping inactive member: {}", m.getEmail());
+                    continue;
+                }
+
+                String recipient = resolveRecipientFromMember(m);
+                if (recipient != null && !recipient.isBlank()) {
+                    dispatchToChannels(reminder, channels, recipient, message, subject);
+                }
+            }
+            return; // Finished broadcasting to group
+        }
+
+        // 2. Individual reminder logic
+        String recipient = resolveRecipient(reminder);
         if (recipient == null || recipient.isBlank()) {
             logger.warn("No recipient found for reminder: {}", reminder.getTitle());
             return;
@@ -54,6 +80,11 @@ public class NotificationService {
         logger.info("Sending notification for reminder '{}' via {} channels to '{}'",
                 subject, channels.size(), recipient);
 
+        dispatchToChannels(reminder, channels, recipient, message, subject);
+    }
+
+    private void dispatchToChannels(Reminder reminder, List<NotificationChannel> channels, String recipient,
+            String message, String subject) {
         for (NotificationChannel channel : channels) {
             try {
                 sendNotification(channel, recipient, message, subject);
@@ -89,7 +120,7 @@ public class NotificationService {
      * Save a notification log entry.
      */
     private void saveNotificationLog(Reminder reminder, NotificationChannel channel,
-                                     String recipient, NotificationLogStatus status, String errorMessage) {
+            String recipient, NotificationLogStatus status, String errorMessage) {
         try {
             NotificationLog log = new NotificationLog();
             log.setReminder(reminder);
@@ -124,6 +155,19 @@ public class NotificationService {
             return reminder.getUser().getEmail();
         }
 
+        return null;
+    }
+
+    /**
+     * Resolves the recipient from a group member response.
+     */
+    private String resolveRecipientFromMember(com.hatirlat.backend.dto.MemberResponse member) {
+        if (member.getEmail() != null && !member.getEmail().isBlank()) {
+            return member.getEmail();
+        }
+        if (member.getPhone() != null && !member.getPhone().isBlank()) {
+            return member.getPhone();
+        }
         return null;
     }
 }
