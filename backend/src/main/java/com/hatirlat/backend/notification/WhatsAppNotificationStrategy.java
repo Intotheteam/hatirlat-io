@@ -1,17 +1,27 @@
 package com.hatirlat.backend.notification;
 
 import com.hatirlat.backend.entity.NotificationChannel;
+import com.twilio.rest.api.v2010.account.Message;
+import com.twilio.type.PhoneNumber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+/**
+ * Recipient format : whatsapp:+905xxxxxxxxx (prefix added automatically if
+ * missing)
+ * From number : whatsapp:+14155238886 (Sandbox default) or approved number
+ */
 @Component
 public class WhatsAppNotificationStrategy implements NotificationStrategy {
 
     private static final Logger logger = LoggerFactory.getLogger(WhatsAppNotificationStrategy.class);
 
-    @Value("${whatsapp.enabled:false}")
+    @Value("${twilio.whatsapp.from-number:whatsapp:+14155238886}")
+    private String fromWhatsApp;
+
+    @Value("${twilio.whatsapp.enabled:false}")
     private boolean whatsappEnabled;
 
     @Override
@@ -20,19 +30,34 @@ public class WhatsAppNotificationStrategy implements NotificationStrategy {
     }
 
     @Override
-    public void sendNotification(String recipient, String message, String subject) {
+    public DeliveryResult sendNotification(String recipient, String message, String subject) {
         if (!whatsappEnabled) {
-            logger.warn("WhatsApp notification is disabled. Would send to: {}, Message: {}", recipient, message);
-            // TODO: Integrate with WhatsApp Business API when service is configured
-            // To enable, set whatsapp.enabled=true and configure WhatsApp Business API credentials:
-            // whatsapp.api.phone-number-id=YOUR_PHONE_NUMBER_ID
-            // whatsapp.api.access-token=YOUR_ACCESS_TOKEN
-            return;
+            logger.warn("WhatsApp disabled — would send to {}: {}", recipient, message);
+            return DeliveryResult.disabled("WhatsApp");
         }
 
-        logger.info("Sending WhatsApp message to: {}, Subject: {}", recipient, subject);
-        // WhatsApp Business API integration placeholder:
-        // POST https://graph.facebook.com/v17.0/{phone-number-id}/messages
-        logger.info("WhatsApp message sent successfully to: {}", recipient);
+        String to = recipient.startsWith("whatsapp:") ? recipient : "whatsapp:" + recipient;
+
+        try {
+            logger.info("Sending WhatsApp message to: {}", to);
+            Message twilioMessage = Message.creator(
+                    new PhoneNumber(to),
+                    new PhoneNumber(fromWhatsApp),
+                    "*[Hatirlat.io]* " + subject + "\n" + message).create();
+
+            String sid = twilioMessage.getSid();
+            String status = twilioMessage.getStatus() != null ? twilioMessage.getStatus().toString() : "unknown";
+            logger.info("WhatsApp sent. SID={} Status={}", sid, status);
+            return DeliveryResult.success(sid, status,
+                    "to=" + to + " sid=" + sid + " status=" + status);
+
+        } catch (com.twilio.exception.ApiException e) {
+            logger.error("Twilio API error sending WhatsApp to {}: code={} message={}", to, e.getCode(),
+                    e.getMessage());
+            return DeliveryResult.failure(String.valueOf(e.getCode()), e.getMessage());
+        } catch (Exception e) {
+            logger.error("Failed to send WhatsApp to {}: {}", to, e.getMessage());
+            return DeliveryResult.failure("UNKNOWN", e.getMessage());
+        }
     }
 }

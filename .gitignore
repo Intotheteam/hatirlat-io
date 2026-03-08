@@ -1,0 +1,79 @@
+# Root .gitignore for Hatirlat.io (Monorepo)
+
+# Ignore all markdown files used for prompt engineering and AI planning
+*.md
+*.txt
+./*.md
+./*.txt
+
+./frontend/*.md
+./mobile/*.md
+./backend/*.md
+./frontend/*.txt
+./mobile/*.txt
+./backend/*.txt
+!README.md
+!readme.md
+
+# Common Ignore Rules
+node_modules/
+.env
+.env.local
+.DS_Store
+.idea/
+.vscode/
+*.log
+tmp/
+temp/
+coverage/
+build/
+dist/
+
+# === Mobile (Flutter/Dart) ===
+mobile/.dart_tool/
+mobile/.packages
+mobile/.pub-cache/
+mobile/.pub/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/coverage/
+mobile/lib/generated_plugin_registrant.dart
+mobile/*.iml
+mobile/*.ipr
+mobile/*.iws
+# Android related
+mobile/android/.gradle
+mobile/android/app/build/
+mobile/android/local.properties
+mobile/android/key.properties
+# iOS related
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/ios/Flutter/Flutter.framework
+mobile/ios/Flutter/Flutter.podspec
+mobile/ios/Flutter/Generated.xcconfig
+mobile/ios/Flutter/app.flx
+mobile/ios/Flutter/app.zip
+mobile/ios/Flutter/flutter_assets/
+mobile/ios/Flutter/flutter_export_environment.sh
+
+# === Backend (Java/Spring Boot) ===
+backend/target/
+backend/*.class
+backend/*.jar
+backend/*.war
+backend/*.ear
+backend/.mvn/
+!backend/.mvn/wrapper/maven-wrapper.jar
+
+# === Frontend (Next.js/React) ===
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/node_modules/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/.vercel

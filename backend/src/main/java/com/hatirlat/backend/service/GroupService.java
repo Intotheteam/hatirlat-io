@@ -31,16 +31,18 @@ public class GroupService {
     private final ReminderRepository reminderRepository;
     private final GroupMapper groupMapper;
     private final LoggingUtil loggingUtil;
+    private final PlanLimitService planLimitService;
 
     public GroupService(GroupRepository groupRepository, MemberRepository memberRepository,
             GroupMemberRepository groupMemberRepository, ReminderRepository reminderRepository, GroupMapper groupMapper,
-            LoggingUtil loggingUtil) {
+            LoggingUtil loggingUtil, PlanLimitService planLimitService) {
         this.groupRepository = groupRepository;
         this.memberRepository = memberRepository;
         this.groupMemberRepository = groupMemberRepository;
         this.reminderRepository = reminderRepository;
         this.groupMapper = groupMapper;
         this.loggingUtil = loggingUtil;
+        this.planLimitService = planLimitService;
     }
 
     @Transactional(readOnly = true)
@@ -78,6 +80,21 @@ public class GroupService {
     public GroupResponse createGroup(GroupRequest request, User currentUser) {
         loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "createGroup", request.getName());
         try {
+            // ── Tier-based Limits ──────────────────────────────────────────────────────
+            long currentGroupCount = groupRepository.countByOwner(currentUser);
+            boolean isPremium = currentUser.isPremium();
+            int maxGroups = isPremium ? planLimitService.premiumMaxGroups() : planLimitService.freeMaxGroups();
+
+            if (currentGroupCount >= maxGroups) {
+                String msg = isPremium
+                        ? String.format("Premium kullanıcılar en fazla %d grup oluşturabilir.", maxGroups)
+                        : String.format(
+                                "Ücretsiz kullanıcılar en fazla %d grup oluşturabilir. Premium'a geçerek %d gruba kadar erişebilirsiniz.",
+                                maxGroups, planLimitService.premiumMaxGroups());
+                throw new IllegalArgumentException(msg);
+            }
+            // ──────────────────────────────────────────────────────────────────────────
+
             Group group = new Group(request.getName(), request.getDescription());
             group.setOwner(currentUser);
             group.setInviteCode(generateInviteCode());

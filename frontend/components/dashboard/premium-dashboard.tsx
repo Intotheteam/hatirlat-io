@@ -19,17 +19,19 @@ import {
   BarChart3,
   Target,
   MessageSquare,
-  PieChart
+  PieChart,
+  Info
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { CustomProgressBar } from "@/components/ui/custom-progress-bar";
 import { apiManager } from "@/services/api/apiManager";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useRouter } from "next/navigation";
 import type { View, Reminder } from "@/types";
-import EditReminderModal from "../edit-reminder-modal";
 
 interface PremiumDashboardProps {
   onNavigate: (view: View, groupId?: string) => void;
@@ -56,8 +58,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
     today: 0
   });
   const [loading, setLoading] = useState(true);
-  const [isEditModalOpen, setEditModalOpen] = useState(false);
-  const [selectedReminder, setSelectedReminder] = useState<Reminder | null>(null);
+  const router = useRouter();
   const { toast } = useToast();
 
   // Fetch reminders and stats from API
@@ -71,16 +72,16 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
         // Calculate stats
         const now = new Date();
         const total = fetchedReminders.length;
-        const active = fetchedReminders.filter(r => r.status === "scheduled").length;
-        const completed = fetchedReminders.filter(r => r.status === "sent").length;
+        const active = fetchedReminders.filter(r => r.status?.toLowerCase() === "scheduled").length;
+        const completed = fetchedReminders.filter(r => r.status?.toLowerCase() === "sent" || r.status?.toLowerCase() === "success").length;
         const groups = new Set(fetchedReminders.map(r => r.group?.id || '')).size;
         const overdue = fetchedReminders.filter(r =>
-          new Date(r.dateTime) < now && r.status === "scheduled"
+          new Date(r.dateTime) < now && r.status?.toLowerCase() === "scheduled"
         ).length;
         const today = fetchedReminders.filter(r => {
           const reminderDate = new Date(r.dateTime);
           const todayDate = new Date();
-          return reminderDate.toDateString() === todayDate.toDateString() && r.status === "scheduled";
+          return reminderDate.toDateString() === todayDate.toDateString() && r.status?.toLowerCase() === "scheduled";
         }).length;
 
         setStats({ total, active, completed, groups, overdue, today });
@@ -100,8 +101,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
 
   const handleReminderAction = async (action: "edit" | "delete" | "toggle", reminder: Reminder) => {
     if (action === "edit") {
-      setSelectedReminder(reminder);
-      setEditModalOpen(true);
+      router.push(`/schedules/${reminder.id}`);
     }
     else if (action === "delete") {
       try {
@@ -111,16 +111,16 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
         // Recalculate stats
         const now = new Date();
         const total = updatedReminders.length;
-        const active = updatedReminders.filter(r => r.status === "scheduled").length;
-        const completed = updatedReminders.filter(r => r.status === "sent").length;
+        const active = updatedReminders.filter(r => r.status?.toLowerCase() === "scheduled").length;
+        const completed = updatedReminders.filter(r => r.status?.toLowerCase() === "sent" || r.status?.toLowerCase() === "success").length;
         const groups = new Set(updatedReminders.map(r => r.group?.id || '')).size;
         const overdue = updatedReminders.filter(r =>
-          new Date(r.dateTime) < now && r.status === "scheduled"
+          new Date(r.dateTime) < now && r.status?.toLowerCase() === "scheduled"
         ).length;
         const today = updatedReminders.filter(r => {
           const reminderDate = new Date(r.dateTime);
           const todayDate = new Date();
-          return reminderDate.toDateString() === todayDate.toDateString() && r.status === "scheduled";
+          return reminderDate.toDateString() === todayDate.toDateString() && r.status?.toLowerCase() === "scheduled";
         }).length;
 
         setStats({ total, active, completed, groups, overdue, today });
@@ -146,14 +146,14 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
         // Recalculate stats after toggle
         const now = new Date();
         const active = reminders.map(r => r.id === reminder.id ? { ...r, status: newStatus } : r)
-          .filter(r => r.status === "scheduled").length;
+          .filter(r => r.status?.toLowerCase() === "scheduled").length;
         const overdue = reminders.map(r => r.id === reminder.id ? { ...r, status: newStatus } : r)
-          .filter(r => new Date(r.dateTime) < now && r.status === "scheduled").length;
+          .filter(r => new Date(r.dateTime) < now && r.status?.toLowerCase() === "scheduled").length;
         const today = reminders.map(r => r.id === reminder.id ? { ...r, status: newStatus } : r)
           .filter(r => {
             const reminderDate = new Date(r.dateTime);
             const todayDate = new Date();
-            return reminderDate.toDateString() === todayDate.toDateString() && r.status === "scheduled";
+            return reminderDate.toDateString() === todayDate.toDateString() && r.status?.toLowerCase() === "scheduled";
           }).length;
 
         setStats(prev => ({
@@ -177,23 +177,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
     }
   };
 
-  const handleSaveReminder = async (updatedReminder: Reminder) => {
-    try {
-      const savedReminder = await apiManager.updateReminder(updatedReminder.id, updatedReminder);
-      setReminders(reminders.map(r => r.id === updatedReminder.id ? savedReminder : r));
-      setEditModalOpen(false);
-      toast({
-        title: "Success",
-        description: "Reminder updated successfully"
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update reminder",
-        variant: "destructive"
-      });
-    }
-  };
+
 
   // Prepare data for activity timeline
   const activityData = reminders
@@ -362,6 +346,13 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                 </div>
                 <Badge variant="secondary" className="text-xs">{stats.total}</Badge>
               </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200/50 dark:border-border/20">
+                <div className="flex items-center gap-2">
+                  <Activity className="h-3.5 w-3.5 text-blue-500" />
+                  <span className="text-xs font-medium">{t("dashboard.active_status")}</span>
+                </div>
+                <Badge variant="secondary" className="text-xs">{stats.active}</Badge>
+              </div>
               <div className="flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200/50 dark:border-border/20">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-3.5 w-3.5 text-purple-500" />
@@ -387,24 +378,102 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                 {t("dashboard.performance")}
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium">{t("dashboard.completion_rate")}</span>
-                  <span className="text-xs font-bold">{completionPercentage}%</span>
+            <CardContent className="px-4 pb-4 space-y-4">
+              <TooltipProvider delayDuration={200}>
+                {/* Today's Progress */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium">Günlük İlerleme (Today)</span>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p className="text-xs">Bugün gönderilmesi planlanan mesajlardan<br />teslim edilenlerin oranı.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <span className="text-xs font-bold">
+                      {(() => {
+                        const todayReminders = reminders.filter(r => new Date(r.dateTime).toDateString() === new Date().toDateString());
+                        const todaySent = todayReminders.filter(r => r.status?.toLowerCase() === "sent" || r.status?.toLowerCase() === "success").length;
+                        return todayReminders.length > 0 ? Math.round((todaySent / todayReminders.length) * 100) : 0;
+                      })()}%
+                    </span>
+                  </div>
+                  <CustomProgressBar
+                    value={(() => {
+                      const todayReminders = reminders.filter(r => new Date(r.dateTime).toDateString() === new Date().toDateString());
+                      const todaySent = todayReminders.filter(r => r.status?.toLowerCase() === "sent" || r.status?.toLowerCase() === "success").length;
+                      return todayReminders.length > 0 ? Math.round((todaySent / todayReminders.length) * 100) : 0;
+                    })()}
+                    max={100}
+                    className="bg-secondary/50 h-5"
+                  />
                 </div>
-                <CustomProgressBar value={completionPercentage} max={100} />
-              </div>
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <div className="text-center p-2 rounded-lg bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-200/50 dark:border-border/20">
-                  <div className="text-sm font-bold">{stats.completed}</div>
-                  <div className="text-xs text-muted-foreground">{t("dashboard.done")}</div>
+
+                {/* Delivery Success Rate */}
+                <div className="space-y-1 pt-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium">Teslimat Başarısı (Success)</span>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p className="text-xs">Gönderilmeye çalışılan tüm mesajlar<br />içindeki başarılı teslimat oranı.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <span className="text-xs font-bold">
+                      {(() => {
+                        const attempted = reminders.filter(r => r.status?.toLowerCase() !== "scheduled" && r.status?.toLowerCase() !== "paused").length;
+                        const successful = reminders.filter(r => r.status?.toLowerCase() === "sent" || r.status?.toLowerCase() === "success").length;
+                        return attempted > 0 ? Math.round((successful / attempted) * 100) : 100;
+                      })()}%
+                    </span>
+                  </div>
+                  <CustomProgressBar
+                    value={(() => {
+                      const attempted = reminders.filter(r => r.status?.toLowerCase() !== "scheduled" && r.status?.toLowerCase() !== "paused").length;
+                      const successful = reminders.filter(r => r.status?.toLowerCase() === "sent" || r.status?.toLowerCase() === "success").length;
+                      return attempted > 0 ? Math.round((successful / attempted) * 100) : 100;
+                    })()}
+                    max={100}
+                    className="bg-secondary/50 h-5"
+                  />
                 </div>
-                <div className="text-center p-2 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200/50 dark:border-border/20">
-                  <div className="text-sm font-bold">{stats.active}</div>
-                  <div className="text-xs text-muted-foreground">{t("dashboard.pending")}</div>
+
+                {/* Credit Usage */}
+                <div className="space-y-1 pt-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium">Kredi Kullanımı (Credits)</span>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p className="text-xs">Kalan aylık mesaj kotanızı ve<br />satın aldığınız toplam kotayı gösterir.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <span className="text-xs font-bold">
+                      12%
+                    </span>
+                  </div>
+                  <CustomProgressBar
+                    value={12}
+                    max={100}
+                    className="bg-secondary/50 h-5"
+                  />
+                  <div className="flex items-center justify-end text-[10px] text-muted-foreground leading-tight mt-1">
+                    <p className="font-medium">880 / 1000 Kalan</p>
+                  </div>
                 </div>
-              </div>
+              </TooltipProvider>
             </CardContent>
           </Card>
 
@@ -653,7 +722,7 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium truncate">{item.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {item.status === "sent" ? t("dashboard.completed") : t("dashboard.scheduled_status")}
+                        {item.status?.toLowerCase() === "sent" || item.status?.toLowerCase() === "success" ? t("dashboard.completed") : t("dashboard.scheduled_status")}
                       </p>
                     </div>
                   </div>
@@ -674,15 +743,6 @@ export default function PremiumDashboard({ onNavigate }: PremiumDashboardProps) 
       </div>
 
 
-      {/* Edit Reminder Modal */}
-      {selectedReminder && (
-        <EditReminderModal
-          isOpen={isEditModalOpen}
-          onClose={() => setEditModalOpen(false)}
-          reminder={selectedReminder}
-          onSave={handleSaveReminder}
-        />
-      )}
     </motion.div>
   );
 }

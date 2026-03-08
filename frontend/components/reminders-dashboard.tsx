@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Bell, Users, MoreHorizontal, Edit, Trash2, CheckCircle, Clock } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import EditReminderModal from "./edit-reminder-modal"
-import { useState } from "react"
 import { useLanguage } from "@/contexts/LanguageContext"
 import type { View } from "@/types"
 
@@ -15,7 +13,6 @@ interface RemindersDashboardProps {
 
 export default function RemindersDashboard({ onNavigate }: RemindersDashboardProps) {
   const { t } = useLanguage()
-  const [selectedReminder, setSelectedReminder] = useState<any | null>(null)
 
   const reminders = [
     { id: "1", title: "Ekip Toplantısı", time: "10:00", type: t("dashboard.group"), status: "active" },
@@ -95,7 +92,7 @@ export default function RemindersDashboard({ onNavigate }: RemindersDashboardPro
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="rounded-xl">
-                    <DropdownMenuItem onSelect={() => setSelectedReminder(reminder)} className="rounded-lg cursor-pointer">
+                    <DropdownMenuItem onSelect={() => onNavigate("schedules")} className="rounded-lg cursor-pointer">
                       <Edit className="mr-2 h-4 w-4" />
                       {t("common.edit")}
                     </DropdownMenuItem>
@@ -110,25 +107,6 @@ export default function RemindersDashboard({ onNavigate }: RemindersDashboardPro
           </div>
         </div>
       </div>
-      {selectedReminder && (
-        <EditReminderModal
-          isOpen={true}
-          reminder={{
-            id: selectedReminder.id,
-            title: selectedReminder.title,
-            message: "",
-            type: selectedReminder.type === "Grup" ? "group" : "personal",
-            status: selectedReminder.status === "active" ? "scheduled" : "sent",
-            dateTime: new Date().toISOString(),
-            contact: { name: "", phone: "", email: "" },
-            group: { id: "2", name: "Work Team" },
-            channels: ["email"],
-            repeat: "none",
-          }}
-          onClose={() => setSelectedReminder(null)}
-          onSave={() => setSelectedReminder(null)}
-        />
-      )}
     </>
   )
 }

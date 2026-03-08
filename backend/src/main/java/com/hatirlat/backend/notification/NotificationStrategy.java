@@ -4,5 +4,6 @@ import com.hatirlat.backend.entity.NotificationChannel;
 
 public interface NotificationStrategy {
     NotificationChannel getChannelType();
-    void sendNotification(String recipient, String message, String subject);
+
+    DeliveryResult sendNotification(String recipient, String message, String subject);
 }

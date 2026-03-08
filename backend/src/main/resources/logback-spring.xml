@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Console Appender with coloured, readable format -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan([%thread]) %yellow(%logger{36}) - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  Package-level overrides                    -->
+    <!-- ═══════════════════════════════════════════ -->
+
+    <!-- Hatirlat.io application code — DEBUG to see everything -->
+    <logger name="com.hatirlat.backend" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Scheduler — always INFO so scan results are visible -->
+    <logger name="com.hatirlat.backend.service.ReminderScheduler" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Spring Security — WARN to reduce noise -->
+    <logger name="org.springframework.security" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Hibernate SQL — INFO (shows queries without verbose bindings) -->
+    <logger name="org.hibernate.SQL" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Hibernate parameter binding — only enable for deep debugging -->
+    <logger name="org.hibernate.type.descriptor.sql" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Resilience4j — WARN to reduce noise -->
+    <logger name="io.github.resilience4j" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Root logger -->
+    <root level="WARN">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>

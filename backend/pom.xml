@@ -76,6 +76,12 @@
                 </exclusion>
             </exclusions>
         </dependency>  
+        <!-- Twilio SDK for SMS and WhatsApp -->
+        <dependency>
+            <groupId>com.twilio.sdk</groupId>
+            <artifactId>twilio</artifactId>
+            <version>10.1.0</version>
+        </dependency>
         <dependency>  
             <groupId>com.h2database</groupId>  
             <artifactId>h2</artifactId>  

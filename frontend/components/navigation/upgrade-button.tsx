@@ -31,7 +31,7 @@ export function UpgradeButton() {
           <Sparkles className="relative h-3.5 w-3.5 animate-pulse" />
         </div>
 
-        <span className="relative z-10">Upgrade</span>
+        <span className="relative z-10 text-[10px] leading-tight text-left">Mobil Uygulamadan<br />Yükseltin</span>
 
         {/* Animated shine effect */}
         <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>

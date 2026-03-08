@@ -39,6 +39,9 @@ public class MemberService {
     @Autowired
     private GroupJoinAuditRepository groupJoinAuditRepository;
 
+    @Autowired
+    private PlanLimitService planLimitService;
+
     public List<MemberResponse> getGroupMembers(String groupId) {
         List<Member> members = memberRepository.findMembersByGroupId(Long.parseLong(groupId));
         return members.stream()
@@ -66,13 +69,12 @@ public class MemberService {
         long currentMemberCount = groupMemberRepository.countByGroupId(group.getId());
         User owner = group.getOwner();
 
-        int maxAllowedMembers = 10; // Free tier default
-        if (owner != null && owner.isPremium()) {
-            maxAllowedMembers = 300; // Premium tier
-        }
+        int maxAllowedMembers = owner != null && owner.isPremium()
+                ? planLimitService.premiumMaxMembers()
+                : planLimitService.freeMaxMembers();
 
         if (currentMemberCount >= maxAllowedMembers) {
-            throw new GroupFullException("Bu grup maksimum üye sınırına ulaşmıştır.");
+            throw new GroupFullException("Bu grup maksimum üye sınırına ulaşmıştır. (" + maxAllowedMembers + " üye)");
         }
 
         Member member = new Member();

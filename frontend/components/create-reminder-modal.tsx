@@ -11,17 +11,20 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Bell, Users, Mail, MessageSquare, Phone, UserIcon, Calendar, Clock, Repeat } from "lucide-react"
+import { Bell, Users, Mail, MessageSquare, Phone, UserIcon, Calendar, Clock, Repeat, Sparkles, Lock } from "lucide-react"
 import type { Reminder, CustomRepeatConfig, Group, Channel } from "@/types"
 import { apiService } from "@/services/api/apiService"
 import { apiManager } from "@/services/api/apiManager"
 import { toast } from "sonner"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface CreateReminderModalProps {
   isOpen: boolean
   onClose: () => void
   onSave: (reminder: Omit<Reminder, "id">) => void
+  /** Current count of group reminders (to show limit warning) */
+  groupReminderCount?: number
 }
 
 const channelOptions: { id: Channel; label: string; icon: any }[] = [
@@ -57,8 +60,11 @@ const initialFormData: Omit<Reminder, "id"> = {
   },
 }
 
-export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateReminderModalProps) {
+export default function CreateReminderModal({ isOpen, onClose, onSave, groupReminderCount = 0 }: CreateReminderModalProps) {
   const { t } = useLanguage()
+  const { user } = useAuth()
+  const isPremium = user?.premium ?? false
+  const freeGroupLimit = 3
   const [formData, setFormData] = useState<Omit<Reminder, "id">>(initialFormData)
   const [groups, setGroups] = useState<Group[]>([])
   const [isLoadingGroups, setIsLoadingGroups] = useState(false)
@@ -67,19 +73,27 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    if (isOpen && formData.type === "group") {
-      const fetchGroups = async () => {
-        try {
-          setIsLoadingGroups(true)
-          const fetchedGroups = await apiManager.getGroups()
-          setGroups(fetchedGroups)
-        } catch (error) {
-          toast.error(t("modals.groups_failed"))
-        } finally {
-          setIsLoadingGroups(false)
+    if (isOpen) {
+      if (formData.type === "group") {
+        const fetchGroups = async () => {
+          try {
+            setIsLoadingGroups(true)
+            const fetchedGroups = await apiManager.getGroups()
+            setGroups(fetchedGroups)
+          } catch (error) {
+            toast.error(t("modals.groups_failed"))
+          } finally {
+            setIsLoadingGroups(false)
+          }
         }
+        fetchGroups()
       }
-      fetchGroups()
+
+      // Set default dateTime to current local time, zeroing out seconds for datetime-local
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      const formattedDateTime = now.toISOString().slice(0, 16);
+      setFormData(prev => ({ ...prev, dateTime: formattedDateTime }));
     }
   }, [isOpen, formData.type])
 
@@ -142,7 +156,7 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     // Frontend validation
@@ -187,23 +201,32 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
     }
 
     if (formData.type === "personal") {
-      // Personal reminder: clear group fields
       finalData.group = null
     } else {
-      // Group reminder: set groupId, clear contact
-      if (groupChoice === "create" && newGroupName) {
-        finalData.group = { id: "", name: newGroupName }
-      }
       finalData.contact = null
+      if (groupChoice === "create" && newGroupName.trim()) {
+        // Create the group first, then use its real ID
+        try {
+          const createdGroup = await apiManager.createGroup({ name: newGroupName.trim() })
+          finalData.group = { id: createdGroup.id, name: createdGroup.name }
+        } catch {
+          toast.error("Grup oluşturulamadı. Lütfen tekrar deneyin.")
+          return
+        }
+      }
     }
 
     onSave(finalData)
-    setFormData(initialFormData)
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    const formattedDateTime = now.toISOString().slice(0, 16);
+    setFormData({ ...initialFormData, dateTime: formattedDateTime })
     setNewGroupName("")
     setGroupChoice("select")
     setErrors({})
     onClose()
   }
+
 
   const showEmailField = useMemo(() => formData.channels.includes("email"), [formData.channels])
   const showPhoneField = useMemo(
@@ -375,26 +398,35 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
 
               {groupChoice === "select" ? (
                 <div>
-                  <Select
-                    onValueChange={(val) => {
-                      handleGroupSelectChange(val)
-                      if (errors.group) setErrors(prev => ({ ...prev, group: "" }))
-                    }}
-                    value={formData.group?.id || ""}
-                    disabled={isLoadingGroups}
-                  >
-                    <SelectTrigger className={`rounded-xl h-10 text-sm ${errors.group ? "border-destructive focus:ring-destructive" : "border-border"}`}>
-                      <SelectValue placeholder={isLoadingGroups ? t("modals.loading_groups") : t("modals.select_group_placeholder")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {groups.map((group) => (
-                        <SelectItem key={group.id} value={group.id}>
-                          {group.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.group && <p className="text-xs text-destructive mt-1.5 font-medium">{errors.group}</p>}
+                  {!isLoadingGroups && groups.length === 0 ? (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-500/30 text-amber-700 dark:text-amber-400">
+                      <Users className="h-4 w-4 flex-shrink-0" />
+                      <p className="text-xs font-medium">Seçilebilecek bir grup yok. Önce grup oluşturun veya aşağıdan yeni grup adı girerek devam edin.</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <Select
+                        onValueChange={(val) => {
+                          handleGroupSelectChange(val)
+                          if (errors.group) setErrors(prev => ({ ...prev, group: "" }))
+                        }}
+                        value={formData.group?.id || ""}
+                        disabled={isLoadingGroups}
+                      >
+                        <SelectTrigger className={`rounded-xl h-10 text-sm ${errors.group ? "border-destructive focus:ring-destructive" : "border-border"}`}>
+                          <SelectValue placeholder={isLoadingGroups ? t("modals.loading_groups") : t("modals.select_group_placeholder")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {groups.map((group) => (
+                            <SelectItem key={group.id} value={group.id}>
+                              {group.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.group && <p className="text-xs text-destructive mt-1.5 font-medium">{errors.group}</p>}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div>
@@ -410,6 +442,26 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
                   />
                   {errors.newGroupName && <p className="text-xs text-destructive mt-1.5 font-medium">{errors.newGroupName}</p>}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Free tier group reminder limit warning */}
+          {formData.type === "group" && !isPremium && (
+            <div className={`flex items-start gap-2 px-3 py-2.5 rounded-xl border text-xs font-medium ${groupReminderCount >= freeGroupLimit
+                ? "bg-destructive/10 border-destructive/40 text-destructive"
+                : "bg-amber-50 dark:bg-amber-950/20 border-amber-300/50 text-amber-700 dark:text-amber-400"
+              }`}>
+              {groupReminderCount >= freeGroupLimit ? (
+                <>
+                  <Lock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                  <span>Ücretsiz planda maksimum <strong>{freeGroupLimit}</strong> grup hatırlatıcısı oluşturabilirsiniz. Premium'a geçin.</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                  <span>Ücretsiz plan: <strong>{groupReminderCount}/{freeGroupLimit}</strong> grup hatırlatıcısı kullandınız. Saatlik tekrar ve sınırsız erişim için Premium'a geçin.</span>
+                </>
               )}
             </div>
           )}
@@ -456,13 +508,28 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
                 <Repeat className="h-3.5 w-3.5 text-primary" />
                 {t("modals.repeat_label")}
               </Label>
+              {/* Repeat frequency select with premium gates */}
               <Select value={formData.repeat} onValueChange={handleRepeatChange}>
                 <SelectTrigger id="repeat" className="rounded-xl h-10 border-border text-sm">
                   <SelectValue placeholder={t("modals.select_frequency")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{t("modals.frequency_none")}</SelectItem>
-                  <SelectItem value="hourly">{t("modals.frequency_hourly")}</SelectItem>
+                  {/* HOURLY — Premium only */}
+                  <SelectItem
+                    value="hourly"
+                    disabled={!isPremium}
+                    className={!isPremium ? "opacity-50 cursor-not-allowed" : ""}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      {t("modals.frequency_hourly")}
+                      {!isPremium && (
+                        <span className="ml-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
+                          PREMIUM
+                        </span>
+                      )}
+                    </span>
+                  </SelectItem>
                   <SelectItem value="daily">{t("modals.frequency_daily")}</SelectItem>
                   <SelectItem value="weekly">{t("modals.frequency_weekly")}</SelectItem>
                   <SelectItem value="custom">{t("modals.frequency_custom")}</SelectItem>
@@ -536,6 +603,7 @@ export default function CreateReminderModal({ isOpen, onClose, onSave }: CreateR
           <Button
             type="submit"
             onClick={handleSubmit}
+            disabled={formData.type === "group" && groupChoice === "select" && !isLoadingGroups && groups.length === 0}
             className="rounded-full h-10 px-8 font-semibold transition-all text-sm shadow-md"
           >
             {t("modals.create_btn")}

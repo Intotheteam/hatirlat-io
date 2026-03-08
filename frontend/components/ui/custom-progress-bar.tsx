@@ -16,14 +16,17 @@ const CustomProgressBar = React.forwardRef<HTMLDivElement, CustomProgressBarProp
     const percentage = Math.round((value / max) * 100);
 
     return (
-      <div 
-        ref={ref} 
-        className={cn("relative w-full overflow-hidden rounded-full bg-secondary", className)} 
+      <div
+        ref={ref}
+        className={cn("relative w-full overflow-hidden rounded-full bg-secondary", className)}
         style={{ height: '28px' }}
         {...props}
       >
         <div
-          className="h-full rounded-full bg-gradient-to-r from-teal-500 to-green-500 transition-all duration-500 ease-out flex items-center justify-end pr-2"
+          className={cn(
+            "h-full rounded-full bg-gradient-to-r from-teal-500 to-green-500 transition-all duration-500 ease-out flex items-center justify-end",
+            percentage > 0 ? "pr-2" : "pr-0 opacity-0"
+          )}
           style={{ width: `${percentage}%` }}
         >
           {showPercentageInside && percentage > 15 && (

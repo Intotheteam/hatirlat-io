@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Calendar, CheckCircle, AlertCircle } from "lucide-react";
 import { Reminder } from "@/types";
-import type { View } from "@/app/page";
+import type { View } from "@/types";
 
 interface ActivityTimelineProps {
   activities: Reminder[];

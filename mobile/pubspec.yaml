@@ -1,0 +1,60 @@
+name: hatirlat_app
+description: "Hatirlat.io — Akıllı Hatırlatıcı Uygulaması"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Routing
+  go_router: ^14.2.0
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # HTTP & API
+  dio: ^5.4.3+1
+
+  # Secure Storage (JWT)
+  flutter_secure_storage: ^9.2.2
+
+  # Shared Preferences (Theme & Locale)
+  shared_preferences: ^2.2.2
+
+  # Calendar View
+  table_calendar: ^3.1.2
+
+  # Animations
+  flutter_animate: ^4.5.0
+
+  # Loading Skeleton
+  shimmer: ^3.0.0
+
+  # Date & i18n
+  intl: ^0.20.2
+
+  # Icons
+  cupertino_icons: ^1.0.8
+  share_plus: ^12.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.9
+  riverpod_generator: ^2.4.3
+  json_serializable: ^6.8.0
+
+flutter:
+  generate: true
+  uses-material-design: true
+
+  assets:
+    - assets/images/

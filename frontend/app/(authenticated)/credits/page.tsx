@@ -38,17 +38,7 @@ export default function CreditsPage() {
     }
 
     const handleBuyCredits = async (amount: number) => {
-        setIsBuying(amount)
-        try {
-            await creditService.addCredits(amount)
-            if (user) updateCredits((user.credits || 0) + amount)
-            toast.success(t("credits.buy_success", { amount }))
-            fetchHistory()
-        } catch {
-            toast.error(t("credits.buy_error"))
-        } finally {
-            setIsBuying(null)
-        }
+        // Disabled since mobile handles it
     }
 
     const formatDate = (d: string) =>
@@ -73,7 +63,7 @@ export default function CreditsPage() {
                             {user?.credits ?? 0} kredi
                         </span>
                     </h1>
-                    <p className="text-sm text-muted-foreground mt-2">Her SMS / WhatsApp bildirimi 1 kredi kullanır.</p>
+                    <p className="text-sm text-muted-foreground mt-2">Kredi satın alımları <b>sadece mobil uygulamamızdan</b> yapılmaktadır.</p>
                 </motion.div>
 
                 {/* Packages */}
@@ -106,16 +96,12 @@ export default function CreditsPage() {
                                     </div>
                                     <div className="text-lg font-bold text-foreground">{pkg.price}</div>
                                     <button
-                                        onClick={() => handleBuyCredits(pkg.amount)}
-                                        disabled={isBuying !== null}
-                                        className={`w-full py-2 rounded-xl text-sm font-semibold text-white shadow-sm
-                      bg-gradient-to-r ${pkg.color} hover:opacity-90 active:scale-[0.98]
-                      transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
+                                        disabled
+                                        className={`w-full py-2 rounded-xl text-xs font-semibold text-white shadow-sm
+                      bg-gradient-to-r ${pkg.color} opacity-80 cursor-default
                       flex items-center justify-center gap-2`}
                                     >
-                                        {isBuying === pkg.amount
-                                            ? <><Loader2 className="h-4 w-4 animate-spin" /> Yükleniyor</>
-                                            : "Satın Al"}
+                                        Mobil Uygulamadan Alın
                                     </button>
                                 </CardContent>
                             </Card>

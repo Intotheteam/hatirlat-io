@@ -20,6 +20,10 @@ interface NotificationLog {
     recipient: string
     status: string
     errorMessage: string | null
+    providerMessageId: string | null
+    providerStatus: string | null
+    providerErrorCode: string | null
+    providerResponse: string | null
     sentAt: string
 }
 
@@ -113,8 +117,8 @@ export default function NotificationLogsPage() {
                                     {/* Left */}
                                     <div className="flex items-start gap-3 min-w-0">
                                         <div className={`mt-0.5 p-1.5 rounded-lg flex-shrink-0 ${log.status === "SUCCESS"
-                                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                                : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                                             }`}>
                                             {log.status === "SUCCESS"
                                                 ? <CheckCircle2 className="h-4 w-4" />
@@ -126,7 +130,15 @@ export default function NotificationLogsPage() {
                                             {log.errorMessage && (
                                                 <p className="text-xs text-rose-500 mt-0.5 truncate">{log.errorMessage}</p>
                                             )}
-                                            <p className="text-xs text-muted-foreground mt-1">{formatDate(log.sentAt)}</p>
+                                            {(log.providerMessageId || log.providerStatus || log.providerResponse) && (
+                                                <div className="mt-2 flex flex-wrap gap-3 text-[10.5px] text-muted-foreground bg-accent/30 py-1.5 px-2.5 rounded-md border border-border/40">
+                                                    {log.providerMessageId && <span><span className="font-medium text-foreground/70">Ref:</span> {log.providerMessageId}</span>}
+                                                    {log.providerStatus && <span><span className="font-medium text-foreground/70">Sağlayıcı Durumu:</span> {log.providerStatus}</span>}
+                                                    {log.providerErrorCode && <span><span className="font-medium text-rose-500">Hata Kodu:</span> {log.providerErrorCode}</span>}
+                                                    {log.providerResponse && <span className="w-full truncate"><span className="font-medium text-foreground/70">Detay:</span> {log.providerResponse}</span>}
+                                                </div>
+                                            )}
+                                            <p className="text-xs text-muted-foreground mt-1.5">{formatDate(log.sentAt)}</p>
                                         </div>
                                     </div>
 
@@ -139,8 +151,8 @@ export default function NotificationLogsPage() {
                                         <Badge
                                             variant="outline"
                                             className={`text-xs ${log.status === "SUCCESS"
-                                                    ? "border-emerald-200/60 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5"
-                                                    : "border-rose-200/60 text-rose-600 dark:text-rose-400 bg-rose-500/5"
+                                                ? "border-emerald-200/60 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5"
+                                                : "border-rose-200/60 text-rose-600 dark:text-rose-400 bg-rose-500/5"
                                                 }`}
                                         >
                                             {log.status === "SUCCESS" ? "Teslim Edildi" : "Başarısız"}

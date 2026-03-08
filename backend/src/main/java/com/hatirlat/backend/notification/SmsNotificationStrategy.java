@@ -1,6 +1,8 @@
 package com.hatirlat.backend.notification;
 
 import com.hatirlat.backend.entity.NotificationChannel;
+import com.twilio.rest.api.v2010.account.Message;
+import com.twilio.type.PhoneNumber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,7 +13,10 @@ public class SmsNotificationStrategy implements NotificationStrategy {
 
     private static final Logger logger = LoggerFactory.getLogger(SmsNotificationStrategy.class);
 
-    @Value("${sms.enabled:false}")
+    @Value("${twilio.sms.from-number:}")
+    private String fromNumber;
+
+    @Value("${twilio.sms.enabled:false}")
     private boolean smsEnabled;
 
     @Override
@@ -20,21 +25,37 @@ public class SmsNotificationStrategy implements NotificationStrategy {
     }
 
     @Override
-    public void sendNotification(String recipient, String message, String subject) {
+    public DeliveryResult sendNotification(String recipient, String message, String subject) {
         if (!smsEnabled) {
-            logger.warn("SMS notification is disabled. Would send to: {}, Message: {}", recipient, message);
-            // TODO: Integrate with Twilio/AWS SNS when SMS service is configured
-            // To enable, set sms.enabled=true and configure Twilio credentials:
-            // sms.twilio.account-sid=YOUR_ACCOUNT_SID
-            // sms.twilio.auth-token=YOUR_AUTH_TOKEN
-            // sms.twilio.from-number=YOUR_TWILIO_NUMBER
-            return;
+            logger.warn("SMS disabled — would send to {}: {}", recipient, message);
+            return DeliveryResult.disabled("SMS");
         }
 
-        logger.info("Sending SMS to: {}, Subject: {}", recipient, subject);
-        // Twilio integration placeholder:
-        // Twilio.init(accountSid, authToken);
-        // Message.creator(new PhoneNumber(recipient), new PhoneNumber(fromNumber), message).create();
-        logger.info("SMS sent successfully to: {}", recipient);
+        if (fromNumber.isBlank()) {
+            logger.error("TWILIO_FROM_PHONE is not configured.");
+            return DeliveryResult.failure("CONFIG_ERROR", "TWILIO_FROM_PHONE is not configured");
+        }
+
+        try {
+            logger.info("Sending SMS to: {}", recipient);
+            Message twilioMessage = Message.creator(
+                    new PhoneNumber(recipient),
+                    new PhoneNumber(fromNumber),
+                    "[Hatirlat.io] " + subject + "\n" + message).create();
+
+            String sid = twilioMessage.getSid();
+            String status = twilioMessage.getStatus() != null ? twilioMessage.getStatus().toString() : "unknown";
+            logger.info("SMS sent. SID={} Status={}", sid, status);
+            return DeliveryResult.success(sid, status,
+                    "to=" + recipient + " sid=" + sid + " status=" + status);
+
+        } catch (com.twilio.exception.ApiException e) {
+            logger.error("Twilio API error sending SMS to {}: code={} message={}", recipient, e.getCode(),
+                    e.getMessage());
+            return DeliveryResult.failure(String.valueOf(e.getCode()), e.getMessage());
+        } catch (Exception e) {
+            logger.error("Failed to send SMS to {}: {}", recipient, e.getMessage());
+            return DeliveryResult.failure("UNKNOWN", e.getMessage());
+        }
     }
 }

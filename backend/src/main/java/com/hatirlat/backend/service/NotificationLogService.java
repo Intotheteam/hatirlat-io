@@ -34,6 +34,21 @@ public class NotificationLogService {
         return notificationLogRepository.findByUserOrderBySentAtDesc(user).size();
     }
 
+    @Transactional(readOnly = true)
+    public List<NotificationLogResponse> getNotificationLogsByReminder(Long reminderId, User user, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<NotificationLog> logs = notificationLogRepository.findByReminderIdAndUserOrderBySentAtDesc(reminderId,
+                user, pageable);
+        return logs.getContent().stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public long getTotalCountByReminder(Long reminderId, User user) {
+        Pageable pageable = Pageable.unpaged();
+        return notificationLogRepository.findByReminderIdAndUserOrderBySentAtDesc(reminderId, user, pageable)
+                .getTotalElements();
+    }
+
     private NotificationLogResponse toDto(NotificationLog log) {
         NotificationLogResponse dto = new NotificationLogResponse();
         dto.setId(String.valueOf(log.getId()));
@@ -45,6 +60,10 @@ public class NotificationLogService {
         dto.setRecipient(log.getRecipient());
         dto.setStatus(log.getStatus() != null ? log.getStatus().name() : null);
         dto.setErrorMessage(log.getErrorMessage());
+        dto.setProviderMessageId(log.getProviderMessageId());
+        dto.setProviderStatus(log.getProviderStatus());
+        dto.setProviderErrorCode(log.getProviderErrorCode());
+        dto.setProviderResponse(log.getProviderResponse());
         dto.setSentAt(log.getSentAt());
         return dto;
     }

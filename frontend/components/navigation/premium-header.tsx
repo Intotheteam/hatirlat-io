@@ -215,14 +215,6 @@ export function PremiumHeader({ currentView, onNavigate }: PremiumHeaderProps) {
                     </div>
                   </DropdownMenuItem>
                 </Link>
-                <Link href="/profile">
-                  <DropdownMenuItem asChild>
-                    <div className="cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>{t("header.settings")}</span>
-                    </div>
-                  </DropdownMenuItem>
-                </Link>
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>{t("header.logout")}</span>

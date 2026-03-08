@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Plus, 
-  Bell, 
-  Users, 
-  MoreHorizontal, 
-  Edit, 
-  Trash2, 
-  CheckCircle, 
+import {
+  Plus,
+  Bell,
+  Users,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  CheckCircle,
   Clock,
   TrendingUp,
   Calendar,
@@ -24,7 +24,7 @@ import { CustomProgressBar } from "@/components/ui/custom-progress-bar";
 import { apiManager } from "@/services/api/apiManager";
 import { useToast } from "@/hooks/use-toast";
 import type { View, Reminder } from "@/types";
-import EditReminderModal from "../edit-reminder-modal";
+import { useRouter } from "next/navigation";
 import { StatCard } from "./stat-card";
 import { ReminderList } from "./reminder-list";
 import { WelcomeCard } from "./welcome-card";
@@ -43,8 +43,7 @@ export default function EnhancedRemindersDashboard({ onNavigate }: RemindersDash
     groups: 0
   });
   const [loading, setLoading] = useState(true);
-  const [isEditModalOpen, setEditModalOpen] = useState(false);
-  const [selectedReminder, setSelectedReminder] = useState<Reminder | null>(null);
+  const router = useRouter();
   const { toast } = useToast();
 
   // Fetch reminders and stats from API
@@ -54,13 +53,13 @@ export default function EnhancedRemindersDashboard({ onNavigate }: RemindersDash
         setLoading(true);
         const fetchedReminders = await apiManager.getReminders();
         setReminders(fetchedReminders);
-        
+
         // Calculate stats
         const total = fetchedReminders.length;
         const active = fetchedReminders.filter(r => r.status === "scheduled").length;
         const completed = fetchedReminders.filter(r => r.status === "sent").length;
         const groups = new Set(fetchedReminders.filter(r => r.group?.id).map(r => r.group!.id)).size;
-        
+
         setStats({ total, active, completed, groups });
       } catch (error) {
         toast({
@@ -78,9 +77,8 @@ export default function EnhancedRemindersDashboard({ onNavigate }: RemindersDash
 
   const handleReminderAction = async (action: "edit" | "delete" | "toggle", reminder: Reminder) => {
     if (action === "edit") {
-      setSelectedReminder(reminder);
-      setEditModalOpen(true);
-    } 
+      router.push(`/schedules/${reminder.id}`);
+    }
     else if (action === "delete") {
       try {
         await apiManager.deleteReminder(reminder.id);
@@ -91,9 +89,9 @@ export default function EnhancedRemindersDashboard({ onNavigate }: RemindersDash
         const active = updatedReminders.filter(r => r.status === "scheduled").length;
         const completed = updatedReminders.filter(r => r.status === "sent").length;
         const groups = new Set(updatedReminders.filter(r => r.group?.id).map(r => r.group!.id)).size;
-        
+
         setStats({ total, active, completed, groups });
-        
+
         toast({
           title: "Success",
           description: "Reminder deleted successfully"
@@ -125,23 +123,7 @@ export default function EnhancedRemindersDashboard({ onNavigate }: RemindersDash
     }
   };
 
-  const handleSaveReminder = async (updatedReminder: Reminder) => {
-    try {
-      const savedReminder = await apiManager.updateReminder(updatedReminder.id, updatedReminder);
-      setReminders(reminders.map(r => r.id === updatedReminder.id ? savedReminder : r));
-      setEditModalOpen(false);
-      toast({
-        title: "Success",
-        description: "Reminder updated successfully"
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update reminder",
-        variant: "destructive"
-      });
-    }
-  };
+
 
   // Prepare data for activity timeline
   const activityData = reminders
@@ -179,7 +161,7 @@ export default function EnhancedRemindersDashboard({ onNavigate }: RemindersDash
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -187,7 +169,7 @@ export default function EnhancedRemindersDashboard({ onNavigate }: RemindersDash
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <WelcomeCard />
-        <Button onClick={() => onNavigate("schedule")}>
+        <Button onClick={() => onNavigate("schedule-form")}>
           <Plus className="mr-2 h-4 w-4" />
           New Reminder
         </Button>
@@ -245,31 +227,22 @@ export default function EnhancedRemindersDashboard({ onNavigate }: RemindersDash
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Upcoming Reminders */}
         <div className="lg:col-span-2">
-          <ReminderList 
-            reminders={reminders} 
-            onAction={handleReminderAction} 
+          <ReminderList
+            reminders={reminders}
+            onAction={handleReminderAction}
             title="Upcoming Reminders"
           />
         </div>
 
         {/* Activity Timeline */}
         <div className="lg:col-span-1">
-          <ActivityTimeline 
+          <ActivityTimeline
             activities={activityData}
             onNavigate={onNavigate}
           />
         </div>
       </div>
 
-      {/* Edit Reminder Modal */}
-      {selectedReminder && (
-        <EditReminderModal
-          isOpen={isEditModalOpen}
-          onClose={() => setEditModalOpen(false)}
-          reminder={selectedReminder}
-          onSave={handleSaveReminder}
-        />
-      )}
     </motion.div>
   );
 }

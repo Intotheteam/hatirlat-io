@@ -20,6 +20,8 @@ public interface NotificationLogRepository extends JpaRepository<NotificationLog
 
     List<NotificationLog> findByUserAndStatus(User user, NotificationLogStatus status);
 
+    Page<NotificationLog> findByReminderIdAndUserOrderBySentAtDesc(Long reminderId, User user, Pageable pageable);
+
     List<NotificationLog> findByUserAndSentAtBetween(User user, LocalDateTime start, LocalDateTime end);
 
     long countByUserAndStatus(User user, NotificationLogStatus status);

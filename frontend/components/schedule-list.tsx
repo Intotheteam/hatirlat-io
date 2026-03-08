@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useMemo } from "react"
+import CalendarView from "@/components/calendar-view"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -17,12 +18,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
-import { User, Users, Mail, MessageSquare, Phone, Play, Pause, Trash2, Pencil, PlusCircle, Bell } from "lucide-react"
+import { User, Users, Mail, MessageSquare, Phone, Play, Pause, Trash2, Pencil, PlusCircle, Bell, LayoutList, CalendarDays } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Reminder, View, CustomRepeatConfig, Channel } from "@/types"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import EditReminderModal from "./edit-reminder-modal"
 import CreateReminderModal from "./create-reminder-modal"
+
 import { useLanguage } from "@/contexts/LanguageContext"
 
 interface ScheduleListProps {
@@ -41,8 +43,9 @@ const channelIcons: { [key: string]: React.ElementType } = {
 
 export default function ScheduleList({ reminders, onNavigate, onSave, onDelete, onToggleStatus }: ScheduleListProps) {
   const { t } = useLanguage()
+  const router = useRouter()
   const [filters, setFilters] = useState({ text: "", status: "all", type: "all", channel: "all" })
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list")
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [selectedReminder, setSelectedReminder] = useState<Reminder | null>(null)
   const [deleteAlert, setDeleteAlert] = useState<{ isOpen: boolean; reminderId: string | null }>({
@@ -55,14 +58,7 @@ export default function ScheduleList({ reminders, onNavigate, onSave, onDelete, 
   }
 
   const handleEditClick = (reminder: Reminder) => {
-    setSelectedReminder(reminder)
-    setIsEditModalOpen(true)
-  }
-
-  const handleSaveEdit = (editedReminder: Reminder) => {
-    onSave(editedReminder)
-    setIsEditModalOpen(false)
-    setSelectedReminder(null)
+    router.push(`/schedules/${reminder.id}`)
   }
 
   const confirmDelete = () => {
@@ -89,21 +85,46 @@ export default function ScheduleList({ reminders, onNavigate, onSave, onDelete, 
         {/* Header Card */}
         <Card className="lg:col-span-5 rounded-xl border bg-card text-card-foreground shadow-sm">
           <CardContent className="p-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
                 <h1 className="text-xl font-bold tracking-tight">
                   {t("schedule_list.title")}
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">{t("schedule_list.subtitle")}</p>
               </div>
-              <Button
-                onClick={() => setIsCreateModalOpen(true)}
-                size="sm"
-                className="rounded-full shadow-sm"
-              >
-                <PlusCircle className="mr-1.5 h-4 w-4" />
-                {t("dashboard.create_new")}
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* View Toggle */}
+                <div className="flex items-center rounded-lg border border-border/60 overflow-hidden">
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={`p-1.5 transition-colors ${viewMode === "list"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent"
+                      }`}
+                    title="Liste Görünümü"
+                  >
+                    <LayoutList className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("calendar")}
+                    className={`p-1.5 transition-colors ${viewMode === "calendar"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent"
+                      }`}
+                    title="Takvim Görünümü"
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                  </button>
+                </div>
+                <Button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  size="sm"
+                  className="rounded-full shadow-sm"
+                >
+                  <PlusCircle className="mr-1.5 h-4 w-4" />
+                  {t("dashboard.create_new")}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -215,145 +236,153 @@ export default function ScheduleList({ reminders, onNavigate, onSave, onDelete, 
           </CardContent>
         </Card>
 
-        {/* Reminders List */}
-        <Card className="lg:col-span-9 rounded-xl border bg-card shadow-sm">
-          <CardHeader className="pb-3 px-5 pt-5 border-b">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold text-foreground">
-                {t("schedule_list.reminders_count", { count: filteredReminders.length })}
-              </h3>
-              <div className="text-sm text-muted-foreground">
-                {t("schedule_list.showing_text", { total: reminders.length, filtered: filteredReminders.length })}
+        {/* Reminders List OR Calendar View */}
+        {viewMode === "calendar" ? (
+          <div className="lg:col-span-9">
+            <CalendarView
+              reminders={filteredReminders}
+              onCreateWithDate={() => setIsCreateModalOpen(true)}
+            />
+          </div>
+        ) : (
+          <Card className="lg:col-span-9 rounded-xl border bg-card shadow-sm">
+            <CardHeader className="pb-3 px-5 pt-5 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-foreground">
+                  {t("schedule_list.reminders_count", { count: filteredReminders.length })}
+                </h3>
+                <div className="text-sm text-muted-foreground">
+                  {t("schedule_list.showing_text", { total: reminders.length, filtered: filteredReminders.length })}
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-5">
-            <div className="space-y-3">
-              {filteredReminders.length > 0 ? (
-                filteredReminders.map((reminder) => {
-                  const TargetIcon = reminder.type === "group" ? Users : User
-                  const isActionable = reminder.status === "scheduled" || reminder.status === "paused"
-                  return (
-                    <div
-                      key={reminder.id}
-                      className="flex items-center justify-between gap-4 rounded-xl border bg-card p-4 hover:shadow-sm transition-all shadow-sm"
-                    >
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
-                          <TargetIcon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-base truncate">{reminder.title}</p>
-                            <Badge
-                              variant={reminder.status === "scheduled" ? "default" : "outline"}
-                              className="text-xs font-medium"
-                            >
-                              {reminder.status === "scheduled" ? t("schedule_list.status_scheduled") : (reminder.status === "paused" ? t("schedule_list.status_paused") : (reminder.status === "sent" ? t("schedule_list.status_sent") : reminder.status))}
-                            </Badge>
+            </CardHeader>
+            <CardContent className="p-5">
+              <div className="space-y-3">
+                {filteredReminders.length > 0 ? (
+                  filteredReminders.map((reminder) => {
+                    const TargetIcon = reminder.type === "group" ? Users : User
+                    const isActionable = reminder.status === "scheduled" || reminder.status === "paused"
+                    return (
+                      <div
+                        key={reminder.id}
+                        className="flex items-center justify-between gap-4 rounded-xl border bg-card p-4 hover:shadow-sm transition-all shadow-sm"
+                      >
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
+                            <TargetIcon className="h-5 w-5 text-primary" />
                           </div>
-                          <div className="flex items-center gap-2 mt-1.5">
-                            <p className="text-sm text-muted-foreground truncate">
-                              {reminder.type === "group" ? reminder.group?.name : reminder.contact?.name}
-                            </p>
-                            <span className="text-sm text-muted-foreground">•</span>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(reminder.dateTime).toLocaleDateString('tr-TR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                            <div className="flex gap-1.5 ml-2">
-                              {(reminder.channels || []).slice(0, 3).map((channel) => {
-                                const Icon = channelIcons[channel]
-                                return Icon ? (
-                                  <div
-                                    key={channel}
-                                    className="p-1 rounded bg-accent text-muted-foreground"
-                                    title={channel}
-                                  >
-                                    <Icon className="h-3 w-3" />
-                                  </div>
-                                ) : null
-                              })}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-base truncate">{reminder.title}</p>
+                              <Badge
+                                variant={reminder.status === "scheduled" ? "default" : "outline"}
+                                className="text-xs font-medium"
+                              >
+                                {reminder.status === "scheduled" ? t("schedule_list.status_scheduled") : (reminder.status === "paused" ? t("schedule_list.status_paused") : (reminder.status === "sent" ? t("schedule_list.status_sent") : reminder.status))}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <p className="text-sm text-muted-foreground truncate">
+                                {reminder.type === "group" ? reminder.group?.name : reminder.contact?.name}
+                              </p>
+                              <span className="text-sm text-muted-foreground">•</span>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(reminder.dateTime).toLocaleDateString('tr-TR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                              <div className="flex gap-1.5 ml-2">
+                                {(reminder.channels || []).slice(0, 3).map((channel) => {
+                                  const Icon = channelIcons[channel]
+                                  return Icon ? (
+                                    <div
+                                      key={channel}
+                                      className="p-1 rounded bg-accent text-muted-foreground"
+                                      title={channel}
+                                    >
+                                      <Icon className="h-3 w-3" />
+                                    </div>
+                                  ) : null
+                                })}
+                              </div>
                             </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onToggleStatus(reminder.id)}
+                            disabled={!isActionable}
+                            title={reminder.status === "paused" ? t("schedule_list.play_title") : t("schedule_list.pause_title")}
+                            className="h-8 w-8 rounded-full hover:bg-accent"
+                          >
+                            {reminder.status === "paused" ? (
+                              <Play className="h-4 w-4" />
+                            ) : (
+                              <Pause className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditClick(reminder)}
+                            title={t("common.edit")}
+                            className="h-8 w-8 rounded-full hover:bg-accent"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => setDeleteAlert({ isOpen: true, reminderId: reminder.id })}
+                            className="h-8 w-8 rounded-full"
+                            title={t("common.delete")}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onToggleStatus(reminder.id)}
-                          disabled={!isActionable}
-                          title={reminder.status === "paused" ? t("schedule_list.play_title") : t("schedule_list.pause_title")}
-                          className="h-8 w-8 rounded-full hover:bg-accent"
-                        >
-                          {reminder.status === "paused" ? (
-                            <Play className="h-4 w-4" />
-                          ) : (
-                            <Pause className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditClick(reminder)}
-                          title={t("common.edit")}
-                          className="h-8 w-8 rounded-full hover:bg-accent"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => setDeleteAlert({ isOpen: true, reminderId: reminder.id })}
-                          className="h-8 w-8 rounded-full"
-                          title={t("common.delete")}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="mx-auto p-4 rounded-full bg-accent/50 w-16 h-16 flex items-center justify-center mb-4">
+                      <Bell className="h-8 w-8 text-muted-foreground" />
                     </div>
-                  )
-                })
-              ) : (
-                <div className="text-center py-16">
-                  <div className="mx-auto p-4 rounded-full bg-accent/50 w-16 h-16 flex items-center justify-center mb-4">
-                    <Bell className="h-8 w-8 text-muted-foreground" />
+                    {reminders.length === 0 ? (
+                      <>
+                        <p className="text-base font-semibold text-foreground">{t("dashboard.no_reminders_title")}</p>
+                        <p className="text-sm text-muted-foreground mt-1 mb-6">{t("dashboard.no_reminders_desc")}</p>
+                        <Button
+                          onClick={() => setIsCreateModalOpen(true)}
+                          className="rounded-full shadow-sm"
+                        >
+                          <PlusCircle className="mr-1.5 h-4 w-4" />
+                          {t("schedule_list.first_reminder")}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-base font-semibold text-foreground">{t("schedule_list.no_reminders")}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{t("schedule_list.no_reminders_desc")}</p>
+                      </>
+                    )}
                   </div>
-                  {reminders.length === 0 ? (
-                    <>
-                      <p className="text-base font-semibold text-foreground">{t("dashboard.no_reminders_title")}</p>
-                      <p className="text-sm text-muted-foreground mt-1 mb-6">{t("dashboard.no_reminders_desc")}</p>
-                      <Button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="rounded-full shadow-sm"
-                      >
-                        <PlusCircle className="mr-1.5 h-4 w-4" />
-                        {t("schedule_list.first_reminder")}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-base font-semibold text-foreground">{t("schedule_list.no_reminders")}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{t("schedule_list.no_reminders_desc")}</p>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Modals and Dialogs */}
-      {selectedReminder && (
-        <EditReminderModal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          reminder={selectedReminder}
-          onSave={handleSaveEdit}
-        />
-      )}
-      <CreateReminderModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onSave={onSave} />
+
+      <CreateReminderModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={onSave}
+        groupReminderCount={reminders.filter(r => r.type === "group").length}
+      />
+
 
       <AlertDialog open={deleteAlert.isOpen} onOpenChange={(open) => setDeleteAlert({ ...deleteAlert, isOpen: open })}>
         <AlertDialogContent className="rounded-xl border">

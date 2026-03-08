@@ -125,7 +125,18 @@ export class ApiManager {
     const response = await apiService.get<{ success: boolean; data: Reminder[] }>(`/api/reminders?q=${encodeURIComponent(query)}`);
     return response.data || [];
   }
+
+  async getReminder(id: string): Promise<Reminder> {
+    const response = await apiService.get<{ success: boolean; data: Reminder }>(`/api/reminders/${id}`);
+    return response.data;
+  }
+
+  async getReminderLogs(id: string, page: number = 0, size: number = 20): Promise<any> {
+    const response = await apiService.get<any>(`/api/notification-logs/reminder/${id}?page=${page}&size=${size}`);
+    return response.data;
+  }
 }
+
 
 // Create a singleton instance
 export const apiManager = new ApiManager();

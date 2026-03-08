@@ -32,12 +32,7 @@ export default function PremiumPage() {
     const [isLoading, setIsLoading] = useState(false)
 
     const handleUpgrade = async () => {
-        setIsLoading(true)
-        // Simulated upgrade – wire to real payment when ready
-        setTimeout(() => {
-            setIsLoading(false)
-            toast.success("Premium'a yükseltme talebi alındı! Yakında sizinle iletişime geçeceğiz.")
-        }, 1500)
+        // Disabled since mobile handles it
     }
 
     return (
@@ -150,32 +145,22 @@ export default function PremiumPage() {
                             <div className="relative group mt-6">
                                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl blur-lg opacity-40 group-hover:opacity-70 transition-all duration-500" />
                                 <Button
-                                    className="relative w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-lg hover:shadow-xl rounded-xl font-semibold h-11 transition-all duration-300 hover:scale-[1.01]"
-                                    onClick={handleUpgrade}
-                                    disabled={isLoading || user?.premium === true}
+                                    className="relative w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white border-0 shadow-lg hover:shadow-xl rounded-xl font-semibold h-11 cursor-default opacity-90"
+                                    disabled
                                 >
-                                    {isLoading ? (
-                                        <span className="flex items-center gap-2">
-                                            <motion.div
-                                                className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
-                                                animate={{ rotate: 360 }}
-                                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                            />
-                                            İşleniyor...
-                                        </span>
-                                    ) : user?.premium ? (
+                                    {user?.premium ? (
                                         "Zaten Premium Kullanıcısınız ✓"
                                     ) : (
                                         <>
                                             <Sparkles className="h-4 w-4 mr-2" />
-                                            Premium'a Yükselt
+                                            Yükseltmek için Mobil Uygulamayı İndirin
                                         </>
                                     )}
                                 </Button>
                             </div>
 
                             <p className="text-xs text-center text-muted-foreground pt-2">
-                                İstediğiniz zaman iptal edebilirsiniz. Kredi kartı şart değil.
+                                Premium satın alımları sadece mobil uygulamamız üzerinden yapılmaktadır.
                             </p>
                         </CardContent>
                     </Card>

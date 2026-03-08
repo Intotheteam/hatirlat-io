@@ -1,6 +1,7 @@
 package com.hatirlat.backend.service;
 
 import com.hatirlat.backend.entity.*;
+import com.hatirlat.backend.notification.DeliveryResult;
 import com.hatirlat.backend.notification.NotificationStrategy;
 import com.hatirlat.backend.repository.NotificationLogRepository;
 import org.slf4j.Logger;
@@ -86,18 +87,23 @@ public class NotificationService {
     private void dispatchToChannels(Reminder reminder, List<NotificationChannel> channels, String recipient,
             String message, String subject) {
         for (NotificationChannel channel : channels) {
+            DeliveryResult result;
             try {
-                sendNotification(channel, recipient, message, subject);
-                // Log success
-                saveNotificationLog(reminder, channel, recipient, NotificationLogStatus.SUCCESS, null);
-                logger.debug("Notification sent via {} for reminder '{}'", channel, subject);
+                result = sendNotification(channel, recipient, message, subject);
             } catch (Exception e) {
-                // Log failure
-                saveNotificationLog(reminder, channel, recipient, NotificationLogStatus.FAILED, e.getMessage());
-                logger.error("Failed to send notification via {} for reminder '{}': {}",
-                        channel, subject, e.getMessage());
-                throw e;
+                result = DeliveryResult.failure("DISPATCH_ERROR", e.getMessage());
             }
+
+            boolean failed = result == null || !result.isSuccess();
+            NotificationLogStatus logStatus = failed ? NotificationLogStatus.FAILED : NotificationLogStatus.SUCCESS;
+            String errorMsg = failed ? (result != null ? result.getProviderResponse() : "unknown") : null;
+            saveNotificationLog(reminder, channel, recipient, logStatus, errorMsg, result);
+
+            if (failed) {
+                logger.error("Delivery FAILED via {} for reminder '{}': {}", channel, subject, errorMsg);
+                throw new RuntimeException("Delivery failed via " + channel + ": " + errorMsg);
+            }
+            logger.debug("Delivery SUCCESS via {} for reminder '{}'", channel, subject);
         }
     }
 
@@ -107,20 +113,21 @@ public class NotificationService {
         }
     }
 
-    public void sendNotification(NotificationChannel channel, String recipient, String message, String subject) {
+    public DeliveryResult sendNotification(NotificationChannel channel, String recipient, String message,
+            String subject) {
         NotificationStrategy strategy = strategies.get(channel);
         if (strategy != null) {
-            strategy.sendNotification(recipient, message, subject);
+            return strategy.sendNotification(recipient, message, subject);
         } else {
             throw new IllegalArgumentException("Unsupported notification channel: " + channel);
         }
     }
 
     /**
-     * Save a notification log entry.
+     * Save a notification log entry with full provider delivery details.
      */
     private void saveNotificationLog(Reminder reminder, NotificationChannel channel,
-            String recipient, NotificationLogStatus status, String errorMessage) {
+            String recipient, NotificationLogStatus status, String errorMessage, DeliveryResult result) {
         try {
             NotificationLog log = new NotificationLog();
             log.setReminder(reminder);
@@ -130,6 +137,12 @@ public class NotificationService {
             log.setStatus(status);
             log.setErrorMessage(errorMessage);
             log.setSentAt(LocalDateTime.now());
+            if (result != null) {
+                log.setProviderMessageId(result.getProviderMessageId());
+                log.setProviderStatus(result.getProviderStatus());
+                log.setProviderErrorCode(result.getProviderErrorCode());
+                log.setProviderResponse(result.getProviderResponse());
+            }
             notificationLogRepository.save(log);
         } catch (Exception e) {
             logger.error("Failed to save notification log: {}", e.getMessage());

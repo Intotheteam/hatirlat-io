@@ -4,6 +4,7 @@ import com.hatirlat.backend.entity.Contact;
 import com.hatirlat.backend.entity.Group;
 import com.hatirlat.backend.entity.Reminder;
 import com.hatirlat.backend.entity.ReminderStatus;
+import com.hatirlat.backend.entity.ReminderType;
 import com.hatirlat.backend.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,4 +42,6 @@ public interface ReminderRepository extends JpaRepository<Reminder, Long> {
     @Query("SELECT r FROM Reminder r WHERE r.user = :user AND (LOWER(r.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(r.message) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<Reminder> searchByUserAndTitleOrMessage(@Param("user") User user, @Param("query") String query,
             Pageable pageable);
+
+    long countByUserAndType(User user, ReminderType type);
 }

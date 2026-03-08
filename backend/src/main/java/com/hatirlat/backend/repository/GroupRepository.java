@@ -22,4 +22,6 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
     Page<Group> findByOwner(User owner, Pageable pageable);
 
     Optional<Group> findByInviteCode(String inviteCode);
+
+    long countByOwner(User owner);
 }

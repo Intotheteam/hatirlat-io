@@ -35,4 +35,19 @@ public class NotificationLogController {
                 : "Notification logs retrieved successfully";
         return ResponseEntity.ok(new BaseResponse<>(true, logs, message));
     }
+
+    @Operation(summary = "Get reminder notification logs", description = "Retrieve notification history for a specific reminder")
+    @GetMapping("/reminder/{id}")
+    public ResponseEntity<BaseResponse<List<NotificationLogResponse>>> getNotificationLogsByReminder(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<NotificationLogResponse> logs = notificationLogService.getNotificationLogsByReminder(id, currentUser, page,
+                size);
+        String message = logs.isEmpty()
+                ? "No notification logs found for this reminder"
+                : "Reminder logs retrieved successfully";
+        return ResponseEntity.ok(new BaseResponse<>(true, logs, message));
+    }
 }

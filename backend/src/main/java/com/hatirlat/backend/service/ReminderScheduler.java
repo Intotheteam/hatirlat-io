@@ -31,44 +31,63 @@ public class ReminderScheduler {
     @Scheduled(fixedRate = 60000)
     @Transactional
     public void processScheduledReminders() {
-        log.info("Checking for scheduled reminders at: {}", LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        log.info("━━━━━ [Scheduler] Scan started at {} ━━━━━", now);
 
         List<Reminder> scheduledReminders = reminderRepository.findByStatusAndDateTimeBefore(
-            ReminderStatus.SCHEDULED,
-            LocalDateTime.now()
-        );
+                ReminderStatus.SCHEDULED,
+                now);
+
+        int total = scheduledReminders.size();
+        int sent = 0, rescheduled = 0, failed = 0;
+
+        if (total == 0) {
+            log.info("[Scheduler] No due reminders found. Next scan in ~60s.");
+        } else {
+            log.info("[Scheduler] Found {} due reminder(s) to process.", total);
+        }
 
         for (Reminder reminder : scheduledReminders) {
             try {
-                // Send the notification
                 notificationService.sendNotification(reminder);
 
-                // Handle recurring reminders
                 if (isRecurring(reminder)) {
                     LocalDateTime nextDateTime = calculateNextDateTime(reminder);
                     if (nextDateTime != null) {
                         reminder.setDateTime(nextDateTime);
                         reminder.setStatus(ReminderStatus.SCHEDULED);
                         reminderRepository.save(reminder);
-                        log.info("Recurring reminder '{}' rescheduled to: {}", reminder.getTitle(), nextDateTime);
+                        log.info("[Scheduler] ✓ RESCHEDULED  id={} title='{}' nextAt={}",
+                                reminder.getId(), reminder.getTitle(), nextDateTime);
+                        rescheduled++;
                     } else {
-                        // Could not calculate next time, mark as sent
                         reminder.setStatus(ReminderStatus.SENT);
                         reminderRepository.save(reminder);
-                        log.info("Recurring reminder '{}' completed (no next date)", reminder.getTitle());
+                        log.info("[Scheduler] ✓ SENT (recurring, no next date)  id={} title='{}'",
+                                reminder.getId(), reminder.getTitle());
+                        sent++;
                     }
                 } else {
-                    // One-time reminder, mark as sent
                     reminder.setStatus(ReminderStatus.SENT);
                     reminderRepository.save(reminder);
-                    log.info("Reminder processed and status updated to SENT: {}", reminder.getTitle());
+                    log.info("[Scheduler] ✓ SENT  id={} title='{}'",
+                            reminder.getId(), reminder.getTitle());
+                    sent++;
                 }
             } catch (Exception e) {
-                log.error("Error processing reminder: {}, Error: {}", reminder.getTitle(), e.getMessage());
+                log.error("[Scheduler] ✗ FAILED  id={} title='{}' error={}",
+                        reminder.getId(), reminder.getTitle(), e.getMessage());
                 reminder.setStatus(ReminderStatus.FAILED);
                 reminderRepository.save(reminder);
+                failed++;
             }
         }
+
+        if (total > 0) {
+            log.info("[Scheduler] ── Summary: total={} sent={} rescheduled={} failed={} ──",
+                    total, sent, rescheduled, failed);
+        }
+        log.info("━━━━━ [Scheduler] Scan finished ━━━━━");
     }
 
     /**

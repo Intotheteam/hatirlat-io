@@ -39,6 +39,7 @@ public class ReminderService {
     private final ReminderMapper reminderMapper;
     private final ContactMapper contactMapper;
     private final LoggingUtil loggingUtil;
+    private final PlanLimitService planLimitService;
 
     public ReminderService(ReminderRepository reminderRepository,
             GroupRepository groupRepository,
@@ -47,7 +48,8 @@ public class ReminderService {
             CustomRepeatConfigRepository customRepeatConfigRepository,
             ReminderMapper reminderMapper,
             ContactMapper contactMapper,
-            LoggingUtil loggingUtil) {
+            LoggingUtil loggingUtil,
+            PlanLimitService planLimitService) {
         this.reminderRepository = reminderRepository;
         this.groupRepository = groupRepository;
         this.memberRepository = memberRepository;
@@ -56,6 +58,7 @@ public class ReminderService {
         this.reminderMapper = reminderMapper;
         this.contactMapper = contactMapper;
         this.loggingUtil = loggingUtil;
+        this.planLimitService = planLimitService;
     }
 
     @Transactional(readOnly = true)
@@ -154,6 +157,34 @@ public class ReminderService {
             reminder.setChannels(convertChannelStringsToEnums(request.getChannels()));
             reminder.setRepeat(parseEnumSafely(request.getRepeat(), RepeatType.class, RepeatType.NONE));
 
+            // ── Tier-based Limits ──────────────────────────────────────────────────────
+            boolean isPremium = currentUser.isPremium();
+            boolean hourlyAllowed = isPremium
+                    ? planLimitService.premiumHourlyAllowed()
+                    : planLimitService.freeHourlyAllowed();
+
+            // 1. Block HOURLY repeat if not allowed for this tier
+            if (!hourlyAllowed && RepeatType.HOURLY.equals(reminder.getRepeat())) {
+                throw new IllegalArgumentException(
+                        "Saatlik hatırlatma yalnızca Premium kullanıcılara açıktır. Minimum tekrar sıklığı: günlük.");
+            }
+
+            // 2. Group reminder count cap
+            if (ReminderType.GROUP.equals(reminder.getType())) {
+                int maxGroupReminders = isPremium
+                        ? planLimitService.premiumMaxGroupReminders()
+                        : planLimitService.freeMaxGroupReminders();
+                if (maxGroupReminders >= 0) { // -1 means unlimited
+                    long groupReminderCount = reminderRepository.countByUserAndType(currentUser, ReminderType.GROUP);
+                    if (groupReminderCount >= maxGroupReminders) {
+                        throw new IllegalArgumentException(
+                                String.format("Ücretsiz kullanıcılar en fazla %d grup hatırlatıcısı oluşturabilir.",
+                                        maxGroupReminders));
+                    }
+                }
+            }
+            // ──────────────────────────────────────────────────────────────────────────
+
             // Set contact if provided
             if (request.getContact() != null) {
                 Contact contact = contactMapper.toEntity(request.getContact());
@@ -208,11 +239,31 @@ public class ReminderService {
                     .setType(parseEnumSafely(request.getType(), ReminderType.class, existingReminder.getType()));
             existingReminder.setMessage(request.getMessage());
             existingReminder.setDateTime(request.getDateTime());
-            existingReminder.setStatus(
-                    parseEnumSafely(request.getStatus(), ReminderStatus.class, existingReminder.getStatus()));
+
+            ReminderStatus newStatus = parseEnumSafely(request.getStatus(), ReminderStatus.class,
+                    existingReminder.getStatus());
+
+            // Auto-reset FAILED -> SCHEDULED if the dateTime is updated to the future
+            if (existingReminder.getStatus() == ReminderStatus.FAILED && newStatus == ReminderStatus.FAILED) {
+                if (request.getDateTime() != null && request.getDateTime().isAfter(java.time.LocalDateTime.now())) {
+                    newStatus = ReminderStatus.SCHEDULED;
+                }
+            }
+            existingReminder.setStatus(newStatus);
+
             existingReminder.setChannels(convertChannelStringsToEnums(request.getChannels()));
-            existingReminder
-                    .setRepeat(parseEnumSafely(request.getRepeat(), RepeatType.class, existingReminder.getRepeat()));
+            RepeatType newRepeat = parseEnumSafely(request.getRepeat(), RepeatType.class, existingReminder.getRepeat());
+
+            // Tier-based hourly check on update
+            boolean isPremiumOnUpdate = currentUser.isPremium();
+            boolean hourlyAllowedOnUpdate = isPremiumOnUpdate
+                    ? planLimitService.premiumHourlyAllowed()
+                    : planLimitService.freeHourlyAllowed();
+            if (!hourlyAllowedOnUpdate && RepeatType.HOURLY.equals(newRepeat)) {
+                throw new IllegalArgumentException(
+                        "Saatlik hatırlatma yalnızca Premium kullanıcılara açıktır.");
+            }
+            existingReminder.setRepeat(newRepeat);
 
             // Update contact if provided
             if (request.getContact() != null) {
