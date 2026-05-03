@@ -126,6 +126,114 @@ function buildDailyChart(dailyStats: DailyBillingStats[]) {
   return result
 }
 
+// ─── Cost Settings Component ──────────────────────────────────────────────────
+
+const COST_PROVIDERS = [
+  { key: "billing.netgsm.cost_per_unit",        label: "Netgsm SMS",          currency: "TRY", defaultVal: "0.080000" },
+  { key: "billing.iletimerkezi.cost_per_unit",  label: "İleti Merkezi SMS",   currency: "TRY", defaultVal: "0.070000" },
+  { key: "billing.twilio_sms.cost_per_unit",    label: "Twilio SMS",          currency: "USD", defaultVal: "0.007900" },
+  { key: "billing.twilio_whatsapp.cost_per_unit", label: "Twilio WhatsApp",   currency: "USD", defaultVal: "0.005000" },
+  { key: "billing.smtp.cost_per_unit",          label: "SMTP E-posta",        currency: "USD", defaultVal: "0.000000" },
+]
+
+function CostSettings() {
+  const [costs, setCosts] = useState<Record<string, string>>({})
+  const [editing, setEditing] = useState<string | null>(null)
+  const [editVal, setEditVal] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/admin/config", { credentials: "include" })
+      .then(r => r.json())
+      .then(json => {
+        const map: Record<string, string> = {}
+        ;(json.data ?? []).forEach((c: { configKey: string; configValue: string }) => {
+          map[c.configKey] = c.configValue
+        })
+        setCosts(map)
+      })
+      .catch(() => {})
+  }, [])
+
+  const save = async (configKey: string) => {
+    setSaving(true)
+    try {
+      await fetch("/api/admin/config", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ configKey, configValue: editVal, configType: "BILLING" }),
+      })
+      setCosts(prev => ({ ...prev, [configKey]: editVal }))
+      setEditing(null)
+    } catch {
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+      <h3 className="text-sm font-medium text-zinc-300">Birim Maliyetler</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {COST_PROVIDERS.map(({ key, label, currency, defaultVal }) => {
+          const current = costs[key] ?? defaultVal
+          const isEditing = editing === key
+          return (
+            <div key={key} className="rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-zinc-400 truncate">{label}</p>
+                {isEditing ? (
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-xs text-zinc-400">{currency === "TRY" ? "₺" : "$"}</span>
+                    <input
+                      autoFocus
+                      type="number"
+                      step="0.000001"
+                      value={editVal}
+                      onChange={e => setEditVal(e.target.value)}
+                      className="w-24 rounded bg-zinc-700 border border-zinc-600 px-2 py-0.5 text-sm text-zinc-100 focus:outline-none focus:border-zinc-400"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-sm font-mono text-zinc-100 mt-0.5">
+                    {currency === "TRY" ? "₺" : "$"}{parseFloat(current).toFixed(6)}
+                  </p>
+                )}
+              </div>
+              {isEditing ? (
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => save(key)}
+                    disabled={saving}
+                    className="rounded px-2 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50"
+                  >
+                    Kaydet
+                  </button>
+                  <button
+                    onClick={() => setEditing(null)}
+                    className="rounded px-2 py-1 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300"
+                  >
+                    İptal
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setEditing(key); setEditVal(current) }}
+                  className="text-xs text-zinc-500 hover:text-zinc-300 px-2 py-1 rounded hover:bg-zinc-700"
+                >
+                  Düzenle
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <p className="text-xs text-zinc-600">Değişiklikler anında geçerli olur — backend yeniden başlatmaya gerek yok.</p>
+    </div>
+  )
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function BillingPage() {
@@ -372,18 +480,8 @@ export default function BillingPage() {
             )}
           </div>
 
-          {/* Per-provider cost config notice */}
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3">
-            <p className="text-xs text-zinc-500">
-              Maliyet hesaplama: Netgsm SMS = <span className="text-zinc-300">₺0.08</span> / adet,
-              Twilio SMS = <span className="text-zinc-300">$0.0079</span> / adet,
-              Twilio WhatsApp = <span className="text-zinc-300">$0.005</span> / mesaj,
-              SMTP = <span className="text-zinc-300">ücretsiz</span>.
-              Özel fiyatlandırma için <span className="text-zinc-400">Sistem Ayarları</span>'ndan
-              <code className="mx-1 rounded bg-zinc-800 px-1 text-[10px]">billing.*.cost_per_unit</code>
-              anahtarlarını yapılandırın.
-            </p>
-          </div>
+          {/* Cost Settings */}
+          <CostSettings />
         </div>
       )}
 
