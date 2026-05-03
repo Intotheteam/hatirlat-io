@@ -78,8 +78,10 @@ public class AdminIpWhitelistFilter extends OncePerRequestFilter {
         String clientIp = resolveClientIp(request);
         String normalizedIp = normalizeIp(clientIp);
 
+        final String finalClientIp = clientIp;
+        final String finalNormalized = normalizedIp;
         boolean allowed = allowedIps.stream()
-                .anyMatch(allowed -> allowed.equals(normalizedIp) || allowed.equals(clientIp));
+                .anyMatch(ip -> ip.equals(finalNormalized) || ip.equals(finalClientIp));
 
         if (allowed) {
             chain.doFilter(request, response);
@@ -98,7 +100,7 @@ public class AdminIpWhitelistFilter extends OncePerRequestFilter {
      * Resolves the real client IP from common proxy headers.
      * X-Forwarded-For may contain multiple IPs (client, proxy1, proxy2) — take the first.
      */
-    String resolveClientIp(HttpServletRequest request) {
+    public String resolveClientIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isBlank()) {
             return xForwardedFor.split(",")[0].trim();
