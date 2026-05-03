@@ -224,6 +224,8 @@ export const adminConfig = {
   byPrefix: (prefix: string) =>
     req<SystemConfig[]>(`/api/admin/config/prefix/${encodeURIComponent(prefix)}`),
 
+  myIp: () => req<string>("/api/admin/config/my-ip"),
+
   set: (payload: { configKey: string; configValue: string; type: string; encrypted?: boolean; active?: boolean; description?: string }) =>
     req<SystemConfig>("/api/admin/config", {
       method: "POST",

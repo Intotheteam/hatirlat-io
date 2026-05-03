@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Receipt,
   Plug,
+  Shield,
 } from "lucide-react"
 
 const NAV = [
@@ -22,6 +23,7 @@ const NAV = [
   { href: "/admin/users",          label: "Kullanıcılar",     icon: Users },
   { href: "/admin/billing",        label: "Fatura & Maliyet", icon: Receipt },
   { href: "/admin/integrations",   label: "Entegrasyonlar",   icon: Plug },
+  { href: "/admin/security",       label: "Güvenlik",         icon: Shield },
   { href: "/admin/audit-logs",     label: "Audit Logs",       icon: ScrollText },
   { href: "/admin/config",         label: "Sistem Ayarları",  icon: Settings },
 ]

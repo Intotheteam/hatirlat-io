@@ -1,5 +1,6 @@
 package com.hatirlat.backend.controller.admin;
 
+import com.hatirlat.backend.config.AdminIpWhitelistFilter;
 import com.hatirlat.backend.dto.BaseResponse;
 import com.hatirlat.backend.dto.admin.SystemConfigRequest;
 import com.hatirlat.backend.dto.admin.SystemConfigResponse;
@@ -40,6 +41,19 @@ public class AdminConfigController {
 
     @Autowired
     private AuditLogService auditLogService;
+
+    @Autowired
+    private AdminIpWhitelistFilter adminIpWhitelistFilter;
+
+    /**
+     * Returns the caller's resolved IP address (useful for setting up the whitelist)
+     */
+    @GetMapping("/my-ip")
+    @Operation(summary = "Get caller's IP address", description = "Returns the IP address as seen by the server — use this to add your IP to the admin whitelist")
+    public ResponseEntity<BaseResponse<String>> getMyIp(HttpServletRequest request) {
+        String ip = adminIpWhitelistFilter.resolveClientIp(request);
+        return ResponseEntity.ok(new BaseResponse<>(true, ip, "Your IP address"));
+    }
 
     /**
      * Get all system configurations

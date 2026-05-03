@@ -26,6 +26,9 @@ public class SecurityConfig {
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired
+    private AdminIpWhitelistFilter adminIpWhitelistFilter;
+
+    @Autowired
     private EndpointSecurityProperties endpointSecurityProperties;
 
     @Autowired
@@ -56,8 +59,9 @@ public class SecurityConfig {
                         // all others need authentication
                         authz.anyRequest().authenticated();
                 })
-                // Add JWT authentication filter before UsernamePasswordAuthenticationFilter
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // IP whitelist runs first, then JWT validation
+                .addFilterBefore(adminIpWhitelistFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, AdminIpWhitelistFilter.class)
                 // For H2 Console
                 .headers(headers -> headers
                     .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
