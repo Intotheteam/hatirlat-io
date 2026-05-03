@@ -1,7 +1,9 @@
 package com.hatirlat.backend.notification;
 
+import com.hatirlat.backend.service.SystemConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -38,17 +40,43 @@ public class NetgsmSmsStrategy {
     @Value("${netgsm.sms.enabled:false}")
     private boolean smsEnabled;
 
+    @Autowired
+    private SystemConfigService configService;
+
+    private String resolve(String dbKey, String envFallback) {
+        try {
+            String v = configService.getConfig(dbKey);
+            return (v != null && !v.isBlank()) ? v : (envFallback != null ? envFallback : "");
+        } catch (Exception e) {
+            return envFallback != null ? envFallback : "";
+        }
+    }
+
+    private boolean resolveBoolean(String dbKey, boolean envFallback) {
+        try {
+            String v = configService.getConfig(dbKey);
+            return v != null ? Boolean.parseBoolean(v) : envFallback;
+        } catch (Exception e) {
+            return envFallback;
+        }
+    }
+
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
     public DeliveryResult send(String recipient, String message, String subject) {
-        if (!smsEnabled) {
+        boolean enabled = resolveBoolean("integration.netgsm.enabled", smsEnabled);
+        if (!enabled) {
             logger.warn("Netgsm SMS disabled — would send to {}: {}", recipient, message);
             return DeliveryResult.disabled("NetgsmSMS").withProvider("NETGSM");
         }
 
-        if (usercode.isBlank() || password.isBlank()) {
+        String uc  = resolve("integration.netgsm.usercode",  usercode);
+        String pwd = resolve("integration.netgsm.password",  password);
+        String hdr = resolve("integration.netgsm.msgheader", msgheader);
+
+        if (uc.isBlank() || pwd.isBlank()) {
             logger.error("Netgsm credentials are not configured (NETGSM_USERCODE / NETGSM_PASSWORD).");
             return DeliveryResult.failure("CONFIG_ERROR", "Netgsm credentials are not configured").withProvider("NETGSM");
         }
@@ -64,11 +92,11 @@ public class NetgsmSmsStrategy {
 
         try {
             URI uri = UriComponentsBuilder.fromHttpUrl(API_URL)
-                    .queryParam("usercode", usercode)
-                    .queryParam("password", password)
+                    .queryParam("usercode", uc)
+                    .queryParam("password", pwd)
                     .queryParam("gsmno", normalizedNumber)
                     .queryParam("text", fullMessage)
-                    .queryParam("msgheader", msgheader)
+                    .queryParam("msgheader", hdr)
                     .queryParam("dil", "TR")
                     .build()
                     .toUri();

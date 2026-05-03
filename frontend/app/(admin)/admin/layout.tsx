@@ -14,14 +14,16 @@ import {
   LogOut,
   ChevronRight,
   Receipt,
+  Plug,
 } from "lucide-react"
 
 const NAV = [
-  { href: "/admin",            label: "Dashboard",       icon: LayoutDashboard },
-  { href: "/admin/users",      label: "Kullanıcılar",    icon: Users },
-  { href: "/admin/billing",    label: "Fatura & Maliyet", icon: Receipt },
-  { href: "/admin/audit-logs", label: "Audit Logs",      icon: ScrollText },
-  { href: "/admin/config",     label: "Sistem Ayarları", icon: Settings },
+  { href: "/admin",                label: "Dashboard",        icon: LayoutDashboard },
+  { href: "/admin/users",          label: "Kullanıcılar",     icon: Users },
+  { href: "/admin/billing",        label: "Fatura & Maliyet", icon: Receipt },
+  { href: "/admin/integrations",   label: "Entegrasyonlar",   icon: Plug },
+  { href: "/admin/audit-logs",     label: "Audit Logs",       icon: ScrollText },
+  { href: "/admin/config",         label: "Sistem Ayarları",  icon: Settings },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

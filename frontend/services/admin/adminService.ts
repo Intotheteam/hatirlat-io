@@ -221,10 +221,19 @@ export const adminConfig = {
 
   get: (key: string) => req<SystemConfig>(`/api/admin/config/${encodeURIComponent(key)}`),
 
+  byPrefix: (prefix: string) =>
+    req<SystemConfig[]>(`/api/admin/config/prefix/${encodeURIComponent(prefix)}`),
+
   set: (payload: { configKey: string; configValue: string; type: string; encrypted?: boolean; active?: boolean; description?: string }) =>
     req<SystemConfig>("/api/admin/config", {
       method: "POST",
       body: JSON.stringify(payload),
+    }),
+
+  bulkSet: (configs: Array<{ configKey: string; configValue: string; type: string; encrypted?: boolean; active?: boolean; description?: string }>) =>
+    req<number>("/api/admin/config/bulk", {
+      method: "POST",
+      body: JSON.stringify(configs),
     }),
 
   toggleFeature: (key: string, enabled: boolean) =>

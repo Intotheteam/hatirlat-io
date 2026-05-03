@@ -1,7 +1,9 @@
 package com.hatirlat.backend.notification;
 
+import com.hatirlat.backend.service.SystemConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -50,17 +52,46 @@ public class IletiMerkeziSmsStrategy {
     @Value("${iletimerkezi.iys-list:BIREYSEL}")
     private String iysList;
 
+    @Autowired
+    private SystemConfigService configService;
+
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
+    /** Reads from SystemConfig first, falls back to @Value from env. */
+    private String resolve(String dbKey, String envFallback) {
+        try {
+            String v = configService.getConfig(dbKey);
+            return (v != null && !v.isBlank()) ? v : (envFallback != null ? envFallback : "");
+        } catch (Exception e) {
+            return envFallback != null ? envFallback : "";
+        }
+    }
+
+    private boolean resolveBoolean(String dbKey, boolean envFallback) {
+        try {
+            String v = configService.getConfig(dbKey);
+            return v != null ? Boolean.parseBoolean(v) : envFallback;
+        } catch (Exception e) {
+            return envFallback;
+        }
+    }
+
     public DeliveryResult send(String recipient, String message, String subject) {
-        if (!smsEnabled) {
+        boolean enabled = resolveBoolean("integration.iletimerkezi.enabled", smsEnabled);
+        if (!enabled) {
             logger.warn("İleti Merkezi SMS disabled — would send to {}: {}", recipient, message);
             return DeliveryResult.disabled("IletiMerkezi").withProvider("ILETIMERKEZI");
         }
 
-        if (apiKey.isBlank() || apiHash.isBlank()) {
+        String key    = resolve("integration.iletimerkezi.key",      apiKey);
+        String hash   = resolve("integration.iletimerkezi.hash",     apiHash);
+        String sndr   = resolve("integration.iletimerkezi.sender",   sender);
+        String iysVal = resolve("integration.iletimerkezi.iys",      iys);
+        String iyLst  = resolve("integration.iletimerkezi.iys_list", iysList);
+
+        if (key.isBlank() || hash.isBlank()) {
             logger.error("İleti Merkezi credentials not configured (ILETIMERKEZI_KEY / ILETIMERKEZI_HASH).");
             return DeliveryResult.failure("CONFIG_ERROR", "İleti Merkezi credentials not configured").withProvider("ILETIMERKEZI");
         }
@@ -75,13 +106,13 @@ public class IletiMerkeziSmsStrategy {
 
         try {
             URI uri = UriComponentsBuilder.fromHttpUrl(API_URL)
-                    .queryParam("key",        apiKey)
-                    .queryParam("hash",       apiHash)
+                    .queryParam("key",        key)
+                    .queryParam("hash",       hash)
                     .queryParam("text",       fullMessage)
                     .queryParam("receipents", normalizedNumber)
-                    .queryParam("sender",     sender)
-                    .queryParam("iys",        iys)
-                    .queryParam("iysList",    iysList)
+                    .queryParam("sender",     sndr)
+                    .queryParam("iys",        iysVal)
+                    .queryParam("iysList",    iyLst)
                     .build(true)
                     .toUri();
 
