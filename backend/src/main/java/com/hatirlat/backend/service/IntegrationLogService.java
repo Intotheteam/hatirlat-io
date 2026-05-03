@@ -23,6 +23,7 @@ public class IntegrationLogService {
     // Default costs per unit
     private static final Map<IntegrationProvider, BigDecimal> DEFAULT_COSTS = Map.of(
         IntegrationProvider.NETGSM,          new BigDecimal("0.080000"),  // TRY per SMS
+        IntegrationProvider.ILETIMERKEZI,    new BigDecimal("0.070000"),  // TRY per SMS
         IntegrationProvider.TWILIO_SMS,       new BigDecimal("0.007900"),  // USD per SMS
         IntegrationProvider.TWILIO_WHATSAPP,  new BigDecimal("0.005000"),  // USD per message
         IntegrationProvider.SMTP,             new BigDecimal("0.000000")   // USD per email (free)
@@ -30,6 +31,7 @@ public class IntegrationLogService {
 
     private static final Map<IntegrationProvider, String> CURRENCIES = Map.of(
         IntegrationProvider.NETGSM,          "TRY",
+        IntegrationProvider.ILETIMERKEZI,    "TRY",
         IntegrationProvider.TWILIO_SMS,       "USD",
         IntegrationProvider.TWILIO_WHATSAPP,  "USD",
         IntegrationProvider.SMTP,             "USD"

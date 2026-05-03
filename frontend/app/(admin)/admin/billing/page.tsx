@@ -88,6 +88,7 @@ async function apiFetch<T>(path: string): Promise<T> {
 
 const PROVIDER_META: Record<string, { color: string; bg: string; icon: React.ReactNode; flag?: string }> = {
   NETGSM:          { color: "text-blue-400",   bg: "bg-blue-500/10 border-blue-500/20",   icon: <Phone className="h-5 w-5" />, flag: "🇹🇷" },
+  ILETIMERKEZI:    { color: "text-cyan-400",   bg: "bg-cyan-500/10 border-cyan-500/20",   icon: <Phone className="h-5 w-5" />, flag: "🇹🇷" },
   TWILIO_SMS:      { color: "text-purple-400",  bg: "bg-purple-500/10 border-purple-500/20", icon: <Phone className="h-5 w-5" /> },
   TWILIO_WHATSAPP: { color: "text-green-400",   bg: "bg-green-500/10 border-green-500/20",  icon: <MessageSquare className="h-5 w-5" /> },
   SMTP:            { color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",  icon: <Mail className="h-5 w-5" /> },
@@ -398,6 +399,7 @@ export default function BillingPage() {
             >
               <option value="">Tüm Sağlayıcılar</option>
               <option value="NETGSM">Netgsm SMS</option>
+              <option value="ILETIMERKEZI">İleti Merkezi SMS</option>
               <option value="TWILIO_SMS">Twilio SMS</option>
               <option value="TWILIO_WHATSAPP">Twilio WhatsApp</option>
               <option value="SMTP">SMTP E-posta</option>

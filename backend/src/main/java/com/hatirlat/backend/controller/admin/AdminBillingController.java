@@ -38,6 +38,7 @@ public class AdminBillingController {
 
     private static final Map<IntegrationProvider, String> DISPLAY_NAMES = Map.of(
         IntegrationProvider.NETGSM,          "Netgsm SMS",
+        IntegrationProvider.ILETIMERKEZI,    "İleti Merkezi SMS",
         IntegrationProvider.TWILIO_SMS,       "Twilio SMS",
         IntegrationProvider.TWILIO_WHATSAPP,  "Twilio WhatsApp",
         IntegrationProvider.SMTP,             "E-posta (SMTP)"
@@ -45,6 +46,7 @@ public class AdminBillingController {
 
     private static final Map<IntegrationProvider, String> CHANNELS = Map.of(
         IntegrationProvider.NETGSM,          "SMS",
+        IntegrationProvider.ILETIMERKEZI,    "SMS",
         IntegrationProvider.TWILIO_SMS,       "SMS",
         IntegrationProvider.TWILIO_WHATSAPP,  "WHATSAPP",
         IntegrationProvider.SMTP,             "EMAIL"
@@ -146,7 +148,7 @@ public class AdminBillingController {
             stat.setDisabledCount(disabled);
             stat.setSuccessRate(total > 0 ? (double) success / total * 100.0 : 0.0);
             stat.setTotalCost(safeSum(() -> integrationLogRepository.sumCostByProvider(p)));
-            stat.setCurrency(p == IntegrationProvider.NETGSM ? "TRY" : "USD");
+            stat.setCurrency((p == IntegrationProvider.NETGSM || p == IntegrationProvider.ILETIMERKEZI) ? "TRY" : "USD");
 
             try {
                 Double avg = integrationLogRepository.avgDurationByProvider(p);
