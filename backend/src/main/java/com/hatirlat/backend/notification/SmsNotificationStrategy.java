@@ -38,9 +38,9 @@ public class SmsNotificationStrategy implements NotificationStrategy {
             logger.info("Routing SMS to İleti Merkezi (TR number): {}", recipient);
             DeliveryResult result = iletiMerkezi.send(recipient, message, subject);
             // Fallback to Netgsm if İleti Merkezi is disabled or fails with config error
-            if (!result.isSuccess() && (result.getErrorCode() == null
-                    || result.getErrorCode().startsWith("DISABLED")
-                    || result.getErrorCode().equals("CONFIG_ERROR"))) {
+            if (!result.isSuccess() && (result.getProviderErrorCode() == null
+                    || result.getProviderErrorCode().startsWith("DISABLED")
+                    || result.getProviderErrorCode().equals("CONFIG_ERROR"))) {
                 logger.info("Falling back to Netgsm for TR number: {}", recipient);
                 return netgsm.send(recipient, message, subject);
             }
