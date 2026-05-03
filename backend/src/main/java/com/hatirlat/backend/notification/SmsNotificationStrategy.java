@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * SMS routing strategy:
- *   - Turkish numbers (+90 / 05xx / 5xx) → Netgsm
+ *   - Turkish numbers (+90 / 05xx / 5xx) → İleti Merkezi (primary) or Netgsm (fallback)
  *   - All other numbers                  → Twilio
  */
 @Component
@@ -15,10 +15,14 @@ public class SmsNotificationStrategy implements NotificationStrategy {
 
     private static final Logger logger = LoggerFactory.getLogger(SmsNotificationStrategy.class);
 
+    private final IletiMerkeziSmsStrategy iletiMerkezi;
     private final NetgsmSmsStrategy netgsm;
     private final TwilioSmsStrategy twilio;
 
-    public SmsNotificationStrategy(NetgsmSmsStrategy netgsm, TwilioSmsStrategy twilio) {
+    public SmsNotificationStrategy(IletiMerkeziSmsStrategy iletiMerkezi,
+                                   NetgsmSmsStrategy netgsm,
+                                   TwilioSmsStrategy twilio) {
+        this.iletiMerkezi = iletiMerkezi;
         this.netgsm = netgsm;
         this.twilio = twilio;
     }
@@ -31,8 +35,16 @@ public class SmsNotificationStrategy implements NotificationStrategy {
     @Override
     public DeliveryResult sendNotification(String recipient, String message, String subject) {
         if (isTurkishNumber(recipient)) {
-            logger.info("Routing SMS to Netgsm (TR number): {}", recipient);
-            return netgsm.send(recipient, message, subject);
+            logger.info("Routing SMS to İleti Merkezi (TR number): {}", recipient);
+            DeliveryResult result = iletiMerkezi.send(recipient, message, subject);
+            // Fallback to Netgsm if İleti Merkezi is disabled or fails with config error
+            if (!result.isSuccess() && (result.getErrorCode() == null
+                    || result.getErrorCode().startsWith("DISABLED")
+                    || result.getErrorCode().equals("CONFIG_ERROR"))) {
+                logger.info("Falling back to Netgsm for TR number: {}", recipient);
+                return netgsm.send(recipient, message, subject);
+            }
+            return result;
         } else {
             logger.info("Routing SMS to Twilio (international number): {}", recipient);
             return twilio.send(recipient, message, subject);
