@@ -65,7 +65,7 @@ log "Tüm servisler başlatıldı"
 # ── 5. Health check ───────────────────────────────────────────────────────────
 info "Backend hazır olana kadar bekleniyor (max 60sn)..."
 for i in $(seq 1 30); do
-  if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
+  if curl -sf http://localhost:18080/actuator/health > /dev/null 2>&1; then
     log "Backend sağlıklı"
     break
   fi
