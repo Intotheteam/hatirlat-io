@@ -32,7 +32,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div suppressHydrationWarning className="flex min-h-screen items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -42,7 +42,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     <ErrorBoundary>
       <Toaster position="top-center" richColors />
       <OnboardingModal />
-      <div className="flex min-h-screen w-full flex-col bg-gradient-to-br from-background via-background to-accent/5">
+      <div suppressHydrationWarning className="flex min-h-screen w-full flex-col bg-gradient-to-br from-background via-background to-accent/5">
         <PremiumHeader currentView={currentView} />
         <main className="flex flex-1 flex-col p-1 sm:p-2">
           <ErrorBoundary>{children}</ErrorBoundary>

@@ -49,10 +49,10 @@ public class AdminConfigController {
     public ResponseEntity<BaseResponse<List<SystemConfigResponse>>> getAllConfigs() {
         List<SystemConfig> configs = configService.getAllConfigsRaw();
         List<SystemConfigResponse> responses = configs.stream()
-            .map(SystemConfigResponse::fromEntity)
-            .collect(Collectors.toList());
+                .map(SystemConfigResponse::fromEntity)
+                .collect(Collectors.toList());
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Configurations retrieved successfully", responses));
+        return ResponseEntity.ok(new BaseResponse<>(true, responses, "Configurations retrieved successfully"));
     }
 
     /**
@@ -62,7 +62,7 @@ public class AdminConfigController {
     @Operation(summary = "Get configurations by type")
     public ResponseEntity<BaseResponse<Map<String, String>>> getConfigsByType(@PathVariable ConfigType type) {
         Map<String, String> configs = configService.getAllConfigs(type);
-        return ResponseEntity.ok(new BaseResponse<>(true, "Configurations retrieved successfully", configs));
+        return ResponseEntity.ok(new BaseResponse<>(true, configs, "Configurations retrieved successfully"));
     }
 
     /**
@@ -73,26 +73,26 @@ public class AdminConfigController {
     public ResponseEntity<BaseResponse<List<SystemConfigResponse>>> getConfigsByPrefix(@PathVariable String prefix) {
         List<SystemConfig> configs = configService.getConfigsByPrefix(prefix);
         List<SystemConfigResponse> responses = configs.stream()
-            .map(SystemConfigResponse::fromEntity)
-            .collect(Collectors.toList());
+                .map(SystemConfigResponse::fromEntity)
+                .collect(Collectors.toList());
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Configurations retrieved successfully", responses));
+        return ResponseEntity.ok(new BaseResponse<>(true, responses, "Configurations retrieved successfully"));
     }
 
     /**
-     * Get a specific configuration (decrypted)
+     * Get a specific configuration (always masked for security)
      */
     @GetMapping("/{key}")
-    @Operation(summary = "Get a specific configuration", description = "Returns decrypted value for editing")
+    @Operation(summary = "Get a specific configuration", description = "Returns masked value for encrypted configs. Use POST to update.")
     public ResponseEntity<BaseResponse<SystemConfigResponse>> getConfig(@PathVariable String key) {
-        String value = configService.getConfig(key);
         SystemConfig config = configService.getConfigsByPrefix(key).stream()
-            .filter(c -> c.getConfigKey().equals(key))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("Config not found: " + key));
+                .filter(c -> c.getConfigKey().equals(key))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Config not found: " + key));
 
-        SystemConfigResponse response = SystemConfigResponse.fromEntityWithDecryptedValue(config, value);
-        return ResponseEntity.ok(new BaseResponse<>(true, "Configuration retrieved successfully", response));
+        // Always return masked response — never expose decrypted secrets via API
+        SystemConfigResponse response = SystemConfigResponse.fromEntity(config);
+        return ResponseEntity.ok(new BaseResponse<>(true, response, "Configuration retrieved successfully"));
     }
 
     /**
@@ -101,23 +101,24 @@ public class AdminConfigController {
     @PostMapping
     @Operation(summary = "Create or update configuration")
     public ResponseEntity<BaseResponse<String>> setConfig(
-        @Valid @RequestBody SystemConfigRequest request,
-        @AuthenticationPrincipal User admin,
-        HttpServletRequest httpRequest
-    ) {
-        String oldValue = configService.getConfig(request.getConfigKey());
+            @Valid @RequestBody SystemConfigRequest request,
+            @AuthenticationPrincipal User admin,
+            HttpServletRequest httpRequest) {
+        // If the incoming value is the mask placeholder, skip updating the encrypted
+        // value
+        // This means the admin didn't change the secret in the UI
+        boolean isPlaceholder = "**********".equals(request.getConfigValue())
+                || "[ENCRYPTED]".equals(request.getConfigValue());
+        if (!isPlaceholder) {
+            configService.setConfig(
+                    request.getConfigKey(),
+                    request.getConfigValue(),
+                    request.getType(),
+                    request.isEncrypted());
+            auditLogService.logConfigChange(admin, request.getConfigKey(), "[REDACTED]", "[REDACTED]", httpRequest);
+        }
 
-        configService.setConfig(
-            request.getConfigKey(),
-            request.getConfigValue(),
-            request.getType(),
-            request.isEncrypted()
-        );
-
-        // Log the change
-        auditLogService.logConfigChange(admin, request.getConfigKey(), oldValue, request.getConfigValue(), httpRequest);
-
-        return ResponseEntity.ok(new BaseResponse<>(true, "Configuration saved successfully", request.getConfigKey()));
+        return ResponseEntity.ok(new BaseResponse<>(true, request.getConfigKey(), "Configuration saved successfully"));
     }
 
     /**
@@ -126,17 +127,16 @@ public class AdminConfigController {
     @PostMapping("/feature/{featureKey}/toggle")
     @Operation(summary = "Toggle a feature flag")
     public ResponseEntity<BaseResponse<Boolean>> toggleFeature(
-        @PathVariable String featureKey,
-        @RequestParam boolean enabled,
-        @AuthenticationPrincipal User admin,
-        HttpServletRequest httpRequest
-    ) {
+            @PathVariable String featureKey,
+            @RequestParam boolean enabled,
+            @AuthenticationPrincipal User admin,
+            HttpServletRequest httpRequest) {
         configService.toggleFeature(featureKey, enabled);
 
         // Log the change
         auditLogService.logFeatureFlagChange(admin, featureKey, enabled, httpRequest);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Feature flag toggled successfully", enabled));
+        return ResponseEntity.ok(new BaseResponse<>(true, enabled, "Feature flag toggled successfully"));
     }
 
     /**
@@ -146,7 +146,7 @@ public class AdminConfigController {
     @Operation(summary = "Check if a feature is enabled")
     public ResponseEntity<BaseResponse<Boolean>> isFeatureEnabled(@PathVariable String featureKey) {
         boolean enabled = configService.isFeatureEnabled(featureKey);
-        return ResponseEntity.ok(new BaseResponse<>(true, "Feature status retrieved", enabled));
+        return ResponseEntity.ok(new BaseResponse<>(true, enabled, "Feature status retrieved"));
     }
 
     /**
@@ -155,11 +155,10 @@ public class AdminConfigController {
     @PutMapping("/{key}/active")
     @Operation(summary = "Activate or deactivate a configuration")
     public ResponseEntity<BaseResponse<String>> setConfigActive(
-        @PathVariable String key,
-        @RequestParam boolean active,
-        @AuthenticationPrincipal User admin,
-        HttpServletRequest httpRequest
-    ) {
+            @PathVariable String key,
+            @RequestParam boolean active,
+            @AuthenticationPrincipal User admin,
+            HttpServletRequest httpRequest) {
         configService.setConfigActive(key, active);
 
         // Log the change
@@ -168,7 +167,7 @@ public class AdminConfigController {
         details.put("active", active);
         auditLogService.logAction(admin, "CONFIG_STATUS_CHANGED", "SystemConfig", null, details, httpRequest);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Configuration status updated", key));
+        return ResponseEntity.ok(new BaseResponse<>(true, key, "Configuration status updated"));
     }
 
     /**
@@ -177,10 +176,9 @@ public class AdminConfigController {
     @DeleteMapping("/{key}")
     @Operation(summary = "Delete a configuration")
     public ResponseEntity<BaseResponse<String>> deleteConfig(
-        @PathVariable String key,
-        @AuthenticationPrincipal User admin,
-        HttpServletRequest httpRequest
-    ) {
+            @PathVariable String key,
+            @AuthenticationPrincipal User admin,
+            HttpServletRequest httpRequest) {
         String oldValue = configService.getConfig(key);
         configService.deleteConfig(key);
 
@@ -190,7 +188,7 @@ public class AdminConfigController {
         details.put("deletedValue", "[REDACTED]");
         auditLogService.logAction(admin, "CONFIG_DELETED", "SystemConfig", null, details, httpRequest);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Configuration deleted successfully", key));
+        return ResponseEntity.ok(new BaseResponse<>(true, key, "Configuration deleted successfully"));
     }
 
     /**
@@ -199,17 +197,15 @@ public class AdminConfigController {
     @PostMapping("/bulk")
     @Operation(summary = "Bulk update configurations")
     public ResponseEntity<BaseResponse<Integer>> bulkUpdateConfigs(
-        @Valid @RequestBody List<SystemConfigRequest> requests,
-        @AuthenticationPrincipal User admin,
-        HttpServletRequest httpRequest
-    ) {
+            @Valid @RequestBody List<SystemConfigRequest> requests,
+            @AuthenticationPrincipal User admin,
+            HttpServletRequest httpRequest) {
         for (SystemConfigRequest request : requests) {
             configService.setConfig(
-                request.getConfigKey(),
-                request.getConfigValue(),
-                request.getType(),
-                request.isEncrypted()
-            );
+                    request.getConfigKey(),
+                    request.getConfigValue(),
+                    request.getType(),
+                    request.isEncrypted());
         }
 
         // Log bulk update
@@ -217,6 +213,6 @@ public class AdminConfigController {
         details.put("count", requests.size());
         auditLogService.logAction(admin, "CONFIG_BULK_UPDATE", "SystemConfig", null, details, httpRequest);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Configurations updated successfully", requests.size()));
+        return ResponseEntity.ok(new BaseResponse<>(true, requests.size(), "Configurations updated successfully"));
     }
 }

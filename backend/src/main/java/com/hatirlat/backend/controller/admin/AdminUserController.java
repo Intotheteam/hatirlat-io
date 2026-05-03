@@ -4,6 +4,7 @@ import com.hatirlat.backend.dto.BaseResponse;
 import com.hatirlat.backend.dto.admin.UserActionRequest;
 import com.hatirlat.backend.dto.admin.UserManagementResponse;
 import com.hatirlat.backend.entity.NotificationLogStatus;
+import com.hatirlat.backend.entity.ReminderStatus;
 import com.hatirlat.backend.entity.User;
 import com.hatirlat.backend.repository.NotificationLogRepository;
 import com.hatirlat.backend.repository.ReminderRepository;
@@ -71,7 +72,7 @@ public class AdminUserController {
             return response;
         });
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Users retrieved successfully", responses));
+        return ResponseEntity.ok(new BaseResponse<>(true, responses, "Users retrieved successfully"));
     }
 
     /**
@@ -86,7 +87,7 @@ public class AdminUserController {
         UserManagementResponse response = UserManagementResponse.fromEntity(user);
         enrichWithStatistics(response, user);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "User retrieved successfully", response));
+        return ResponseEntity.ok(new BaseResponse<>(true, response, "User retrieved successfully"));
     }
 
     /**
@@ -111,7 +112,7 @@ public class AdminUserController {
             })
             .collect(Collectors.toList());
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Search completed", responses));
+        return ResponseEntity.ok(new BaseResponse<>(true, responses, "Search completed"));
     }
 
     /**
@@ -137,7 +138,7 @@ public class AdminUserController {
         UserManagementResponse response = UserManagementResponse.fromEntity(user);
         enrichWithStatistics(response, user);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "User ban status updated", response));
+        return ResponseEntity.ok(new BaseResponse<>(true, response, "User ban status updated"));
     }
 
     /**
@@ -163,7 +164,7 @@ public class AdminUserController {
         UserManagementResponse response = UserManagementResponse.fromEntity(user);
         enrichWithStatistics(response, user);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "User unbanned successfully", response));
+        return ResponseEntity.ok(new BaseResponse<>(true, response, "User unbanned successfully"));
     }
 
     /**
@@ -185,7 +186,7 @@ public class AdminUserController {
         // Delete user (cascading will handle related entities)
         userRepository.delete(user);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "User deleted successfully", user.getUsername()));
+        return ResponseEntity.ok(new BaseResponse<>(true, user.getUsername(), "User deleted successfully"));
     }
 
     /**
@@ -200,7 +201,7 @@ public class AdminUserController {
         UserManagementResponse response = UserManagementResponse.fromEntity(user);
         enrichWithStatistics(response, user);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "User statistics retrieved", response));
+        return ResponseEntity.ok(new BaseResponse<>(true, response, "User statistics retrieved"));
     }
 
     /**
@@ -209,7 +210,7 @@ public class AdminUserController {
     private void enrichWithStatistics(UserManagementResponse response, User user) {
         long totalReminders = reminderRepository.findByUser(user).size();
         long activeReminders = reminderRepository.findByUser(user).stream()
-            .filter(r -> r.isActive())
+            .filter(r -> r.getStatus() == ReminderStatus.SCHEDULED)
             .count();
 
         long totalNotifications = notificationLogRepository.findByUserOrderBySentAtDesc(user).size();

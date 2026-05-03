@@ -1,25 +1,17 @@
 import axios from "axios";
-import { authService } from "./authService";
 import type { CreditTransaction } from "@/types";
 
-const API_URL = "http://localhost:8080/api/credits";
-
-const getHeaders = () => {
-    const token = authService.getToken();
-    return {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-    };
-};
+// Use relative URL so the Next.js proxy handles the request (same-origin = cookie sent automatically)
+const API_URL = "/api/credits";
 
 export const creditService = {
     getBalance: async (): Promise<number> => {
-        const response = await axios.get(`${API_URL}/balance`, { headers: getHeaders() });
+        const response = await axios.get(`${API_URL}/balance`, { withCredentials: true });
         return response.data.credits;
     },
 
     getHistory: async (): Promise<CreditTransaction[]> => {
-        const response = await axios.get(`${API_URL}/history`, { headers: getHeaders() });
+        const response = await axios.get(`${API_URL}/history`, { withCredentials: true });
         return response.data;
     },
 
@@ -27,7 +19,7 @@ export const creditService = {
         const response = await axios.post(
             `${API_URL}/add`,
             { amount },
-            { headers: getHeaders() }
+            { withCredentials: true }
         );
         return response.data;
     },
@@ -36,7 +28,7 @@ export const creditService = {
         const response = await axios.post(
             `${API_URL}/use`,
             { amount },
-            { headers: getHeaders() }
+            { withCredentials: true }
         );
         return response.data;
     },

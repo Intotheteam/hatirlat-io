@@ -1,15 +1,20 @@
 package com.hatirlat.backend.config;
 
+import com.hatirlat.backend.entity.BlacklistedToken;
+import com.hatirlat.backend.repository.BlacklistedTokenRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +22,9 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
+
+    @Autowired
+    private BlacklistedTokenRepository blacklistedTokenRepository;
 
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
@@ -42,8 +50,7 @@ public class JwtService {
 
     public String generateToken(
             Map<String, Object> extraClaims,
-            UserDetails userDetails
-    ) {
+            UserDetails userDetails) {
         return buildToken(extraClaims, userDetails, jwtExpiration);
     }
 
@@ -54,8 +61,7 @@ public class JwtService {
     private String buildToken(
             Map<String, Object> extraClaims,
             UserDetails userDetails,
-            long expiration
-    ) {
+            long expiration) {
         return Jwts
                 .builder()
                 .setClaims(extraClaims)
@@ -68,7 +74,17 @@ public class JwtService {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token) && !isTokenBlacklisted(token);
+    }
+
+    public void blacklistToken(String token) {
+        Date expiration = extractExpiration(token);
+        LocalDateTime expiresAt = expiration.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+        blacklistedTokenRepository.save(new BlacklistedToken(token, expiresAt));
+    }
+
+    public boolean isTokenBlacklisted(String token) {
+        return blacklistedTokenRepository.existsByToken(token);
     }
 
     private boolean isTokenExpired(String token) {

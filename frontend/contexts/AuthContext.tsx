@@ -11,7 +11,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: { username: string; password: string }) => Promise<void>;
   register: (userData: { username: string; password: string; email: string }) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateCredits: (newCredits: number) => void;
 }
 
@@ -23,11 +23,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already authenticated on app load
-    const token = authService.getToken();
+    // Restore non-sensitive user metadata from localStorage (token stays in HttpOnly cookie)
     const currentUser = authService.getCurrentUser();
 
-    if (token && currentUser) {
+    if (currentUser) {
       setUser(currentUser);
       setIsAuthenticated(true);
 
@@ -46,7 +45,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.user);
       setIsAuthenticated(true);
     } catch (error) {
-      // Re-throw error to be handled by the calling component
       throw error;
     }
   };
@@ -61,19 +59,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    authService.logout();
+  const logout = async () => {
+    // Call backend to blacklist token and clear HttpOnly cookie
+    await authService.logout();
     setUser(null);
     setIsAuthenticated(false);
   };
 
   const updateCredits = (newCredits: number) => {
-    if (user) {
-      const updatedUser = { ...user, credits: newCredits };
-      setUser(updatedUser);
-      // Optional: You could update local storage here if authService provides a method for it
-      localStorage.setItem('user', JSON.stringify(updatedUser)); // Keep local state in sync
-    }
+    setUser(prev => {
+      if (!prev) return null;
+      const updated = { ...prev, credits: newCredits };
+      // Update non-sensitive user cache
+      authService.setCurrentUser(updated);
+      return updated;
+    });
   };
 
   return (

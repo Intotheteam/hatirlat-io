@@ -48,7 +48,7 @@ public class AdminAuditLogController {
         Page<AuditLog> logs = auditLogService.getAllLogs(pageable);
         Page<AuditLogResponse> responses = logs.map(AuditLogResponse::fromEntity);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Audit logs retrieved successfully", responses));
+        return ResponseEntity.ok(new BaseResponse<>(true, responses, "Audit logs retrieved successfully"));
     }
 
     /**
@@ -62,7 +62,7 @@ public class AdminAuditLogController {
             .map(AuditLogResponse::fromEntity)
             .collect(Collectors.toList());
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Recent audit logs retrieved", responses));
+        return ResponseEntity.ok(new BaseResponse<>(true, responses, "Recent audit logs retrieved"));
     }
 
     /**
@@ -79,7 +79,7 @@ public class AdminAuditLogController {
         Page<AuditLog> logs = auditLogService.getLogsByAction(action, pageable);
         Page<AuditLogResponse> responses = logs.map(AuditLogResponse::fromEntity);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Audit logs retrieved successfully", responses));
+        return ResponseEntity.ok(new BaseResponse<>(true, responses, "Audit logs retrieved successfully"));
     }
 
     /**
@@ -97,7 +97,7 @@ public class AdminAuditLogController {
         Page<AuditLog> logs = auditLogService.getLogsByTarget(entityType, entityId, pageable);
         Page<AuditLogResponse> responses = logs.map(AuditLogResponse::fromEntity);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Audit logs retrieved successfully", responses));
+        return ResponseEntity.ok(new BaseResponse<>(true, responses, "Audit logs retrieved successfully"));
     }
 
     /**
@@ -115,7 +115,7 @@ public class AdminAuditLogController {
         Page<AuditLog> logs = auditLogService.getLogsByTimeRange(startDate, endDate, pageable);
         Page<AuditLogResponse> responses = logs.map(AuditLogResponse::fromEntity);
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Audit logs retrieved successfully", responses));
+        return ResponseEntity.ok(new BaseResponse<>(true, responses, "Audit logs retrieved successfully"));
     }
 
     /**
@@ -125,7 +125,7 @@ public class AdminAuditLogController {
     @Operation(summary = "Get action statistics", description = "Get count of each action type")
     public ResponseEntity<BaseResponse<Map<String, Long>>> getActionStats() {
         Map<String, Long> stats = auditLogService.getActionStats();
-        return ResponseEntity.ok(new BaseResponse<>(true, "Action statistics retrieved", stats));
+        return ResponseEntity.ok(new BaseResponse<>(true, stats, "Action statistics retrieved"));
     }
 
     /**
@@ -135,6 +135,6 @@ public class AdminAuditLogController {
     @Operation(summary = "Get admin activity statistics", description = "Get count of actions per admin")
     public ResponseEntity<BaseResponse<Map<String, Long>>> getAdminActivityStats() {
         Map<String, Long> stats = auditLogService.getAdminActivityStats();
-        return ResponseEntity.ok(new BaseResponse<>(true, "Admin activity statistics retrieved", stats));
+        return ResponseEntity.ok(new BaseResponse<>(true, stats, "Admin activity statistics retrieved"));
     }
 }

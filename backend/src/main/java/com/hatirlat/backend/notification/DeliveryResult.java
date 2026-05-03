@@ -11,6 +11,7 @@ public class DeliveryResult {
     private final String providerStatus; // "queued", "sent", "delivered", "failed", "250 OK", etc.
     private final String providerErrorCode; // Twilio error code, SMTP error, etc.
     private final String providerResponse; // Raw response or summary
+    private String provider; // e.g. "NETGSM", "TWILIO_SMS", "TWILIO_WHATSAPP", "SMTP"
 
     private DeliveryResult(boolean success, String providerMessageId, String providerStatus,
             String providerErrorCode, String providerResponse) {
@@ -38,6 +39,12 @@ public class DeliveryResult {
         return new DeliveryResult(true, null, "disabled", null, channel + " channel is disabled");
     }
 
+    /** Fluent helper to set the provider name on an existing result */
+    public DeliveryResult withProvider(String provider) {
+        this.provider = provider;
+        return this;
+    }
+
     public boolean isSuccess() {
         return success;
     }
@@ -56,5 +63,9 @@ public class DeliveryResult {
 
     public String getProviderResponse() {
         return providerResponse;
+    }
+
+    public String getProvider() {
+        return provider;
     }
 }

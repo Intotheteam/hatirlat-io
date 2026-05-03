@@ -33,7 +33,7 @@ public class WhatsAppNotificationStrategy implements NotificationStrategy {
     public DeliveryResult sendNotification(String recipient, String message, String subject) {
         if (!whatsappEnabled) {
             logger.warn("WhatsApp disabled — would send to {}: {}", recipient, message);
-            return DeliveryResult.disabled("WhatsApp");
+            return DeliveryResult.disabled("WhatsApp").withProvider("TWILIO_WHATSAPP");
         }
 
         String to = recipient.startsWith("whatsapp:") ? recipient : "whatsapp:" + recipient;
@@ -49,15 +49,15 @@ public class WhatsAppNotificationStrategy implements NotificationStrategy {
             String status = twilioMessage.getStatus() != null ? twilioMessage.getStatus().toString() : "unknown";
             logger.info("WhatsApp sent. SID={} Status={}", sid, status);
             return DeliveryResult.success(sid, status,
-                    "to=" + to + " sid=" + sid + " status=" + status);
+                    "to=" + to + " sid=" + sid + " status=" + status).withProvider("TWILIO_WHATSAPP");
 
         } catch (com.twilio.exception.ApiException e) {
             logger.error("Twilio API error sending WhatsApp to {}: code={} message={}", to, e.getCode(),
                     e.getMessage());
-            return DeliveryResult.failure(String.valueOf(e.getCode()), e.getMessage());
+            return DeliveryResult.failure(String.valueOf(e.getCode()), e.getMessage()).withProvider("TWILIO_WHATSAPP");
         } catch (Exception e) {
             logger.error("Failed to send WhatsApp to {}: {}", to, e.getMessage());
-            return DeliveryResult.failure("UNKNOWN", e.getMessage());
+            return DeliveryResult.failure("UNKNOWN", e.getMessage()).withProvider("TWILIO_WHATSAPP");
         }
     }
 }

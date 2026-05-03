@@ -1,7 +1,8 @@
 package com.hatirlat.backend.service;
 
 import com.hatirlat.backend.entity.SystemStats;
-import com.hatirlat.backend.entity.UserRole;
+import com.hatirlat.backend.entity.Role;
+import com.hatirlat.backend.entity.ReminderStatus;
 import com.hatirlat.backend.repository.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -131,12 +132,12 @@ public class SystemStatsService {
 
         // User metrics
         stats.setTotalUsers(userRepository.count());
-        stats.setPremiumUsers(userRepository.countByRole(UserRole.PREMIUM_USER));
+        stats.setPremiumUsers(userRepository.countByPremiumTrue());
         stats.setNewUsersToday(userRepository.countByCreatedAtBetween(startOfDay, endOfDay));
 
         // Reminder metrics
         stats.setTotalReminders(reminderRepository.count());
-        stats.setActiveReminders(reminderRepository.countByActiveTrue());
+        stats.setActiveReminders(reminderRepository.countByStatus(ReminderStatus.SCHEDULED));
 
         // Group metrics
         stats.setTotalGroups(groupRepository.count());
@@ -147,9 +148,12 @@ public class SystemStatsService {
             com.hatirlat.backend.entity.NotificationLogStatus.FAILED, startOfDay, endOfDay));
 
         // Channel breakdown
-        stats.setEmailCount(notificationLogRepository.countByChannelAndCreatedAtBetween("EMAIL", startOfDay, endOfDay));
-        stats.setSmsCount(notificationLogRepository.countByChannelAndCreatedAtBetween("SMS", startOfDay, endOfDay));
-        stats.setWhatsappCount(notificationLogRepository.countByChannelAndCreatedAtBetween("WHATSAPP", startOfDay, endOfDay));
+        stats.setEmailCount(notificationLogRepository.countByChannelAndCreatedAtBetween(
+            com.hatirlat.backend.entity.NotificationChannel.EMAIL, startOfDay, endOfDay));
+        stats.setSmsCount(notificationLogRepository.countByChannelAndCreatedAtBetween(
+            com.hatirlat.backend.entity.NotificationChannel.SMS, startOfDay, endOfDay));
+        stats.setWhatsappCount(notificationLogRepository.countByChannelAndCreatedAtBetween(
+            com.hatirlat.backend.entity.NotificationChannel.WHATSAPP, startOfDay, endOfDay));
 
         // Calculate additional metrics
         Map<String, Object> additionalMetrics = calculateAdditionalMetrics(startOfDay, endOfDay);

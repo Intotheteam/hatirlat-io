@@ -58,7 +58,7 @@ public class AdminDashboardController {
         response.setActiveReminders(today.getActiveReminders());
         response.setTotalGroups(today.getTotalGroups());
 
-        return ResponseEntity.ok(new BaseResponse<>(true, "Dashboard stats retrieved successfully", response));
+        return ResponseEntity.ok(new BaseResponse<>(true, response, "Dashboard stats retrieved successfully"));
     }
 
     /**
@@ -68,7 +68,7 @@ public class AdminDashboardController {
     @Operation(summary = "Get today's statistics")
     public ResponseEntity<BaseResponse<SystemStats>> getTodayStats() {
         SystemStats stats = statsService.getTodayStats();
-        return ResponseEntity.ok(new BaseResponse<>(true, "Today's stats retrieved successfully", stats));
+        return ResponseEntity.ok(new BaseResponse<>(true, stats, "Today's stats retrieved successfully"));
     }
 
     /**
@@ -79,7 +79,7 @@ public class AdminDashboardController {
     public ResponseEntity<BaseResponse<SystemStats>> getStatsForDate(@PathVariable String date) {
         LocalDate localDate = LocalDate.parse(date);
         SystemStats stats = statsService.getStatsForDate(localDate);
-        return ResponseEntity.ok(new BaseResponse<>(true, "Stats retrieved successfully", stats));
+        return ResponseEntity.ok(new BaseResponse<>(true, stats, "Stats retrieved successfully"));
     }
 
     /**
@@ -89,7 +89,7 @@ public class AdminDashboardController {
     @Operation(summary = "Get statistics for the last N days")
     public ResponseEntity<BaseResponse<List<SystemStats>>> getRecentStats(@PathVariable int days) {
         List<SystemStats> stats = statsService.getRecentStats(days);
-        return ResponseEntity.ok(new BaseResponse<>(true, "Recent stats retrieved successfully", stats));
+        return ResponseEntity.ok(new BaseResponse<>(true, stats, "Recent stats retrieved successfully"));
     }
 
     /**
@@ -99,7 +99,7 @@ public class AdminDashboardController {
     @Operation(summary = "Force recalculation of today's statistics")
     public ResponseEntity<BaseResponse<SystemStats>> recalculateStats() {
         SystemStats stats = statsService.recalculateStatsForDate(LocalDate.now());
-        return ResponseEntity.ok(new BaseResponse<>(true, "Stats recalculated successfully", stats));
+        return ResponseEntity.ok(new BaseResponse<>(true, stats, "Stats recalculated successfully"));
     }
 
     /**
@@ -110,6 +110,6 @@ public class AdminDashboardController {
     public ResponseEntity<BaseResponse<SystemStats>> recalculateStatsForDate(@PathVariable String date) {
         LocalDate localDate = LocalDate.parse(date);
         SystemStats stats = statsService.recalculateStatsForDate(localDate);
-        return ResponseEntity.ok(new BaseResponse<>(true, "Stats recalculated successfully", stats));
+        return ResponseEntity.ok(new BaseResponse<>(true, stats, "Stats recalculated successfully"));
     }
 }

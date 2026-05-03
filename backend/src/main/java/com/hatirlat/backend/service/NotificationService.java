@@ -6,6 +6,7 @@ import com.hatirlat.backend.notification.NotificationStrategy;
 import com.hatirlat.backend.repository.NotificationLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,9 @@ public class NotificationService {
     private final Map<NotificationChannel, NotificationStrategy> strategies;
     private final NotificationLogRepository notificationLogRepository;
     private final MemberService memberService; // To fetch group members
+
+    @Autowired
+    private IntegrationLogService integrationLogService;
 
     public NotificationService(List<NotificationStrategy> notificationStrategies,
             NotificationLogRepository notificationLogRepository,
@@ -88,11 +92,18 @@ public class NotificationService {
             String message, String subject) {
         for (NotificationChannel channel : channels) {
             DeliveryResult result;
+            long startMs = System.currentTimeMillis();
             try {
                 result = sendNotification(channel, recipient, message, subject);
             } catch (Exception e) {
                 result = DeliveryResult.failure("DISPATCH_ERROR", e.getMessage());
             }
+            long durationMs = System.currentTimeMillis() - startMs;
+
+            // Determine provider from result or channel
+            IntegrationProvider provider = resolveProvider(channel, result, recipient);
+            Long userId = reminder.getUser() != null ? reminder.getUser().getId() : null;
+            integrationLogService.log(provider, channel, result, userId, reminder.getId(), recipient, durationMs);
 
             boolean failed = result == null || !result.isSuccess();
             NotificationLogStatus logStatus = failed ? NotificationLogStatus.FAILED : NotificationLogStatus.SUCCESS;
@@ -105,6 +116,19 @@ public class NotificationService {
             }
             logger.debug("Delivery SUCCESS via {} for reminder '{}'", channel, subject);
         }
+    }
+
+    private IntegrationProvider resolveProvider(NotificationChannel channel, DeliveryResult result, String recipient) {
+        // Use provider set by strategy if available
+        if (result != null && result.getProvider() != null) {
+            try { return IntegrationProvider.valueOf(result.getProvider()); } catch (IllegalArgumentException ignored) {}
+        }
+        // Fallback by channel
+        return switch (channel) {
+            case SMS -> IntegrationProvider.NETGSM; // default to netgsm for unknown
+            case WHATSAPP -> IntegrationProvider.TWILIO_WHATSAPP;
+            case EMAIL -> IntegrationProvider.SMTP;
+        };
     }
 
     public void sendNotification(List<NotificationChannel> channels, String recipient, String message, String subject) {

@@ -48,14 +48,14 @@ public class EmailNotificationStrategy implements NotificationStrategy {
             String messageId = mimeMessage.getMessageID();
             logger.info("Email sent successfully to: {}, messageId={}", recipient, messageId);
             return DeliveryResult.success(messageId, "250 OK",
-                    "to=" + recipient + " subject=" + subject + " messageId=" + messageId);
+                    "to=" + recipient + " subject=" + subject + " messageId=" + messageId).withProvider("SMTP");
 
         } catch (MessagingException e) {
             logger.error("Failed to send email to {}: {}", recipient, e.getMessage());
-            return DeliveryResult.failure("SMTP_ERROR", e.getMessage());
+            return DeliveryResult.failure("SMTP_ERROR", e.getMessage()).withProvider("SMTP");
         } catch (Exception e) {
             logger.error("Unexpected error sending email to {}: {}", recipient, e.getMessage());
-            return DeliveryResult.failure("UNKNOWN", e.getMessage());
+            return DeliveryResult.failure("UNKNOWN", e.getMessage()).withProvider("SMTP");
         }
     }
 

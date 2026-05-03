@@ -38,6 +38,17 @@ public class NotificationLog {
 
     private LocalDateTime sentAt;
 
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        if (sentAt == null) {
+            sentAt = LocalDateTime.now();
+        }
+    }
+
     // Constructors
     public NotificationLog() {
     }
@@ -147,5 +158,20 @@ public class NotificationLog {
 
     public void setSentAt(LocalDateTime sentAt) {
         this.sentAt = sentAt;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    /**
+     * Helper method to check if notification was successful
+     */
+    public boolean isSuccess() {
+        return status == NotificationLogStatus.SUCCESS;
     }
 }

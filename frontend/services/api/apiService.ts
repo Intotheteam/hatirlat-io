@@ -11,22 +11,18 @@ import { authService } from "../auth/authService"
 const API_BASE_URL = ""
 
 // Add authentication token to requests if available
-function getAuthHeaders(): HeadersInit {
-  const token = authService.getToken()
-  return token ? { "Authorization": `Bearer ${token}` } : {}
-}
+// NOTE: Token is now stored as an HttpOnly cookie — browser sends it automatically.
+// No Authorization header needed for same-origin requests.
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`
 
   // Add authentication headers for all requests except login/register
-  const authHeaders = getAuthHeaders()
-
   const config: RequestInit = {
     ...options,
+    credentials: "include", // HttpOnly cookie is sent automatically
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders,
       ...options.headers
     },
   }
@@ -41,7 +37,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
     // Handle 401 Unauthorized - redirect to login (skip for auth endpoints)
     if (response.status === 401 && !endpoint.startsWith("/api/auth/")) {
-      authService.logout()
+      authService.logout() // fire-and-forget async
       if (typeof window !== "undefined") {
         window.location.href = "/login"
       }

@@ -44,4 +44,9 @@ public interface ReminderRepository extends JpaRepository<Reminder, Long> {
             Pageable pageable);
 
     long countByUserAndType(User user, ReminderType type);
+
+    /**
+     * Count active reminders (for admin stats)
+     */
+    long countByStatus(ReminderStatus status);
 }
