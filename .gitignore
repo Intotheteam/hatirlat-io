@@ -19,6 +19,7 @@
 node_modules/
 .env
 .env.local
+.env.production
 .DS_Store
 .idea/
 .vscode/
@@ -65,6 +66,8 @@ backend/*.jar
 backend/*.war
 backend/*.ear
 backend/.mvn/
+backend/*.mv.db
+backend/*.trace.db
 !backend/.mvn/wrapper/maven-wrapper.jar
 
 # === Frontend (Next.js/React) ===
