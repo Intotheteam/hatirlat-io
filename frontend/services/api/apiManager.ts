@@ -32,6 +32,21 @@ export class ApiManager {
     return response.data;
   }
 
+  /** Trigger a browser download of the reminder as an .ics calendar file. */
+  async downloadReminderIcs(id: string, filename?: string): Promise<void> {
+    const res = await fetch(`/api/reminders/${id}/ics`, { credentials: "include" });
+    if (!res.ok) throw new Error(`ICS indirilemedi (${res.status})`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || `reminder-${id}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   // Group methods
   async getGroups(): Promise<Group[]> {
     const response = await apiService.get<{ success: boolean; data: Group[] }>("/api/groups");

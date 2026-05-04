@@ -18,12 +18,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
-import { User, Users, Mail, MessageSquare, Phone, Play, Pause, Trash2, Pencil, PlusCircle, Bell, LayoutList, CalendarDays } from "lucide-react"
+import { User, Users, Mail, MessageSquare, Phone, Play, Pause, Trash2, Pencil, PlusCircle, Bell, LayoutList, CalendarDays, CalendarPlus } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Reminder, View, CustomRepeatConfig, Channel } from "@/types"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import CreateReminderModal from "./create-reminder-modal"
+import { apiManager } from "@/services/api/apiManager"
 
 import { useLanguage } from "@/contexts/LanguageContext"
 
@@ -320,6 +321,21 @@ export default function ScheduleList({ reminders, onNavigate, onSave, onDelete, 
                             ) : (
                               <Pause className="h-4 w-4" />
                             )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={async () => {
+                              try {
+                                await apiManager.downloadReminderIcs(reminder.id, `${reminder.title || "reminder"}.ics`)
+                              } catch (e) {
+                                toast.error("Takvime eklenemedi")
+                              }
+                            }}
+                            title="Takvime ekle (.ics)"
+                            className="h-8 w-8 rounded-full hover:bg-accent"
+                          >
+                            <CalendarPlus className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"

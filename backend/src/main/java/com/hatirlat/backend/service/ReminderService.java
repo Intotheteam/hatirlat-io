@@ -142,6 +142,15 @@ public class ReminderService {
         }
     }
 
+    /** Fetch the underlying entity (with ownership check) for non-DTO consumers like the .ics export. */
+    @Transactional(readOnly = true)
+    public Reminder getReminderEntity(String id, User currentUser) {
+        Reminder reminder = reminderRepository.findById(Long.parseLong(id))
+                .orElseThrow(() -> new ResourceNotFoundException("Reminder", id));
+        verifyOwnership(reminder, currentUser);
+        return reminder;
+    }
+
     @Transactional
     public ReminderResponse createReminder(ReminderRequest request, User currentUser) {
         loggingUtil.logServiceMethodEntry(this.getClass().getSimpleName(), "createReminder", request.getTitle());
