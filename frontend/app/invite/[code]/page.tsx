@@ -20,8 +20,6 @@ interface GroupInfo {
   memberCount: number
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
-
 export default function InvitePage() {
   const params = useParams()
   const code = params.code as string
@@ -41,7 +39,7 @@ export default function InvitePage() {
 
   const validateInviteCode = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/public/invite/${code}`)
+      const response = await fetch(`/api/public/invite/${code}`)
       const data = await response.json()
 
       if (data.success && data.data) {
@@ -72,7 +70,7 @@ export default function InvitePage() {
 
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/api/public/invite/${code}/join`, {
+      const response = await fetch(`/api/public/invite/${code}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, phone: phoneNumber }),
