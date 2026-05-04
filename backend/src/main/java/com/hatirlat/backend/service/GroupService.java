@@ -175,6 +175,7 @@ public class GroupService {
         Member member = new Member(memberName, memberEmail, memberPhone);
         member.setRole(MemberRole.MEMBER);
         member.setStatus(MemberStatus.ACTIVE);
+        member.setUnsubscribeToken(UUID.randomUUID().toString().replace("-", ""));
         Member savedMember = memberRepository.save(member);
 
         // Create GroupMember association

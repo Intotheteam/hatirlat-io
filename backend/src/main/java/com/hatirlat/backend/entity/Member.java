@@ -24,6 +24,12 @@ public class Member {
     private String phone;
     private LocalDateTime lastActivity;
 
+    @Column(name = "unsubscribe_token", unique = true)
+    private String unsubscribeToken;
+
+    @Column(name = "unsubscribed_at")
+    private LocalDateTime unsubscribedAt;
+
     // Constructors
     public Member() {
         this.joinedAt = LocalDateTime.now();
@@ -102,5 +108,21 @@ public class Member {
 
     public void setLastActivity(LocalDateTime lastActivity) {
         this.lastActivity = lastActivity;
+    }
+
+    public String getUnsubscribeToken() {
+        return unsubscribeToken;
+    }
+
+    public void setUnsubscribeToken(String unsubscribeToken) {
+        this.unsubscribeToken = unsubscribeToken;
+    }
+
+    public LocalDateTime getUnsubscribedAt() {
+        return unsubscribedAt;
+    }
+
+    public void setUnsubscribedAt(LocalDateTime unsubscribedAt) {
+        this.unsubscribedAt = unsubscribedAt;
     }
 }
