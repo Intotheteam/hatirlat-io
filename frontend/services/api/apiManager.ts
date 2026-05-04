@@ -57,6 +57,14 @@ export class ApiManager {
     await apiService.delete(`/api/groups/${id}`);
   }
 
+  async regenerateInviteCode(id: string): Promise<Group> {
+    const response = await apiService.post<{ success: boolean; data: Group }>(
+      `/api/groups/${id}/invite/regenerate`,
+      {}
+    );
+    return response.data;
+  }
+
   // Member methods
   async getGroupMembers(groupId: string): Promise<Member[]> {
     const response = await apiService.get<{ success: boolean; data: Member[] }>(`/api/groups/${groupId}/members`);
