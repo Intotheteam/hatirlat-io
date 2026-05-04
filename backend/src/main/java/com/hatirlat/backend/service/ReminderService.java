@@ -153,6 +153,9 @@ public class ReminderService {
             reminder.setType(parseEnumSafely(request.getType(), ReminderType.class, ReminderType.PERSONAL));
             reminder.setMessage(request.getMessage());
             reminder.setDateTime(request.getDateTime());
+            // startDate defaults to dateTime if not provided (first fire time = original start)
+            reminder.setStartDate(request.getStartDate() != null ? request.getStartDate() : request.getDateTime());
+            reminder.setEndDate(request.getEndDate());
             reminder.setStatus(parseEnumSafely(request.getStatus(), ReminderStatus.class, ReminderStatus.SCHEDULED));
             reminder.setChannels(convertChannelStringsToEnums(request.getChannels()));
             reminder.setRepeat(parseEnumSafely(request.getRepeat(), RepeatType.class, RepeatType.NONE));
@@ -239,6 +242,12 @@ public class ReminderService {
                     .setType(parseEnumSafely(request.getType(), ReminderType.class, existingReminder.getType()));
             existingReminder.setMessage(request.getMessage());
             existingReminder.setDateTime(request.getDateTime());
+            if (request.getStartDate() != null) {
+                existingReminder.setStartDate(request.getStartDate());
+            } else if (existingReminder.getStartDate() == null) {
+                existingReminder.setStartDate(request.getDateTime());
+            }
+            existingReminder.setEndDate(request.getEndDate());
 
             ReminderStatus newStatus = parseEnumSafely(request.getStatus(), ReminderStatus.class,
                     existingReminder.getStatus());

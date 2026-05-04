@@ -28,6 +28,8 @@ public class ReminderMapper implements BaseMapper<Reminder, ReminderResponse> {
         response.setType(reminder.getType() != null ? reminder.getType().name().toLowerCase(Locale.ENGLISH) : null);
         response.setMessage(reminder.getMessage());
         response.setDateTime(reminder.getDateTime());
+        response.setStartDate(reminder.getStartDate());
+        response.setEndDate(reminder.getEndDate());
         response.setStatus(
                 reminder.getStatus() != null ? reminder.getStatus().name().toLowerCase(Locale.ENGLISH) : null);
 

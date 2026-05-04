@@ -30,6 +30,10 @@ export interface Reminder {
   type: ReminderType
   message: string
   dateTime: string
+  /** Original first-fire timestamp; persists across reschedules. */
+  startDate?: string
+  /** Optional end of recurrence; null/undefined = no end. */
+  endDate?: string
   status: ReminderStatus
   contact?: Contact | null
   group?: Group | null

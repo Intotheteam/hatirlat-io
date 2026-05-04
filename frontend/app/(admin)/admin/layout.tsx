@@ -16,11 +16,13 @@ import {
   Receipt,
   Plug,
   Shield,
+  Coins,
 } from "lucide-react"
 
 const NAV = [
   { href: "/admin",                label: "Dashboard",        icon: LayoutDashboard },
   { href: "/admin/users",          label: "Kullanıcılar",     icon: Users },
+  { href: "/admin/topup",          label: "Kredi Talepleri",  icon: Coins },
   { href: "/admin/billing",        label: "Fatura & Maliyet", icon: Receipt },
   { href: "/admin/integrations",   label: "Entegrasyonlar",   icon: Plug },
   { href: "/admin/security",       label: "Güvenlik",         icon: Shield },

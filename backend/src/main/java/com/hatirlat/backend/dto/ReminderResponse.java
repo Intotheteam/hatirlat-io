@@ -11,6 +11,10 @@ public class ReminderResponse {
     private String message;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime dateTime;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime startDate;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime endDate;
     private String status; // "scheduled" | "sent" | "paused" | "failed"
     private ContactRequest contact;
     private GroupResponse group;
@@ -51,4 +55,10 @@ public class ReminderResponse {
 
     public CustomRepeatRequest getCustomRepeat() { return customRepeat; }
     public void setCustomRepeat(CustomRepeatRequest customRepeat) { this.customRepeat = customRepeat; }
+
+    public LocalDateTime getStartDate() { return startDate; }
+    public void setStartDate(LocalDateTime startDate) { this.startDate = startDate; }
+
+    public LocalDateTime getEndDate() { return endDate; }
+    public void setEndDate(LocalDateTime endDate) { this.endDate = endDate; }
 }

@@ -18,9 +18,17 @@ public class Reminder {
     private ReminderType type; // Enum for "personal" or "group"
     
     private String message;
-    
+
     private LocalDateTime dateTime;
-    
+
+    /** Original start date (the first scheduled fire time). dateTime advances; startDate is fixed. */
+    @Column(name = "start_date")
+    private LocalDateTime startDate;
+
+    /** Optional end date. When set on a recurring reminder, scheduler stops after this date. Null = no end. */
+    @Column(name = "end_date")
+    private LocalDateTime endDate;
+
     @Enumerated(EnumType.STRING)
     private ReminderStatus status; // Enum for "scheduled", "sent", "paused", "failed"
     
@@ -158,5 +166,21 @@ public class Reminder {
 
     public void setCustomRepeatConfig(CustomRepeatConfig customRepeatConfig) {
         this.customRepeatConfig = customRepeatConfig;
+    }
+
+    public LocalDateTime getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDateTime startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
     }
 }

@@ -18,6 +18,12 @@ public class ReminderRequest {
     @NotNull(message = "Date and time is required")
     private LocalDateTime dateTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime startDate;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime endDate;
+
     @NotBlank(message = "Status is required")
     private String status; // "scheduled" | "sent" | "paused" | "failed"
 
@@ -67,4 +73,10 @@ public class ReminderRequest {
 
     public CustomRepeatRequest getCustomRepeat() { return customRepeat; }
     public void setCustomRepeat(CustomRepeatRequest customRepeat) { this.customRepeat = customRepeat; }
+
+    public LocalDateTime getStartDate() { return startDate; }
+    public void setStartDate(LocalDateTime startDate) { this.startDate = startDate; }
+
+    public LocalDateTime getEndDate() { return endDate; }
+    public void setEndDate(LocalDateTime endDate) { this.endDate = endDate; }
 }

@@ -108,18 +108,32 @@ public class ReminderScheduler {
             return null;
         }
 
+        LocalDateTime next;
         switch (repeatType) {
             case HOURLY:
-                return current.plusHours(1);
+                next = current.plusHours(1);
+                break;
             case DAILY:
-                return current.plusDays(1);
+                next = current.plusDays(1);
+                break;
             case WEEKLY:
-                return current.plusWeeks(1);
+                next = current.plusWeeks(1);
+                break;
             case CUSTOM:
-                return calculateCustomNextDateTime(reminder, current);
+                next = calculateCustomNextDateTime(reminder, current);
+                break;
             default:
                 return null;
         }
+
+        // Stop if next firing would exceed the configured end date
+        if (next != null && reminder.getEndDate() != null && next.isAfter(reminder.getEndDate())) {
+            log.info("[Scheduler] Reminder id={} reached endDate={}, stopping recurrence.",
+                    reminder.getId(), reminder.getEndDate());
+            return null;
+        }
+
+        return next;
     }
 
     /**

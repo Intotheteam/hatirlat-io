@@ -63,7 +63,16 @@ export default function CreditsPage() {
                             {user?.credits ?? 0} kredi
                         </span>
                     </h1>
-                    <p className="text-sm text-muted-foreground mt-2">Kredi satın alımları <b>sadece mobil uygulamamızdan</b> yapılmaktadır.</p>
+                    <p className="text-sm text-muted-foreground mt-2">Web üzerinden talep gönderebilir veya mobil uygulamamızı kullanabilirsiniz.</p>
+                    <div className="mt-4">
+                        <a
+                            href="/credits/topup"
+                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-5 py-2.5 text-sm font-semibold shadow-sm transition-colors"
+                        >
+                            <Coins className="h-4 w-4" />
+                            Kredi Yükleme Talebi Oluştur
+                        </a>
+                    </div>
                 </motion.div>
 
                 {/* Packages */}

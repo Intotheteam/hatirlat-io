@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { useAuth } from "@/contexts/AuthContext"
 import { apiManager } from "@/services/api/apiManager"
 import { toast } from "sonner"
 import type { Reminder, CustomRepeatConfig, Group } from "@/types"
@@ -39,6 +40,8 @@ export default function EditReminderPage() {
     const { id } = useParams()
     const router = useRouter()
     const { t } = useLanguage()
+    const { user } = useAuth()
+    const isPremium = user?.premium ?? false
 
     const [formData, setFormData] = useState<Reminder | null>(null)
     const [groups, setGroups] = useState<Group[]>([])
@@ -157,6 +160,10 @@ export default function EditReminderPage() {
     }
 
     const handleRepeatChange = (value: Reminder["repeat"]) => {
+        if (value === "hourly" && !isPremium) {
+            toast.error(t("modals.premium_required") || "Bu özellik Premium üyelere özeldir")
+            return
+        }
         setFormData((prev) => (prev ? { ...prev, repeat: value } : null))
     }
 
@@ -186,11 +193,20 @@ export default function EditReminderPage() {
             dateTime = dateTime + ":00"
         }
 
+        let endDate: string | null = null
+        if (reminder.repeat !== "none" && reminder.endDate) {
+            endDate = reminder.endDate
+            if (!endDate.match(/T\d{2}:\d{2}:\d{2}$/)) {
+                endDate = endDate + ":00"
+            }
+        }
+
         const payload: Record<string, unknown> = {
             title: reminder.title,
             type: reminder.type,
             message: reminder.message,
             dateTime,
+            endDate,
             status: reminder.status,
             channels: reminder.channels,
             repeat: reminder.repeat,
@@ -215,6 +231,10 @@ export default function EditReminderPage() {
         if (!formData.dateTime) newErrors.dateTime = t("modals.validation_datetime")
         if (!formData.message?.trim()) newErrors.message = t("modals.validation_message")
         if (!formData.channels || formData.channels.length === 0) newErrors.channels = t("modals.validation_channels")
+        if (formData.repeat !== "none" && formData.endDate &&
+            new Date(formData.endDate) <= new Date(formData.dateTime)) {
+            newErrors.endDate = "Bitiş tarihi başlangıçtan sonra olmalıdır"
+        }
 
         if (formData.type === "personal") {
             if (!formData.contact?.name?.trim()) newErrors.name = t("modals.validation_name")
@@ -513,13 +533,47 @@ export default function EditReminderPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="none">{t("modals.frequency_none")}</SelectItem>
-                                        <SelectItem value="hourly">{t("modals.frequency_hourly")}</SelectItem>
+                                        <SelectItem
+                                            value="hourly"
+                                            disabled={!isPremium}
+                                            className={!isPremium ? "opacity-50 cursor-not-allowed" : ""}
+                                        >
+                                            <span className="flex items-center gap-1.5">
+                                                {t("modals.frequency_hourly")}
+                                                {!isPremium && (
+                                                    <span className="ml-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
+                                                        PREMIUM
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </SelectItem>
                                         <SelectItem value="daily">{t("modals.frequency_daily")}</SelectItem>
                                         <SelectItem value="weekly">{t("modals.frequency_weekly")}</SelectItem>
                                         <SelectItem value="custom">{t("modals.frequency_custom")}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
+
+                            {formData.repeat !== "none" && (
+                                <div>
+                                    <Label htmlFor="endDate" className="text-sm font-semibold text-foreground mb-1.5 block">
+                                        Bitiş Tarihi <span className="text-xs font-normal text-muted-foreground">(opsiyonel)</span>
+                                    </Label>
+                                    <Input
+                                        id="endDate"
+                                        name="endDate"
+                                        type="datetime-local"
+                                        value={formData.endDate ? formatForDateTimeLocal(formData.endDate) : ""}
+                                        onChange={handleInputChange}
+                                        min={formatForDateTimeLocal(formData.dateTime)}
+                                        className={`rounded-lg h-9 text-sm flex-1 ${errors.endDate ? "border-destructive" : ""}`}
+                                    />
+                                    <p className="text-[11px] text-muted-foreground mt-1">
+                                        Bu tarihten sonra tekrarlama durur. Boş bırakırsanız süresiz tekrar eder.
+                                    </p>
+                                    {errors.endDate && <p className="text-xs text-destructive mt-1 font-medium">{errors.endDate}</p>}
+                                </div>
+                            )}
 
                             {formData.repeat === "custom" && (
                                 <div className="pt-2 border-t border-border/50 space-y-3 mt-1">

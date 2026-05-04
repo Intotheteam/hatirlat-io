@@ -48,6 +48,7 @@ const initialFormData: Omit<Reminder, "id"> = {
   type: "personal",
   message: "",
   dateTime: "",
+  endDate: "",
   status: "scheduled",
   contact: { name: "", phone: "", email: "" },
   group: { id: "", name: "" },
@@ -165,6 +166,10 @@ export default function CreateReminderModal({ isOpen, onClose, onSave, groupRemi
     if (!formData.title.trim()) newErrors.title = "Başlık zorunludur"
     if (!formData.dateTime) newErrors.dateTime = "Tarih ve saat zorunludur"
     if (!formData.message.trim()) newErrors.message = "Mesaj zorunludur"
+    if (formData.repeat !== "none" && formData.endDate && formData.dateTime &&
+        new Date(formData.endDate) <= new Date(formData.dateTime)) {
+      newErrors.endDate = "Bitiş tarihi başlangıçtan sonra olmalıdır"
+    }
 
     if (formData.channels.length === 0) {
       newErrors.channels = "En az bir bildirim kanalı seçilmelidir"
@@ -198,6 +203,13 @@ export default function CreateReminderModal({ isOpen, onClose, onSave, groupRemi
     // Normalize dateTime: backend expects "yyyy-MM-dd'T'HH:mm:ss" (with seconds)
     if (finalData.dateTime && !finalData.dateTime.match(/T\d{2}:\d{2}:\d{2}$/)) {
       finalData.dateTime = finalData.dateTime + ":00"
+    }
+    if (finalData.endDate && !finalData.endDate.match(/T\d{2}:\d{2}:\d{2}$/)) {
+      finalData.endDate = finalData.endDate + ":00"
+    }
+    // Drop endDate when one-time
+    if (formData.repeat === "none") {
+      finalData.endDate = undefined
     }
 
     if (formData.type === "personal") {
@@ -537,6 +549,29 @@ export default function CreateReminderModal({ isOpen, onClose, onSave, groupRemi
               </Select>
             </div>
           </div>
+
+          {/* End Date — only for recurring reminders */}
+          {formData.repeat !== "none" && (
+            <div>
+              <Label htmlFor="endDate" className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
+                <Calendar className="h-3.5 w-3.5 text-primary" />
+                Bitiş Tarihi <span className="text-xs font-normal text-muted-foreground">(opsiyonel)</span>
+              </Label>
+              <Input
+                id="endDate"
+                name="endDate"
+                type="datetime-local"
+                value={formData.endDate || ""}
+                onChange={handleInputChange}
+                min={formData.dateTime}
+                className={`rounded-xl h-10 text-sm ${errors.endDate ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Bu tarihten sonra tekrarlama durur. Boş bırakırsanız süresiz tekrar eder.
+              </p>
+              {errors.endDate && <p className="text-xs text-destructive mt-1.5 font-medium">{errors.endDate}</p>}
+            </div>
+          )}
 
           {/* Custom Repeat Section */}
           {formData.repeat === "custom" && (
