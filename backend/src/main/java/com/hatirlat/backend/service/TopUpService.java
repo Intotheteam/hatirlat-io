@@ -34,6 +34,15 @@ public class TopUpService {
     /** Submit a new top-up request from a user. */
     @Transactional
     public TopUpRequestResponse createRequest(User user, TopUpRequestCreate dto) {
+        // Enforce 1 hour rate limit
+        topUpRepository.findFirstByUserOrderByRequestedAtDesc(user).ifPresent(lastReq -> {
+            long minutesSince = java.time.Duration.between(lastReq.getRequestedAt(), LocalDateTime.now()).toMinutes();
+            if (minutesSince < 60) {
+                long waitTime = 60 - minutesSince;
+                throw new IllegalStateException("Yeni bir bakiye yükleme talebi oluşturabilmek için " + waitTime + " dakika daha beklemelisiniz.");
+            }
+        });
+
         TopUpRequest req = new TopUpRequest();
         req.setUser(user);
         req.setAmount(dto.getAmount());
@@ -73,11 +82,13 @@ public class TopUpService {
         return toDto(topUpRepository.save(req));
     }
 
+    @Transactional(readOnly = true)
     public List<TopUpRequestResponse> listForUser(User user) {
         return topUpRepository.findByUserOrderByRequestedAtDesc(user).stream()
                 .map(this::toDto).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public Page<TopUpRequestResponse> listAll(Pageable pageable, TopUpStatus statusFilter) {
         Page<TopUpRequest> page = (statusFilter == null)
                 ? topUpRepository.findAllByOrderByRequestedAtDesc(pageable)

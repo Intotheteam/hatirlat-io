@@ -12,7 +12,7 @@ Write-Host "==========================================" -ForegroundColor Blue
 # Backend - yeni pencerede basla
 Write-Host "`n[1/2] Backend baslatiliyor (port 8080)..." -ForegroundColor Green
 $BackendProc = Start-Process -FilePath "cmd" `
-  -ArgumentList "/c", "cd `"$BackendDir`" && mvn spring-boot:run" `
+  -ArgumentList "/c", "cd `"$BackendDir`" && `"C:\Users\oguzh\.m2\wrapper\dists\apache-maven-3.9.9-bin\4nf9hui3q3djbarqar9g711ggc\apache-maven-3.9.9\bin\mvn.cmd`" clean spring-boot:run" `
   -PassThru `
   -WindowStyle Normal
 
@@ -22,7 +22,7 @@ $maxWait = 60
 $waited = 0
 while ($waited -lt $maxWait) {
   try {
-    $response = Invoke-WebRequest -Uri "http://localhost:8080/actuator/health" -TimeoutSec 2 -ErrorAction Stop
+    $response = Invoke-WebRequest -Uri "http://localhost:8080/actuator/health" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
     if ($response.StatusCode -eq 200) {
       Write-Host "Backend hazir!" -ForegroundColor Green
       break

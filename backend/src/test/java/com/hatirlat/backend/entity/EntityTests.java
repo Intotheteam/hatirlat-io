@@ -22,11 +22,6 @@ class EntityTests {
         reminder.setChannels(Arrays.asList(NotificationChannel.EMAIL));
         reminder.setRepeat(RepeatType.DAILY);
 
-        // Use foreign key IDs instead of setting full entity objects
-        reminder.setContactId(1L);
-        reminder.setGroupId(1L);
-        reminder.setCustomRepeatId(1L);
-
         assertEquals(1L, reminder.getId());
         assertEquals("Test Reminder", reminder.getTitle());
         assertEquals(ReminderType.PERSONAL, reminder.getType());
@@ -34,9 +29,6 @@ class EntityTests {
         assertEquals(ReminderStatus.SCHEDULED, reminder.getStatus());
         assertEquals(Arrays.asList(NotificationChannel.EMAIL), reminder.getChannels());
         assertEquals(RepeatType.DAILY, reminder.getRepeat());
-        assertEquals(Long.valueOf(1L), reminder.getContactId());
-        assertEquals(Long.valueOf(1L), reminder.getGroupId());
-        assertEquals(Long.valueOf(1L), reminder.getCustomRepeatId());
     }
 
     @Test

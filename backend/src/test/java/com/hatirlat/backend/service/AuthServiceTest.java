@@ -93,16 +93,22 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_NewUser_ReturnsSavedUser() {
+    void registerAndAuthenticate_NewUser_ReturnsAuthResponse() {
         when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
+        when(jwtService.generateToken(any(UserDetails.class))).thenReturn("test-jwt-token");
+        when(jwtService.generateRefreshToken(any(UserDetails.class))).thenReturn("test-refresh-token");
 
-        User registeredUser = authService.register("testuser", "password", "test@example.com", Role.USER);
+        AuthResponse response = authService.registerAndAuthenticate("testuser", "password", "test@example.com", Role.USER);
 
-        assertNotNull(registeredUser);
-        assertEquals("testuser", registeredUser.getUsername());
-        assertEquals(Role.USER, registeredUser.getRole());
+        assertNotNull(response);
+        assertEquals("test-jwt-token", response.getToken());
+        assertEquals("test-refresh-token", response.getRefreshToken());
+        assertEquals("testuser", response.getUser().getUsername());
+        assertEquals(Role.USER.name(), response.getUser().getRole());
         verify(passwordEncoder, times(1)).encode("password");
         verify(userRepository, times(1)).save(any(User.class));
+        verify(jwtService, times(1)).generateToken(any(UserDetails.class));
+        verify(jwtService, times(1)).generateRefreshToken(any(UserDetails.class));
     }
 }

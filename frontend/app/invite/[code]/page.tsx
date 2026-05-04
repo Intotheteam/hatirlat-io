@@ -151,11 +151,9 @@ export default function InvitePage() {
                 <Users className="h-4 w-4" />
                 <span>{(groupData?.memberCount || 0) + 1} üye</span>
               </div>
-              <Link href="/login">
-                <Button className="rounded-xl w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-0">
-                  Giriş Yap <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
+              <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                İşlem tamamlandı. Artık bu sayfayı kapatabilirsiniz.
+              </p>
             </CardContent>
           </Card>
         </motion.div>

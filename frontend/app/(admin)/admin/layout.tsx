@@ -8,6 +8,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import {
   LayoutDashboard,
   Users,
+  UserCheck,
   ScrollText,
   Settings,
   ShieldAlert,
@@ -22,6 +23,7 @@ import {
 const NAV = [
   { href: "/admin",                label: "Dashboard",        icon: LayoutDashboard },
   { href: "/admin/users",          label: "Kullanıcılar",     icon: Users },
+  { href: "/admin/members",        label: "Grup Üyeleri",     icon: UserCheck },
   { href: "/admin/topup",          label: "Kredi Talepleri",  icon: Coins },
   { href: "/admin/billing",        label: "Fatura & Maliyet", icon: Receipt },
   { href: "/admin/integrations",   label: "Entegrasyonlar",   icon: Plug },

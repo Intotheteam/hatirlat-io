@@ -7,12 +7,29 @@ import { ChevronLeft, ChevronRight, Filter, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
 const ACTION_COLORS: Record<string, string> = {
-  BAN:           "bg-red-900/40 text-red-300 border-red-800",
-  UNBAN:         "bg-green-900/40 text-green-300 border-green-800",
-  DELETE:        "bg-red-900/60 text-red-200 border-red-700",
-  CONFIG_CHANGE: "bg-blue-900/40 text-blue-300 border-blue-800",
-  FEATURE_FLAG:  "bg-purple-900/40 text-purple-300 border-purple-800",
-  LOGIN:         "bg-zinc-800 text-zinc-300 border-zinc-700",
+  // User Actions
+  USER_BANNED:   "bg-red-900/40 text-red-300 border-red-800",
+  USER_UNBANNED: "bg-emerald-900/40 text-emerald-300 border-emerald-800",
+  USER_DELETED:  "bg-red-900/60 text-red-200 border-red-700",
+  USER_LOGIN:    "bg-zinc-800 text-zinc-300 border-zinc-700",
+  USER_REGISTER: "bg-indigo-900/40 text-indigo-300 border-indigo-800",
+  USER_LOGOUT:   "bg-zinc-800/50 text-zinc-500 border-zinc-800",
+
+  // Group Actions
+  GROUP_CREATED: "bg-emerald-900/40 text-emerald-300 border-emerald-800",
+  GROUP_UPDATED: "bg-blue-900/40 text-blue-300 border-blue-800",
+  GROUP_DELETED: "bg-amber-900/40 text-amber-300 border-amber-800",
+
+  // TopUp Actions
+  TOPUP_REQUESTED:         "bg-amber-900/40 text-amber-300 border-amber-800",
+  TOPUP_PAYMENT_SUBMITTED: "bg-blue-900/40 text-blue-300 border-blue-800",
+  TOPUP_APPROVED:          "bg-emerald-900/40 text-emerald-300 border-emerald-800",
+  TOPUP_REJECTED:          "bg-red-900/40 text-red-300 border-red-800",
+
+  // Config Actions
+  CONFIG_UPDATED:        "bg-blue-900/40 text-blue-300 border-blue-800",
+  FEATURE_FLAG_TOGGLED:  "bg-purple-900/40 text-purple-300 border-purple-800",
+  CONFIG_STATUS_CHANGED: "bg-zinc-800 text-zinc-300 border-zinc-700",
 }
 
 function ActionBadge({ action }: { action: string }) {

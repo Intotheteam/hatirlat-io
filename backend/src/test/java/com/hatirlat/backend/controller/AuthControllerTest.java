@@ -7,6 +7,9 @@ import com.hatirlat.backend.dto.UserRequest;
 import com.hatirlat.backend.dto.UserResponse;
 import com.hatirlat.backend.entity.Role;
 import com.hatirlat.backend.service.AuthService;
+import com.hatirlat.backend.service.AuditLogService;
+import com.hatirlat.backend.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +34,15 @@ class AuthControllerTest {
 
     @Mock
     private JwtService jwtService;
+
+    @Mock
+    private AuditLogService auditLogService;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private HttpServletRequest httpServletRequest;
 
     @InjectMocks
     private AuthController authController;
@@ -58,7 +70,7 @@ class AuthControllerTest {
     void login_ValidCredentials_ReturnsAuthResponse() {
         when(authService.authenticate(any(AuthRequest.class))).thenReturn(authResponse);
 
-        ResponseEntity<?> response = authController.login(authRequest, mockHttpResponse);
+        ResponseEntity<?> response = authController.login(authRequest, httpServletRequest, mockHttpResponse);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(authService, times(1)).authenticate(any(AuthRequest.class));
@@ -75,7 +87,7 @@ class AuthControllerTest {
         userRequest.setEmail("test@example.com");
         userRequest.setRole("USER");
 
-        ResponseEntity<?> response = authController.register(userRequest, mockHttpResponse);
+        ResponseEntity<?> response = authController.register(userRequest, httpServletRequest, mockHttpResponse);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(authService, times(1)).registerAndAuthenticate(anyString(), anyString(), anyString(), any(Role.class));
@@ -92,7 +104,7 @@ class AuthControllerTest {
         userRequest.setEmail("test@example.com");
         // role null -> controller uses Role.USER
 
-        ResponseEntity<?> response = authController.register(userRequest, mockHttpResponse);
+        ResponseEntity<?> response = authController.register(userRequest, httpServletRequest, mockHttpResponse);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(authService, times(1)).registerAndAuthenticate(anyString(), anyString(), anyString(), any(Role.class));

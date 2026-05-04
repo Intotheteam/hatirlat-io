@@ -64,9 +64,15 @@ class ReminderServiceTest {
     private Reminder reminderWithGroupId;
     private Group group;
     private Contact contact;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
+        testUser = new User();
+        testUser.setId(1L);
+        testUser.setUsername("testuser");
+        testUser.setRole(Role.USER);
+
         reminderRequest = new ReminderRequest();
         reminderRequest.setTitle("Test Reminder");
         reminderRequest.setType("personal");
@@ -105,14 +111,14 @@ class ReminderServiceTest {
         reminderWithGroupId.setStatus(ReminderStatus.SCHEDULED);
         reminderWithGroupId.setChannels(Arrays.asList(NotificationChannel.EMAIL));
         reminderWithGroupId.setRepeat(RepeatType.NONE);
-        reminderWithGroupId.setGroupId(1L);
+        reminderWithGroupId.setGroup(group);
     }
 
     @Test
     void getAllReminders_ReturnsListOfReminders() {
         when(reminderRepository.findAll()).thenReturn(Arrays.asList(personalReminder));
 
-        List<ReminderResponse> result = reminderService.getAllReminders();
+        List<ReminderResponse> result = reminderService.getAllReminders(testUser);
 
         assertEquals(1, result.size());
         assertEquals("Test Reminder", result.get(0).getTitle());
@@ -123,7 +129,7 @@ class ReminderServiceTest {
     void getReminderById_ExistingReminder_ReturnsReminder() {
         when(reminderRepository.findById(1L)).thenReturn(Optional.of(personalReminder));
 
-        ReminderResponse result = reminderService.getReminderById("1");
+        ReminderResponse result = reminderService.getReminderById("1", testUser);
 
         assertEquals("1", result.getId());
         assertEquals("Test Reminder", result.getTitle());
@@ -135,7 +141,7 @@ class ReminderServiceTest {
         when(reminderRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> {
-            reminderService.getReminderById("999");
+            reminderService.getReminderById("999", testUser);
         });
 
         verify(reminderRepository, times(1)).findById(999L);
@@ -151,7 +157,7 @@ class ReminderServiceTest {
         when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
         when(memberRepository.findMembersByGroupId(1L)).thenReturn(Collections.emptyList());
 
-        ReminderResponse response = reminderService.createReminder(reminderRequest);
+        ReminderResponse response = reminderService.createReminder(reminderRequest, testUser);
 
         assertNotNull(response);
         assertEquals("Group Reminder", response.getTitle());
@@ -163,7 +169,7 @@ class ReminderServiceTest {
     void createReminder_ValidPersonalRequest_ReturnsCreatedReminder() {
         when(reminderRepository.save(any(Reminder.class))).thenReturn(personalReminder);
 
-        ReminderResponse response = reminderService.createReminder(reminderRequest);
+        ReminderResponse response = reminderService.createReminder(reminderRequest, testUser);
 
         assertNotNull(response);
         assertEquals("Test Reminder", response.getTitle());
@@ -179,7 +185,7 @@ class ReminderServiceTest {
         when(reminderRepository.findById(1L)).thenReturn(Optional.of(personalReminder));
         when(reminderRepository.save(any(Reminder.class))).thenReturn(personalReminder);
 
-        ReminderResponse response = reminderService.updateReminder("1", reminderRequest);
+        ReminderResponse response = reminderService.updateReminder("1", reminderRequest, testUser);
 
         assertNotNull(response);
         verify(reminderRepository, times(1)).findById(1L);
@@ -191,7 +197,7 @@ class ReminderServiceTest {
         when(reminderRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> {
-            reminderService.updateReminder("999", reminderRequest);
+            reminderService.updateReminder("999", reminderRequest, testUser);
         });
 
         verify(reminderRepository, times(1)).findById(999L);
@@ -210,7 +216,7 @@ class ReminderServiceTest {
         when(reminderRepository.findById(1L)).thenReturn(Optional.of(personalReminder));
         when(reminderRepository.save(any(Reminder.class))).thenReturn(pausedReminder);
 
-        ReminderResponse result = reminderService.updateReminderStatus("1", "paused");
+        ReminderResponse result = reminderService.updateReminderStatus("1", "paused", testUser);
 
         assertNotNull(result);
         assertEquals("paused", result.getStatus());
@@ -223,7 +229,7 @@ class ReminderServiceTest {
         when(reminderRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> {
-            reminderService.updateReminderStatus("999", "paused");
+            reminderService.updateReminderStatus("999", "paused", testUser);
         });
 
         verify(reminderRepository, times(1)).findById(999L);
@@ -233,7 +239,7 @@ class ReminderServiceTest {
     void testDeleteReminder() {
         when(reminderRepository.existsById(1L)).thenReturn(true);
 
-        boolean result = reminderService.deleteReminder("1");
+        boolean result = reminderService.deleteReminder("1", testUser);
 
         assertTrue(result);
         verify(reminderRepository, times(1)).deleteById(1L);
@@ -244,7 +250,7 @@ class ReminderServiceTest {
         when(reminderRepository.existsById(999L)).thenReturn(false);
 
         assertThrows(ResourceNotFoundException.class, () -> {
-            reminderService.deleteReminder("999");
+            reminderService.deleteReminder("999", testUser);
         });
 
         verify(reminderRepository, times(1)).existsById(999L);

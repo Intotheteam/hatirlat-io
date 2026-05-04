@@ -39,8 +39,20 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers: { "Content-Type": "application/json", ...options.headers },
   })
   if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText)
-    throw new Error(`TopUp API error ${res.status}: ${text}`)
+    let text = res.statusText
+    try {
+      const errorJson = await res.json()
+      if (errorJson.errorMessage) {
+        text = errorJson.errorMessage
+      } else if (errorJson.message) {
+        text = errorJson.message
+      } else {
+        text = JSON.stringify(errorJson)
+      }
+    } catch (e) {
+      text = await res.text().catch(() => res.statusText)
+    }
+    throw new Error(text)
   }
   if (res.status === 204) return null as T
   const json = await res.json()

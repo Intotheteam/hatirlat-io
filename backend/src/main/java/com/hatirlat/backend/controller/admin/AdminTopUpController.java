@@ -7,6 +7,8 @@ import com.hatirlat.backend.entity.TopUpStatus;
 import com.hatirlat.backend.entity.User;
 import com.hatirlat.backend.repository.UserRepository;
 import com.hatirlat.backend.service.TopUpService;
+import com.hatirlat.backend.service.AuditLogService;
+import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,9 @@ public class AdminTopUpController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private AuditLogService auditLogService;
 
     private User currentAdmin(Authentication auth) {
         return userRepository.findByUsername(auth.getName())
@@ -73,8 +78,14 @@ public class AdminTopUpController {
     public ResponseEntity<BaseResponse<TopUpRequestResponse>> approve(
             @PathVariable Long id,
             @RequestBody(required = false) TopUpReviewRequest review,
-            Authentication auth) {
-        TopUpRequestResponse res = topUpService.approve(id, currentAdmin(auth), review);
+            Authentication auth,
+            HttpServletRequest httpRequest) {
+        User admin = currentAdmin(auth);
+        TopUpRequestResponse res = topUpService.approve(id, admin, review);
+        auditLogService.logAction(admin, "TOPUP_APPROVED", "TopUpRequest",
+                res.getId(),
+                Map.of("targetUser", res.getUsername(), "credits", res.getAmount()),
+                httpRequest);
         return ResponseEntity.ok(new BaseResponse<>(true, res, "Talep onaylandı, krediler yüklendi"));
     }
 
@@ -82,8 +93,18 @@ public class AdminTopUpController {
     public ResponseEntity<BaseResponse<TopUpRequestResponse>> reject(
             @PathVariable Long id,
             @RequestBody TopUpReviewRequest review,
-            Authentication auth) {
-        TopUpRequestResponse res = topUpService.reject(id, currentAdmin(auth), review);
+            Authentication auth,
+            HttpServletRequest httpRequest) {
+        User admin = currentAdmin(auth);
+        TopUpRequestResponse res = topUpService.reject(id, admin, review);
+        auditLogService.logAction(admin, "TOPUP_REJECTED", "TopUpRequest",
+                res.getId(),
+                Map.of(
+                        "targetUser", res.getUsername() != null ? res.getUsername() : "",
+                        "reason", review.getAdminNote() != null ? review.getAdminNote() : "",
+                        "rejectionReason", review.getRejectionReason() != null ? review.getRejectionReason() : ""
+                ),
+                httpRequest);
         return ResponseEntity.ok(new BaseResponse<>(true, res, "Talep reddedildi"));
     }
 }

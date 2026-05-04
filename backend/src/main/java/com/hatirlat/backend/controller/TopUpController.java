@@ -6,6 +6,8 @@ import com.hatirlat.backend.dto.TopUpRequestResponse;
 import com.hatirlat.backend.entity.User;
 import com.hatirlat.backend.repository.UserRepository;
 import com.hatirlat.backend.service.TopUpService;
+import com.hatirlat.backend.service.AuditLogService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +31,9 @@ public class TopUpController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private AuditLogService auditLogService;
+
     private User currentUser(Authentication auth) {
         return userRepository.findByUsername(auth.getName())
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
@@ -38,9 +43,14 @@ public class TopUpController {
     @PostMapping
     public ResponseEntity<BaseResponse<TopUpRequestResponse>> create(
             @Valid @RequestBody TopUpRequestCreate dto,
-            Authentication auth) {
+            Authentication auth,
+            HttpServletRequest httpRequest) {
         User user = currentUser(auth);
         TopUpRequestResponse res = topUpService.createRequest(user, dto);
+        auditLogService.logAction(user, "TOPUP_REQUESTED", "TopUpRequest",
+                res.getId(),
+                Map.of("amount", res.getAmount()),
+                httpRequest);
         return ResponseEntity.ok(new BaseResponse<>(true, res, "Talep oluşturuldu"));
     }
 
@@ -56,10 +66,15 @@ public class TopUpController {
     public ResponseEntity<BaseResponse<TopUpRequestResponse>> markPaid(
             @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body,
-            Authentication auth) {
+            Authentication auth,
+            HttpServletRequest httpRequest) {
         User user = currentUser(auth);
         String reference = body != null ? body.get("paymentReference") : null;
         TopUpRequestResponse res = topUpService.markPaymentDone(id, user, reference);
+        auditLogService.logAction(user, "TOPUP_PAYMENT_SUBMITTED", "TopUpRequest",
+                res.getId(),
+                Map.of("reference", reference != null ? reference : ""),
+                httpRequest);
         return ResponseEntity.ok(new BaseResponse<>(true, res, "Ödeme bilgisi kaydedildi"));
     }
 }

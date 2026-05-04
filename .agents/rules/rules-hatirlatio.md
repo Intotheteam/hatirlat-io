@@ -9,4 +9,4 @@ trigger: always_on
 @/C:/Users/oguzh/intothecv/IntotheIO/hatirlat-io/.agent/rules/05-testing-rules.md 
 @/C:/Users/oguzh/intothecv/IntotheIO/hatirlat-io/.agent/rules/06-security-rules.md 
 @/C:/Users/oguzh/intothecv/IntotheIO/hatirlat-io/.agent/rules/07-entity-relationships.md 
-@/C:/Users/oguzh/intothecv/IntotheIO/hatirlat-io/.agent/rules/08-frontend-patterns.md 
+@/C:/Users/oguzh/intothecv/IntotheIO/hatirlat-io/.agent/rules/08-frontend-patterns.md

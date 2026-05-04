@@ -90,7 +90,7 @@ class MemberServiceTest {
         when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
         when(memberRepository.save(any(Member.class))).thenReturn(member);
 
-        MemberResponse response = memberService.addMemberToGroup("1", memberRequest);
+        MemberResponse response = memberService.addMemberToGroup("1", memberRequest, "admin");
 
         assertNotNull(response);
         assertEquals("Test Member", response.getName());
@@ -104,7 +104,7 @@ class MemberServiceTest {
         when(groupRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(com.hatirlat.backend.exception.ResourceNotFoundException.class, () -> {
-            memberService.addMemberToGroup("999", memberRequest);
+            memberService.addMemberToGroup("999", memberRequest, "admin");
         });
 
         verify(groupRepository, times(1)).findById(999L);
@@ -152,7 +152,7 @@ class MemberServiceTest {
 
     @Test
     void inviteMember_ValidRequest_ReturnsSuccessMessage() {
-        String result = memberService.inviteMember("test@example.com", "1");
+        String result = memberService.inviteMember("test@example.com", "1", "admin");
 
         assertTrue(result.startsWith("Invitation sent to test@example.com for group 1"));
     }

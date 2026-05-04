@@ -80,3 +80,7 @@ frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
 frontend/.vercel
+
+# === Local tooling / generated diffs ===
+*.patch
+.claude/settings.local.json

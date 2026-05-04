@@ -37,9 +37,15 @@ class ReminderControllerTest {
 
     private ReminderRequest reminderRequest;
     private ReminderResponse reminderResponse;
+    private com.hatirlat.backend.entity.User testUser;
 
     @BeforeEach
     void setUp() {
+        testUser = new com.hatirlat.backend.entity.User();
+        testUser.setId(1L);
+        testUser.setUsername("testuser");
+        testUser.setRole(com.hatirlat.backend.entity.Role.USER);
+
         reminderRequest = new ReminderRequest();
         reminderRequest.setTitle("Test Reminder");
         reminderRequest.setType("personal");
@@ -63,79 +69,79 @@ class ReminderControllerTest {
     @Test
     void getAllReminders_ReturnsListOfReminders() {
         List<ReminderResponse> reminders = Arrays.asList(reminderResponse);
-        when(reminderService.getAllReminders()).thenReturn(reminders);
+        when(reminderService.getAllReminders(testUser)).thenReturn(reminders);
 
-        ResponseEntity<BaseResponse<List<ReminderResponse>>> response = reminderController.getAllReminders();
+        ResponseEntity<BaseResponse<List<ReminderResponse>>> response = reminderController.getAllReminders(null, testUser);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         assertEquals(1, response.getBody().getData().size());
         assertEquals("Test Reminder", response.getBody().getData().get(0).getTitle());
-        verify(reminderService, times(1)).getAllReminders();
+        verify(reminderService, times(1)).getAllReminders(testUser);
     }
 
     @Test
     void getReminderById_ExistingReminder_ReturnsReminder() {
-        when(reminderService.getReminderById("1")).thenReturn(reminderResponse);
+        when(reminderService.getReminderById("1", testUser)).thenReturn(reminderResponse);
 
-        ResponseEntity<BaseResponse<ReminderResponse>> response = reminderController.getReminderById("1");
+        ResponseEntity<BaseResponse<ReminderResponse>> response = reminderController.getReminderById("1", testUser);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         assertEquals("Test Reminder", response.getBody().getData().getTitle());
-        verify(reminderService, times(1)).getReminderById("1");
+        verify(reminderService, times(1)).getReminderById("1", testUser);
     }
 
     @Test
     void getReminderById_NonExistingReminder_ThrowsResourceNotFoundException() {
-        when(reminderService.getReminderById("999"))
+        when(reminderService.getReminderById("999", testUser))
                 .thenThrow(new ResourceNotFoundException("Reminder", "999"));
 
         assertThrows(ResourceNotFoundException.class, () -> {
-            reminderController.getReminderById("999");
+            reminderController.getReminderById("999", testUser);
         });
 
-        verify(reminderService, times(1)).getReminderById("999");
+        verify(reminderService, times(1)).getReminderById("999", testUser);
     }
 
     @Test
     void createReminder_ValidRequest_ReturnsCreatedReminder() {
-        when(reminderService.createReminder(any(ReminderRequest.class))).thenReturn(reminderResponse);
+        when(reminderService.createReminder(any(ReminderRequest.class), eq(testUser))).thenReturn(reminderResponse);
 
-        ResponseEntity<BaseResponse<ReminderResponse>> response = reminderController.createReminder(reminderRequest);
+        ResponseEntity<BaseResponse<ReminderResponse>> response = reminderController.createReminder(reminderRequest, testUser);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         assertEquals("Test Reminder", response.getBody().getData().getTitle());
-        verify(reminderService, times(1)).createReminder(any(ReminderRequest.class));
+        verify(reminderService, times(1)).createReminder(any(ReminderRequest.class), eq(testUser));
     }
 
     @Test
     void updateReminder_ExistingReminder_ReturnsUpdatedReminder() {
-        when(reminderService.updateReminder(eq("1"), any(ReminderRequest.class))).thenReturn(reminderResponse);
+        when(reminderService.updateReminder(eq("1"), any(ReminderRequest.class), eq(testUser))).thenReturn(reminderResponse);
 
-        ResponseEntity<BaseResponse<ReminderResponse>> response = reminderController.updateReminder("1", reminderRequest);
+        ResponseEntity<BaseResponse<ReminderResponse>> response = reminderController.updateReminder("1", reminderRequest, testUser);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         assertEquals("Test Reminder", response.getBody().getData().getTitle());
-        verify(reminderService, times(1)).updateReminder(eq("1"), any(ReminderRequest.class));
+        verify(reminderService, times(1)).updateReminder(eq("1"), any(ReminderRequest.class), eq(testUser));
     }
 
     @Test
     void updateReminder_NonExistingReminder_ThrowsResourceNotFoundException() {
-        when(reminderService.updateReminder(eq("999"), any(ReminderRequest.class)))
+        when(reminderService.updateReminder(eq("999"), any(ReminderRequest.class), eq(testUser)))
                 .thenThrow(new ResourceNotFoundException("Reminder", "999"));
 
         assertThrows(ResourceNotFoundException.class, () -> {
-            reminderController.updateReminder("999", reminderRequest);
+            reminderController.updateReminder("999", reminderRequest, testUser);
         });
 
-        verify(reminderService, times(1)).updateReminder(eq("999"), any(ReminderRequest.class));
+        verify(reminderService, times(1)).updateReminder(eq("999"), any(ReminderRequest.class), eq(testUser));
     }
 
     @Test
@@ -154,38 +160,38 @@ class ReminderControllerTest {
         updatedReminderResponse.setChannels(Arrays.asList("email"));
         updatedReminderResponse.setRepeat("none");
         
-        when(reminderService.updateReminderStatus(eq("1"), eq("paused"))).thenReturn(updatedReminderResponse);
+        when(reminderService.updateReminderStatus(eq("1"), eq("paused"), eq(testUser))).thenReturn(updatedReminderResponse);
 
-        ResponseEntity<BaseResponse<ReminderResponse>> response = reminderController.updateReminderStatus("1", statusRequest);
+        ResponseEntity<BaseResponse<ReminderResponse>> response = reminderController.updateReminderStatus("1", statusRequest, testUser);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         assertEquals("paused", response.getBody().getData().getStatus());
-        verify(reminderService, times(1)).updateReminderStatus(eq("1"), eq("paused"));
+        verify(reminderService, times(1)).updateReminderStatus(eq("1"), eq("paused"), eq(testUser));
     }
 
     @Test
     void deleteReminder_ExistingReminder_ReturnsSuccess() {
-        when(reminderService.deleteReminder("1")).thenReturn(true);
+        when(reminderService.deleteReminder("1", testUser)).thenReturn(true);
 
-        ResponseEntity<BaseResponse<Void>> response = reminderController.deleteReminder("1");
+        ResponseEntity<BaseResponse<Void>> response = reminderController.deleteReminder("1", testUser);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
-        verify(reminderService, times(1)).deleteReminder("1");
+        verify(reminderService, times(1)).deleteReminder("1", testUser);
     }
 
     @Test
     void deleteReminder_NonExistingReminder_ThrowsResourceNotFoundException() {
         doThrow(new ResourceNotFoundException("Reminder", "999"))
-                .when(reminderService).deleteReminder("999");
+                .when(reminderService).deleteReminder("999", testUser);
 
         assertThrows(ResourceNotFoundException.class, () -> {
-            reminderController.deleteReminder("999");
+            reminderController.deleteReminder("999", testUser);
         });
 
-        verify(reminderService, times(1)).deleteReminder("999");
+        verify(reminderService, times(1)).deleteReminder("999", testUser);
     }
 }

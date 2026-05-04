@@ -15,6 +15,8 @@ public interface TopUpRequestRepository extends JpaRepository<TopUpRequest, Long
 
     List<TopUpRequest> findByUserOrderByRequestedAtDesc(User user);
 
+    java.util.Optional<TopUpRequest> findFirstByUserOrderByRequestedAtDesc(User user);
+
     Page<TopUpRequest> findByStatusOrderByRequestedAtDesc(TopUpStatus status, Pageable pageable);
 
     Page<TopUpRequest> findAllByOrderByRequestedAtDesc(Pageable pageable);

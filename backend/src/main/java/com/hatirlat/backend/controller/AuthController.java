@@ -8,7 +8,9 @@ import com.hatirlat.backend.dto.UserRequest;
 import com.hatirlat.backend.dto.UserResponse;
 import com.hatirlat.backend.entity.Role;
 import com.hatirlat.backend.entity.User;
+import com.hatirlat.backend.service.AuditLogService;
 import com.hatirlat.backend.service.AuthService;
+import com.hatirlat.backend.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,6 +36,12 @@ public class AuthController {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private AuditLogService auditLogService;
+
+    @Autowired
+    private UserRepository userRepository;
+
     @Operation(summary = "Login", description = "Authenticate user and return JWT token. Also sets an HttpOnly cookie for web clients.", responses = {
             @ApiResponse(responseCode = "200", description = "Successfully authenticated", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))),
             @ApiResponse(responseCode = "401", description = "Invalid credentials")
@@ -41,14 +49,19 @@ public class AuthController {
     @PostMapping(value = "/login")
     public ResponseEntity<BaseResponse<AuthResponse>> login(
             @Valid @RequestBody AuthRequest request,
+            HttpServletRequest httpRequest,
             HttpServletResponse response) {
         AuthResponse authResponse = authService.authenticate(request);
-
-        // Set HttpOnly cookie for Next.js web frontend
-        // Mobile (Flutter) still uses the token from the JSON body via Authorization
-        // header
         setJwtCookie(response, authResponse.getToken());
-
+        // Log successful login
+        try {
+            userRepository.findByUsername(request.getUsername()).ifPresent(user ->
+                auditLogService.logAction(user, "USER_LOGIN", "User",
+                        user.getId(),
+                        java.util.Map.of("username", user.getUsername()),
+                        httpRequest)
+            );
+        } catch (Exception ignored) {}
         return ResponseEntity.ok(new BaseResponse<>(true, authResponse, "Login successful"));
     }
 
@@ -59,16 +72,23 @@ public class AuthController {
     @PostMapping(value = "/register")
     public ResponseEntity<BaseResponse<AuthResponse>> register(
             @Valid @RequestBody UserRequest userRequest,
+            HttpServletRequest httpRequest,
             HttpServletResponse response) {
         AuthResponse authResponse = authService.registerAndAuthenticate(
                 userRequest.getUsername(),
                 userRequest.getPassword(),
                 userRequest.getEmail(),
                 userRequest.getRole() != null ? Role.valueOf(userRequest.getRole()) : Role.USER);
-
-        // Set HttpOnly cookie for web clients
         setJwtCookie(response, authResponse.getToken());
-
+        try {
+            userRepository.findByUsername(userRequest.getUsername()).ifPresent(newUser ->
+                auditLogService.logAction(newUser, "USER_REGISTER", "User",
+                        newUser.getId(),
+                        java.util.Map.of("username", userRequest.getUsername(),
+                                         "email", userRequest.getEmail() != null ? userRequest.getEmail() : ""),
+                        httpRequest)
+            );
+        } catch (Exception ignored) {}
         return ResponseEntity.ok(new BaseResponse<>(true, authResponse, "Registration successful"));
     }
 
@@ -78,19 +98,15 @@ public class AuthController {
             @AuthenticationPrincipal User currentUser,
             HttpServletRequest request,
             HttpServletResponse response) {
-        // Blacklist the current token so it cannot be reused
         String token = extractTokenFromRequest(request);
         if (token != null) {
-            try {
-                jwtService.blacklistToken(token);
-            } catch (Exception ignored) {
-                // Token may already be invalid; proceed with logout anyway
-            }
+            try { jwtService.blacklistToken(token); } catch (Exception ignored) {}
         }
-
-        // Clear the HttpOnly cookie
+        if (currentUser != null) {
+            auditLogService.logAction(currentUser, "USER_LOGOUT", "User",
+                    currentUser.getId(), null, request);
+        }
         clearJwtCookie(response);
-
         return ResponseEntity.ok(new BaseResponse<>(true, "Logged out successfully", "Logout successful"));
     }
 

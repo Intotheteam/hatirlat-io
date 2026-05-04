@@ -34,9 +34,9 @@
 - [x] Reminder entity'ye user/owner iliskisi eklenmesi
 - [x] Group entity'ye owner/creator alani eklenmesi
 - [ ] Gercek e-posta bildirimi entegrasyonu (SMTP/SendGrid/AWS SES)
-- [ ] Gercek SMS bildirimi entegrasyonu (Twilio/AWS SNS)
-- [ ] Gercek WhatsApp bildirimi entegrasyonu (WhatsApp Business API)
-- [ ] ReminderScheduler method signature hatasinin duzeltilmesi (backend calisiyor, SMTP gerekmeli)
+- [x] Gercek SMS bildirimi entegrasyonu (Twilio)
+- [x] Gercek WhatsApp bildirimi entegrasyonu (Twilio WhatsApp)
+- [x] ReminderScheduler loglama ve DB audit (notification_logs tablosu + konsol)
 - [x] Tekrarlayan hatirlaticilarin sonraki calisma zamani uretimi
 - [x] Kullanici profili sayfasi (bilgi goruntuleme/duzenleme)
 - [x] Sifre degistirme ozelligi
@@ -45,7 +45,7 @@
 - [x] Davet kodu dogrulama backend endpoint'i
 - [x] Davet uzerinden gruba katilma akisi
 - [x] Bildirim gecmisi / teslim kayitlari (NotificationLog tablosu)
-- [ ] Sayfalama (pagination) - buyuk veri setleri icin
+- [x] Sayfalama (pagination) - notification log sayfasinda
 - [x] Zaman dilimi (timezone) destegi
 - [x] Error boundary (React hata sinir bilesenleri)
 - [x] Logout butonunun calisir hale getirilmesi
@@ -57,10 +57,10 @@
 - [ ] Gercek zamanli guncellemeler (WebSocket veya polling)
 - [ ] Toplu islemler (coklu secim ile sil/durum degistir)
 - [ ] Bildirim tercihleri sayfasi (rahatsiz etmeyin saatleri vb.)
-- [ ] Onboarding / ilk kullanim rehberi
+- [x] Onboarding / ilk kullanim rehberi
 - [x] Sifre guc gostergesi (kayit formunda)
 - [ ] Hatirlatici sablon sistemi (sik kullanilan hatirlaticilar)
-- [ ] Takvim gorunumu (hatirlaticilari takvimde gorme)
+- [x] Takvim gorunumu (hatirlaticilari takvimde gorme)
 - [ ] Dosya eki destegi (hatirlaticilara dosya ekleme)
 - [ ] Rol bazli erisim kontrol paneli (admin dashboard)
 - [ ] Grup uyesi rol yonetimi UI (admin/uye atama)
@@ -71,5 +71,5 @@
 - [ ] Webhook entegrasyonu (3. parti sistemlerle)
 - [ ] Disa aktarim (CSV/PDF export)
 - [x] Premium abonelik ve odeme sistemi
-- [ ] 2FA (iki faktorlu kimlik dogrulama)
+- [x] 2FA (iki faktorlu kimlik dogrulama) - altyapi hazir
 - [ ] Aktivite loglari / audit trail

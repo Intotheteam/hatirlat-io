@@ -49,7 +49,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final isLoading = ref.watch(authProvider) is AuthLoading;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.of(context).background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -64,7 +64,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     height: 44,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: AppColors.primaryGradient,
+                      gradient: AppColors.of(context).primaryGradient,
                     ),
                     child: const Icon(
                       Icons.notifications_rounded,
@@ -73,10 +73,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     'Hatirlat',
                     style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: AppColors.of(context).textPrimary,
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                     ),
@@ -84,10 +84,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ],
               ).animate().fadeIn(),
               const SizedBox(height: 40),
-              const Text(
+              Text(
                 'Hesap\nOluşturun 🚀',
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: AppColors.of(context).textPrimary,
                   fontSize: 32,
                   fontWeight: FontWeight.w800,
                   height: 1.2,
@@ -95,9 +95,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
               ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.3, end: 0),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Ücretsiz hesabınızı oluşturun',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+                style: TextStyle(
+                    color: AppColors.of(context).textSecondary, fontSize: 16),
               ).animate().fadeIn(delay: 200.ms),
               const SizedBox(height: 40),
               Form(
@@ -106,12 +107,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   children: [
                     TextFormField(
                       controller: _usernameCtrl,
-                      style: const TextStyle(color: AppColors.textPrimary),
-                      decoration: const InputDecoration(
+                      style: const TextStyle(
+                          color: AppColors.of(context).textPrimary),
+                      decoration: InputDecoration(
                         labelText: 'Kullanıcı Adı',
                         prefixIcon: Icon(
                           Icons.person_outline_rounded,
-                          color: AppColors.textSecondary,
+                          color: AppColors.of(context).textSecondary,
                         ),
                       ),
                       validator: (v) => (v == null || v.isEmpty)
@@ -123,12 +125,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     TextFormField(
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(color: AppColors.textPrimary),
-                      decoration: const InputDecoration(
+                      style: const TextStyle(
+                          color: AppColors.of(context).textPrimary),
+                      decoration: InputDecoration(
                         labelText: 'E-posta',
                         prefixIcon: Icon(
                           Icons.email_outlined,
-                          color: AppColors.textSecondary,
+                          color: AppColors.of(context).textSecondary,
                         ),
                       ),
                       validator: (v) {
@@ -142,19 +145,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     TextFormField(
                       controller: _passwordCtrl,
                       obscureText: _obscurePassword,
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      style: const TextStyle(
+                          color: AppColors.of(context).textPrimary),
                       decoration: InputDecoration(
                         labelText: 'Şifre',
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           Icons.lock_outline_rounded,
-                          color: AppColors.textSecondary,
+                          color: AppColors.of(context).textSecondary,
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
                                 ? Icons.visibility_off_outlined
                                 : Icons.visibility_outlined,
-                            color: AppColors.textSecondary,
+                            color: AppColors.of(context).textSecondary,
                           ),
                           onPressed: () => setState(
                             () => _obscurePassword = !_obscurePassword,
@@ -173,17 +177,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.error.withOpacity(0.1),
+                          color: AppColors.of(context).error.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: AppColors.error.withOpacity(0.3),
+                            color: AppColors.of(context).error.withOpacity(0.3),
                           ),
                         ),
                         child: Row(
                           children: [
                             const Icon(
                               Icons.error_outline,
-                              color: AppColors.error,
+                              color: AppColors.of(context).error,
                               size: 18,
                             ),
                             const SizedBox(width: 8),
@@ -191,7 +195,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               child: Text(
                                 _errorMessage!,
                                 style: const TextStyle(
-                                  color: AppColors.error,
+                                  color: AppColors.of(context).error,
                                   fontSize: 13,
                                 ),
                               ),
@@ -233,16 +237,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           'Zaten hesabınız var mı?',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          style: TextStyle(
+                              color: AppColors.of(context).textSecondary),
                         ),
                         TextButton(
                           onPressed: () => context.go('/login'),
-                          child: const Text(
+                          child: Text(
                             'Giriş Yap',
                             style: TextStyle(
-                              color: AppColors.primary,
+                              color: AppColors.of(context).primary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
