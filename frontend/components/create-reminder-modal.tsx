@@ -13,6 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Bell, Users, Mail, MessageSquare, Phone, UserIcon, Calendar, Clock, Repeat, Sparkles, Lock } from "lucide-react"
 import type { Reminder, CustomRepeatConfig, Group, Channel } from "@/types"
+import { REMINDER_TEMPLATES, type ReminderTemplate } from "./reminder-templates"
 import { apiService } from "@/services/api/apiService"
 import { apiManager } from "@/services/api/apiManager"
 import { toast } from "sonner"
@@ -264,6 +265,38 @@ export default function CreateReminderModal({ isOpen, onClose, onSave, groupRemi
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5 py-3">
+          {/* Template Quick-pick */}
+          <div>
+            <Label className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-2">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              Şablon Seç
+            </Label>
+            <div className="grid grid-cols-3 gap-2">
+              {REMINDER_TEMPLATES.map((tpl) => {
+                const Icon = tpl.icon
+                return (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        title: tpl.title || prev.title,
+                        message: tpl.message || prev.message,
+                        channels: tpl.channels.length ? tpl.channels : prev.channels,
+                        repeat: tpl.repeat as any,
+                      }))
+                    }}
+                    className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition text-xs"
+                  >
+                    <Icon className="h-4 w-4 text-primary" />
+                    <span className="font-medium">{tpl.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           {/* Basic Information Section */}
           <div className="space-y-3.5">
             <div>
