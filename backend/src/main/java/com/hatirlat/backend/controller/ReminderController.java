@@ -5,6 +5,7 @@ import com.hatirlat.backend.entity.Reminder;
 import com.hatirlat.backend.entity.User;
 import com.hatirlat.backend.service.BulkReminderImportService;
 import com.hatirlat.backend.service.IcsService;
+import com.hatirlat.backend.service.NotificationPreviewService;
 import com.hatirlat.backend.service.ReminderService;
 import com.hatirlat.backend.aop.LimitedForFree;
 import jakarta.validation.Valid;
@@ -30,12 +31,15 @@ public class ReminderController {
     private final ReminderService reminderService;
     private final IcsService icsService;
     private final BulkReminderImportService bulkReminderImportService;
+    private final NotificationPreviewService notificationPreviewService;
 
     public ReminderController(ReminderService reminderService, IcsService icsService,
-            BulkReminderImportService bulkReminderImportService) {
+            BulkReminderImportService bulkReminderImportService,
+            NotificationPreviewService notificationPreviewService) {
         this.reminderService = reminderService;
         this.icsService = icsService;
         this.bulkReminderImportService = bulkReminderImportService;
+        this.notificationPreviewService = notificationPreviewService;
     }
 
     @Operation(
@@ -187,6 +191,17 @@ public class ReminderController {
                     )
             }
     )
+    @Operation(summary = "Preview reminder delivery",
+            description = "Returns the per-recipient breakdown that would result from sending this reminder, without contacting any provider")
+    @GetMapping("/{id}/preview")
+    public ResponseEntity<BaseResponse<NotificationPreview>> previewDelivery(
+            @PathVariable String id,
+            @AuthenticationPrincipal User currentUser) {
+        Reminder reminder = reminderService.getReminderEntity(id, currentUser);
+        NotificationPreview preview = notificationPreviewService.build(reminder);
+        return ResponseEntity.ok(new BaseResponse<>(true, preview, null));
+    }
+
     @Operation(summary = "Bulk import reminders", description = "Create up to 500 reminders from a parsed CSV/JSON payload")
     @PostMapping("/bulk")
     public ResponseEntity<BaseResponse<BulkImportResult>> bulkImport(

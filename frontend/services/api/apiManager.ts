@@ -37,6 +37,11 @@ export class ApiManager {
     return response.data;
   }
 
+  async previewReminder(id: string): Promise<any> {
+    const response = await apiService.get<{ success: boolean; data: any }>(`/api/reminders/${id}/preview`);
+    return response.data;
+  }
+
   /** Trigger a browser download of the reminder as an .ics calendar file. */
   async downloadReminderIcs(id: string, filename?: string): Promise<void> {
     const res = await fetch(`/api/reminders/${id}/ics`, { credentials: "include" });
