@@ -97,7 +97,7 @@ public class GroupService {
 
             Group group = new Group(request.getName(), request.getDescription());
             group.setOwner(currentUser);
-            group.setInviteCode(generateInviteCode());
+            group.setInviteCode(generateUniqueInviteCode());
             Group savedGroup = groupRepository.save(group);
             loggingUtil.logDatabaseOperation("CREATE", "Group", savedGroup.getId());
             GroupResponse response = groupMapper.toDto(savedGroup);
@@ -175,6 +175,7 @@ public class GroupService {
         Member member = new Member(memberName, memberEmail, memberPhone);
         member.setRole(MemberRole.MEMBER);
         member.setStatus(MemberStatus.ACTIVE);
+        member.setUnsubscribeToken(UUID.randomUUID().toString().replace("-", ""));
         Member savedMember = memberRepository.save(member);
 
         // Create GroupMember association
@@ -184,8 +185,37 @@ public class GroupService {
         logger.info("Member '{}' joined group '{}' via invite code", memberName, group.getName());
     }
 
+    /**
+     * Regenerate the invite code for a group, invalidating the old one.
+     * Only the group owner can do this.
+     */
+    @Transactional
+    public GroupResponse regenerateInviteCode(String id, User currentUser) {
+        Group group = groupRepository.findById(Long.parseLong(id))
+                .orElseThrow(() -> new ResourceNotFoundException("Group", id));
+        verifyOwnership(group, currentUser);
+
+        String newCode = generateUniqueInviteCode();
+        group.setInviteCode(newCode);
+        Group saved = groupRepository.save(group);
+        logger.info("Invite code regenerated for group '{}' by user '{}'", group.getName(), currentUser.getUsername());
+        return groupMapper.toDto(saved);
+    }
+
     private String generateInviteCode() {
         return UUID.randomUUID().toString().substring(0, 8).toUpperCase(java.util.Locale.ENGLISH);
+    }
+
+    /** Generate an invite code with collision check (retry up to 5 times). */
+    private String generateUniqueInviteCode() {
+        for (int i = 0; i < 5; i++) {
+            String candidate = generateInviteCode();
+            if (groupRepository.findByInviteCode(candidate).isEmpty()) {
+                return candidate;
+            }
+        }
+        // Extremely unlikely; fall back to a 12-char code
+        return UUID.randomUUID().toString().substring(0, 12).toUpperCase(java.util.Locale.ENGLISH);
     }
 
     private void verifyOwnership(Group group, User currentUser) {

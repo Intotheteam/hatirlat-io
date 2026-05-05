@@ -32,6 +32,31 @@ export class ApiManager {
     return response.data;
   }
 
+  async bulkImportReminders(rows: any[]): Promise<any> {
+    const response = await apiService.post<{ success: boolean; data: any; message?: string }>("/api/reminders/bulk", { rows });
+    return response.data;
+  }
+
+  async previewReminder(id: string): Promise<any> {
+    const response = await apiService.get<{ success: boolean; data: any }>(`/api/reminders/${id}/preview`);
+    return response.data;
+  }
+
+  /** Trigger a browser download of the reminder as an .ics calendar file. */
+  async downloadReminderIcs(id: string, filename?: string): Promise<void> {
+    const res = await fetch(`/api/reminders/${id}/ics`, { credentials: "include" });
+    if (!res.ok) throw new Error(`ICS indirilemedi (${res.status})`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || `reminder-${id}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   // Group methods
   async getGroups(): Promise<Group[]> {
     const response = await apiService.get<{ success: boolean; data: Group[] }>("/api/groups");
@@ -55,6 +80,14 @@ export class ApiManager {
 
   async deleteGroup(id: string): Promise<void> {
     await apiService.delete(`/api/groups/${id}`);
+  }
+
+  async regenerateInviteCode(id: string): Promise<Group> {
+    const response = await apiService.post<{ success: boolean; data: Group }>(
+      `/api/groups/${id}/invite/regenerate`,
+      {}
+    );
+    return response.data;
   }
 
   // Member methods

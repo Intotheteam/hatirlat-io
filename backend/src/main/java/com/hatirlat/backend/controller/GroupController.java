@@ -81,6 +81,21 @@ public class GroupController {
         return ResponseEntity.ok(new BaseResponse<>(true, updatedGroup, "Group updated successfully"));
     }
 
+    @Operation(summary = "Regenerate invite code", description = "Invalidate the old invite code and generate a new one")
+    @PostMapping("/{id}/invite/regenerate")
+    public ResponseEntity<BaseResponse<GroupResponse>> regenerateInviteCode(
+            @PathVariable String id,
+            @AuthenticationPrincipal User currentUser,
+            HttpServletRequest httpRequest) {
+        GroupResponse updated = groupService.regenerateInviteCode(id, currentUser);
+        auditLogService.logAction(currentUser, "GROUP_INVITE_REGENERATED", "Group",
+                Long.valueOf(id),
+                Map.of("groupName", updated.getName() != null ? updated.getName() : "",
+                       "newCode", updated.getInviteCode() != null ? updated.getInviteCode() : ""),
+                httpRequest);
+        return ResponseEntity.ok(new BaseResponse<>(true, updated, "Invite code regenerated"));
+    }
+
     @Operation(summary = "Delete a group")
     @DeleteMapping("/{id}")
     public ResponseEntity<BaseResponse<Void>> deleteGroup(

@@ -18,12 +18,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
-import { User, Users, Mail, MessageSquare, Phone, Play, Pause, Trash2, Pencil, PlusCircle, Bell, LayoutList, CalendarDays } from "lucide-react"
+import { User, Users, Mail, MessageSquare, Phone, Play, Pause, Trash2, Pencil, PlusCircle, Bell, LayoutList, CalendarDays, CalendarPlus, Upload, Eye } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Reminder, View, CustomRepeatConfig, Channel } from "@/types"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import CreateReminderModal from "./create-reminder-modal"
+import ReminderPreviewModal from "./reminder-preview-modal"
+import { apiManager } from "@/services/api/apiManager"
 
 import { useLanguage } from "@/contexts/LanguageContext"
 
@@ -52,6 +54,7 @@ export default function ScheduleList({ reminders, onNavigate, onSave, onDelete, 
     isOpen: false,
     reminderId: null,
   })
+  const [previewReminderId, setPreviewReminderId] = useState<string | null>(null)
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
@@ -116,6 +119,16 @@ export default function ScheduleList({ reminders, onNavigate, onSave, onDelete, 
                     <CalendarDays className="h-4 w-4" />
                   </button>
                 </div>
+                <Button
+                  onClick={() => router.push("/schedules/import")}
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full"
+                  title="Toplu içe aktar (CSV)"
+                >
+                  <Upload className="mr-1.5 h-4 w-4" />
+                  CSV
+                </Button>
                 <Button
                   onClick={() => setIsCreateModalOpen(true)}
                   size="sm"
@@ -324,6 +337,30 @@ export default function ScheduleList({ reminders, onNavigate, onSave, onDelete, 
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => setPreviewReminderId(reminder.id)}
+                            title="Gönderim önizleme"
+                            className="h-8 w-8 rounded-full hover:bg-accent"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={async () => {
+                              try {
+                                await apiManager.downloadReminderIcs(reminder.id, `${reminder.title || "reminder"}.ics`)
+                              } catch (e) {
+                                toast.error("Takvime eklenemedi")
+                              }
+                            }}
+                            title="Takvime ekle (.ics)"
+                            className="h-8 w-8 rounded-full hover:bg-accent"
+                          >
+                            <CalendarPlus className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleEditClick(reminder)}
                             title={t("common.edit")}
                             className="h-8 w-8 rounded-full hover:bg-accent"
@@ -381,6 +418,12 @@ export default function ScheduleList({ reminders, onNavigate, onSave, onDelete, 
         onClose={() => setIsCreateModalOpen(false)}
         onSave={onSave}
         groupReminderCount={reminders.filter(r => r.type === "group").length}
+      />
+
+      <ReminderPreviewModal
+        reminderId={previewReminderId}
+        open={!!previewReminderId}
+        onOpenChange={(open) => { if (!open) setPreviewReminderId(null) }}
       />
 
 

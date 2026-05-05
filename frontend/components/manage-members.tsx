@@ -9,7 +9,9 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Trash2, UserPlus, ArrowLeft, Copy, RefreshCw } from "lucide-react"
+import { Trash2, UserPlus, ArrowLeft, Copy, RefreshCw, QrCode, KeyRound } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import QRCode from "react-qr-code"
 import type { Member } from "@/core/domain/entities/member"
 import { MemberRepository } from "@/services/repositories/MemberRepository"
 import { IMemberRepository } from "@/core/domain/repositories/IMemberRepository"
@@ -138,6 +140,21 @@ export default function ManageMembers({ groupId, groupName, onNavigate }: Manage
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://hatirlat.io"
   const inviteLink = `${baseUrl}/invite/${groupDetails?.inviteCode || groupId}`
 
+  const [isRegenerating, setIsRegenerating] = useState(false)
+  const handleRegenerateInvite = async () => {
+    if (!confirm("Mevcut davet linki geçersiz olacak ve yeni bir kod üretilecek. Devam edilsin mi?")) return
+    setIsRegenerating(true)
+    try {
+      const updated = await apiManager.regenerateInviteCode(groupId)
+      setGroupDetails(updated)
+      toast.success("Yeni davet kodu üretildi")
+    } catch (err: any) {
+      toast.error(err?.message || "Davet kodu yenilenemedi")
+    } finally {
+      setIsRegenerating(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -217,17 +234,44 @@ export default function ManageMembers({ groupId, groupName, onNavigate }: Manage
           <CardContent className="px-4 pb-4">
             <div className="space-y-2">
               <Input value={inviteLink} readOnly className="rounded-xl h-9 text-sm" />
-              <Button
-                variant="outline"
-                onClick={() => {
-                  navigator.clipboard.writeText(inviteLink)
-                  toast.success(t("members.link_copied"))
-                }}
-                className="w-full rounded-full text-sm h-9"
-              >
-                <Copy className="h-3.5 w-3.5 mr-1.5" />
-                {t("members.copy_link")}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(inviteLink)
+                    toast.success(t("members.link_copied"))
+                  }}
+                  className="flex-1 rounded-full text-sm h-9"
+                >
+                  <Copy className="h-3.5 w-3.5 mr-1.5" />
+                  {t("members.copy_link")}
+                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon" className="rounded-full h-9 w-9" title="QR kodunu göster">
+                      <QrCode className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-4">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="bg-white p-3 rounded-lg">
+                        <QRCode value={inviteLink} size={180} />
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">Telefonla taratıp davet linkini açın</p>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full h-9 w-9"
+                  title="Yeni davet kodu üret"
+                  onClick={handleRegenerateInvite}
+                  disabled={isRegenerating}
+                >
+                  <KeyRound className={`h-4 w-4 ${isRegenerating ? "animate-spin" : ""}`} />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
