@@ -3,6 +3,7 @@ package com.hatirlat.backend.controller;
 import com.hatirlat.backend.dto.*;
 import com.hatirlat.backend.entity.Reminder;
 import com.hatirlat.backend.entity.User;
+import com.hatirlat.backend.service.BulkReminderImportService;
 import com.hatirlat.backend.service.IcsService;
 import com.hatirlat.backend.service.ReminderService;
 import com.hatirlat.backend.aop.LimitedForFree;
@@ -28,10 +29,13 @@ public class ReminderController {
 
     private final ReminderService reminderService;
     private final IcsService icsService;
+    private final BulkReminderImportService bulkReminderImportService;
 
-    public ReminderController(ReminderService reminderService, IcsService icsService) {
+    public ReminderController(ReminderService reminderService, IcsService icsService,
+            BulkReminderImportService bulkReminderImportService) {
         this.reminderService = reminderService;
         this.icsService = icsService;
+        this.bulkReminderImportService = bulkReminderImportService;
     }
 
     @Operation(
@@ -183,6 +187,16 @@ public class ReminderController {
                     )
             }
     )
+    @Operation(summary = "Bulk import reminders", description = "Create up to 500 reminders from a parsed CSV/JSON payload")
+    @PostMapping("/bulk")
+    public ResponseEntity<BaseResponse<BulkImportResult>> bulkImport(
+            @Valid @RequestBody BulkImportRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        BulkImportResult result = bulkReminderImportService.importRows(request, currentUser);
+        String msg = String.format("%d/%d başarıyla içe aktarıldı", result.getCreated(), result.getTotal());
+        return ResponseEntity.ok(new BaseResponse<>(true, result, msg));
+    }
+
     @Operation(summary = "Download reminder as .ics", description = "Returns RFC 5545 iCalendar file for the reminder")
     @GetMapping("/{id}/ics")
     public ResponseEntity<byte[]> downloadIcs(

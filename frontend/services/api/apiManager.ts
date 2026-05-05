@@ -32,6 +32,11 @@ export class ApiManager {
     return response.data;
   }
 
+  async bulkImportReminders(rows: any[]): Promise<any> {
+    const response = await apiService.post<{ success: boolean; data: any; message?: string }>("/api/reminders/bulk", { rows });
+    return response.data;
+  }
+
   /** Trigger a browser download of the reminder as an .ics calendar file. */
   async downloadReminderIcs(id: string, filename?: string): Promise<void> {
     const res = await fetch(`/api/reminders/${id}/ics`, { credentials: "include" });

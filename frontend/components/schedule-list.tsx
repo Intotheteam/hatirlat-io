@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
-import { User, Users, Mail, MessageSquare, Phone, Play, Pause, Trash2, Pencil, PlusCircle, Bell, LayoutList, CalendarDays, CalendarPlus } from "lucide-react"
+import { User, Users, Mail, MessageSquare, Phone, Play, Pause, Trash2, Pencil, PlusCircle, Bell, LayoutList, CalendarDays, CalendarPlus, Upload } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Reminder, View, CustomRepeatConfig, Channel } from "@/types"
 import { useRouter } from "next/navigation"
@@ -117,6 +117,16 @@ export default function ScheduleList({ reminders, onNavigate, onSave, onDelete, 
                     <CalendarDays className="h-4 w-4" />
                   </button>
                 </div>
+                <Button
+                  onClick={() => router.push("/schedules/import")}
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full"
+                  title="Toplu içe aktar (CSV)"
+                >
+                  <Upload className="mr-1.5 h-4 w-4" />
+                  CSV
+                </Button>
                 <Button
                   onClick={() => setIsCreateModalOpen(true)}
                   size="sm"
