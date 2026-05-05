@@ -188,13 +188,16 @@ public class ReminderController {
         return ResponseEntity.ok(new BaseResponse<>(true, preview, null));
     }
 
-    @Operation(summary = "Bulk import reminders", description = "Create up to 500 reminders from a parsed CSV/JSON payload")
+    @Operation(
+            summary = "Bulk import reminders",
+            description = "Create up to 500 reminders from a parsed CSV/JSON payload"
+    )
     @PostMapping("/bulk")
     public ResponseEntity<BaseResponse<BulkImportResult>> bulkImport(
             @Valid @RequestBody BulkImportRequest request,
             @AuthenticationPrincipal User currentUser) {
         BulkImportResult result = bulkReminderImportService.importRows(request, currentUser);
-        String msg = String.format("%d/%d başarıyla içe aktarıldı", result.getCreated(), result.getTotal());
+        String msg = String.format("%d/%d reminders successfully imported", result.getCreated(), result.getTotal());
         return ResponseEntity.ok(new BaseResponse<>(true, result, msg));
     }
 
