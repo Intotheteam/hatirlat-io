@@ -53,7 +53,7 @@
     "react-day-picker": "latest",
     "react-dom": "^19",
     "react-hook-form": "latest",
-    "react-qr-code": "^2.0.15",
+    "react-qr-code": "^2.0.21",
     "react-resizable-panels": "latest",
     "recharts": "latest",
     "sonner": "latest",
