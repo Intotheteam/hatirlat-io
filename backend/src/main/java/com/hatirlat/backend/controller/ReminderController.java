@@ -177,20 +177,6 @@ public class ReminderController {
         return ResponseEntity.ok(new BaseResponse<>(true, updatedReminder, "Reminder status updated successfully"));
     }
 
-    @Operation(
-            summary = "Delete a reminder",
-            description = "Delete a reminder by its ID",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "204",
-                            description = "Successfully deleted reminder"
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Reminder not found"
-                    )
-            }
-    )
     @Operation(summary = "Preview reminder delivery",
             description = "Returns the per-recipient breakdown that would result from sending this reminder, without contacting any provider")
     @GetMapping("/{id}/preview")
@@ -227,6 +213,20 @@ public class ReminderController {
                 .body(bytes);
     }
 
+    @Operation(
+            summary = "Delete a reminder",
+            description = "Delete a reminder by its ID",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "204",
+                            description = "Successfully deleted reminder"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Reminder not found"
+                    )
+            }
+    )
     @DeleteMapping("/{id}")
     public ResponseEntity<BaseResponse<Void>> deleteReminder(
             @PathVariable String id,
